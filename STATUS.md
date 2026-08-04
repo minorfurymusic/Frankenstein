@@ -5,8 +5,8 @@
 > partir de outra branch estão lendo estado desatualizado.
 
 **Fase:** 0 — Reconhecimento
-**Ciclo atual:** 5
-**Objetivo do ciclo 5:** produzir `docs/recon/wger.md`
+**Ciclo atual:** 6
+**Objetivo do ciclo 6:** produzir `docs/recon/fasten-health.md`
 
 ## Progresso
 
@@ -17,7 +17,7 @@
 | 0 | Ficha Gadgetbridge | **BLOQUEADA** desde 2026-08-04 — codeberg.org barrado pelo proxy do ambiente (`connect_rejected`, 403 na CONNECT). Não conta para as 7; retomar quando o acesso for liberado. |
 | 0 | Ficha FoodYou | pronta (`docs/recon/foodyou.md`) |
 | 0 | Ficha OpenNutriTracker | pronta (`docs/recon/opennutritracker.md`) |
-| 0 | Ficha wger | pendente |
+| 0 | Ficha wger | pronta (`docs/recon/wger.md`) |
 | 0 | Ficha Fasten Health | pendente |
 | 0 | docs/LICENSE-AUDIT.md | pendente |
 | 0 | docs/VIABILITY.md | pendente |
@@ -92,3 +92,13 @@
   confirmada: Flutter/Dart, 451 arquivos `.dart` — único Flutter confirmado
   entre os 5 avaliados até agora. Build não tentado: `flutter`/`dart` não
   estão instalados neste ambiente.
+- **Ciclo 5 — ficha de reconhecimento do wger.** Criado `docs/recon/wger.md`:
+  commit `b1714bc5`, licença AGPL-3.0 lida literalmente de `LICENSE.txt` —
+  regime mais restritivo confirmado até agora (cobre uso via rede, não só
+  distribuição; relevante se `docs/B2B.md` previr wger hospedado).
+  Divergência registrada: fontes estáticas em
+  `wger/core/static/fonts/LICENSE.txt` são Apache-2.0; `licenses.json` não
+  é licença do repo, é catálogo de licenças de conteúdo (exercícios) do
+  próprio produto. Build tentado: `uv sync --python 3.12` instalou tudo
+  sem erro; `manage.py check` parou por falta de `DJANGO_DB_ENGINE`
+  (configuração de ambiente ausente, não defeito de build).
