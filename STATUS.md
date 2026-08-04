@@ -1,5 +1,9 @@
 # STATUS — Frankstein
 
+> Este arquivo só é fonte de verdade na branch `main`. Todo ciclo termina com
+> merge para `main` antes do próximo começar — sessões futuras que abrirem a
+> partir de outra branch estão lendo estado desatualizado.
+
 **Fase:** 0 — Reconhecimento
 **Ciclo atual:** 1
 **Objetivo do ciclo 1:** produzir `docs/recon/mlc-llm.md`
@@ -9,7 +13,7 @@
 | Fase | Item | Status |
 |---|---|---|
 | 0 | Ficha MLC LLM | pendente |
-| 0 | Ficha Flutter Steps Tracker | pendente |
+| 0 | Ficha OpenTracks | pendente |
 | 0 | Ficha Gadgetbridge | pendente |
 | 0 | Ficha FoodYou | pendente |
 | 0 | Ficha OpenNutriTracker | pendente |
@@ -42,3 +46,13 @@
   e `scripts/`. Adicionado `.gitignore` (ausente). Nenhuma ficha de
   reconhecimento foi criada; ciclo 1 (`docs/recon/mlc-llm.md`) continua
   pendente.
+- **Ciclo 0.6 — alinhar troca Flutter Steps Tracker → OpenTracks.** O papel de
+  "corrida, caminhada e GPS" passou de Flutter Steps Tracker para OpenTracks
+  em `docs/PRODUTO.md` e nesta tabela de progresso. `scripts/clone-refs.sh`:
+  entrada renomeada para `opentracks` (minúsculas), comentário de cabeçalho
+  atualizado, clone de um repositório não aborta mais os demais (erros
+  acumulados e resumidos no fim, `exit 1` se algum falhar), hash curto do
+  HEAD impresso após cada clone bem-sucedido. Registrado em `docs/PRODUTO.md`
+  que o pedômetro do celular não vem de nenhum dos 7 — é código próprio.
+  Clone ainda não executado; licença do OpenTracks (permissiva vs. copyleft)
+  segue não verificada até a ficha de reconhecimento.

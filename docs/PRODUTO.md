@@ -10,7 +10,7 @@ saúde do usuário não saem do aparelho, salvo ação explícita dele.
 | Projeto | Papel | Stack esperada (CONFIRMAR na Fase 0) |
 |---|---|---|
 | MLC LLM | Cérebro: inferência local com aceleração de hardware | C++/Python/TVM + bindings móveis |
-| Flutter Steps Tracker | Pedômetro, metas diárias | Flutter |
+| OpenTracks | Corrida, caminhada e GPS | CONFIRMAR — repositório ainda não aberto |
 | Gadgetbridge | Ponte BLE para pulseiras/relógios | Android — **Android-only** |
 | FoodYou | Diário alimentar offline | Android/Compose |
 | OpenNutriTracker | Calorias, macros, código de barras | Flutter |
@@ -19,6 +19,10 @@ saúde do usuário não saem do aparelho, salvo ação explícita dele.
 
 Toda afirmação acima é hipótese. Linguagem, licença e estado de manutenção são
 confirmados lendo o repositório em `refs/`, na Fase 0.
+
+O pedômetro do celular (contagem de passos, metas diárias) não vem de nenhum
+dos 7 repositórios — é código próprio, com foreground service (ver
+`.claude/rules/activity.md`).
 
 ## Módulos próprios (não vêm dos 7)
 - **Academia:** planos, sessão ao vivo, séries/repetições/carga, RPE, recordes, progressão.
