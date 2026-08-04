@@ -5,8 +5,10 @@
 > partir de outra branch estão lendo estado desatualizado.
 
 **Fase:** 0 — Reconhecimento
-**Ciclo atual:** 8
-**Objetivo do ciclo 8:** `docs/VIABILITY.md`
+**Ciclo atual:** 9
+**Objetivo do ciclo 9:** consertar o débito técnico do `docs/recon/_MODELO.md`
+(está com o conteúdo de template de ADR) e começar a formalizar ADR-6 (sem
+anúncios — já decidido, só falta registrar).
 
 ## Progresso
 
@@ -20,7 +22,7 @@
 | 0 | Ficha wger | pronta (`docs/recon/wger.md`) |
 | 0 | Ficha Fasten Health | pronta (`docs/recon/fasten-health.md`) |
 | 0 | docs/LICENSE-AUDIT.md | pronta (`docs/LICENSE-AUDIT.md`) |
-| 0 | docs/VIABILITY.md | pendente |
+| 0 | docs/VIABILITY.md | pronta (`docs/VIABILITY.md`) |
 | 1 | ADR-1 a ADR-10 | pendente |
 
 ## Decisões já tomadas (não reabrir sem motivo novo)
@@ -144,3 +146,22 @@
   `WebFetch` (403 do próprio site, não do proxy); afirmações de
   compatibilidade de licença vêm de `WebSearch`, não de leitura primária —
   registrado como ressalva de método no próprio documento.
+
+> A partir daqui a sessão está rodando autônoma (loop dinâmico), autorizada
+> pelo usuário a decidir sozinha o que for rotineiro/procedural até
+> 05:00 America/Sao_Paulo de 2026-08-05, mas mantendo os PORTÕES do
+> CLAUDE.md (licença, custo, arquitetura, UX, dado de saúde): nesses
+> pontos, ADRs entram como "proposto", nunca "aceito", sem confirmação.
+
+- **Ciclo 8 — `docs/VIABILITY.md`.** Síntese das 7 fichas + `LICENSE-AUDIT.md`
+  em recomendações de MVP por repositório (nenhuma marcada como decisão
+  final). Achado que fica para o usuário decidir, não decidido aqui:
+  FoodYou e OpenNutriTracker se sobrepõem (os dois são diário
+  alimentar/macros) — recomendação é usar OpenNutriTracker no MVP e tratar
+  FoodYou como HARVEST opcional ou descarte, mas `docs/PRODUTO.md` não foi
+  editado para refletir isso. Risco de produto registrado: o item 3 da
+  Definição de Pronto (wearable) depende do usuário ter o Gadgetbridge (ou
+  similar) instalado à parte, já que a rota recomendada é FEDERATE via
+  Health Connect, não embutir o código. wger e Fasten confirmados como
+  pós-MVP (F13), federados, consistente com `docs/ARQUITETURA.md` e
+  `docs/MONETIZACAO.md`.
