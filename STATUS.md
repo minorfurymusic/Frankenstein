@@ -5,10 +5,8 @@
 > partir de outra branch estão lendo estado desatualizado.
 
 **Fase:** 0 — Reconhecimento
-**Ciclo atual:** 7 — BLOQUEADO
-**Objetivo do ciclo 7:** `docs/LICENSE-AUDIT.md`, mas não deve ser escrito
-enquanto a ficha do Gadgetbridge continuar bloqueada (decisão explícita do
-Ciclo 1-6: auditoria sem o Gadgetbridge é incompleta).
+**Ciclo atual:** 7
+**Objetivo do ciclo 7:** `docs/LICENSE-AUDIT.md` — as 7 fichas estão prontas.
 
 ## Progresso
 
@@ -16,7 +14,7 @@ Ciclo 1-6: auditoria sem o Gadgetbridge é incompleta).
 |---|---|---|
 | 0 | Ficha MLC LLM | pronta (`docs/recon/mlc-llm.md`) |
 | 0 | Ficha OpenTracks | pronta (`docs/recon/opentracks.md`) |
-| 0 | Ficha Gadgetbridge | **BLOQUEADA** desde 2026-08-04 — codeberg.org barrado pelo proxy do ambiente (`connect_rejected`, 403 na CONNECT). Não conta para as 7; retomar quando o acesso for liberado. |
+| 0 | Ficha Gadgetbridge | pronta (`docs/recon/gadgetbridge.md`) — **ressalva:** produzida fora deste ambiente, por leitura no navegador (codeberg.org bloqueado pelo proxy); sem clone, sem build |
 | 0 | Ficha FoodYou | pronta (`docs/recon/foodyou.md`) |
 | 0 | Ficha OpenNutriTracker | pronta (`docs/recon/opennutritracker.md`) |
 | 0 | Ficha wger | pronta (`docs/recon/wger.md`) |
@@ -113,8 +111,18 @@ Ciclo 1-6: auditoria sem o Gadgetbridge é incompleta).
   falhou em `fasten-sources@v0.6.25` — módulo não publicado em proxy,
   precisa de `git ls-remote` direto no GitHub, bloqueado pela política de
   autenticação/rede do ambiente. Frontend Angular não testado neste ciclo.
-  **As 6 fichas planejadas estão prontas.** Gadgetbridge segue BLOQUEADA
-  (ver acima) e não conta para as 7 — por isso `docs/LICENSE-AUDIT.md` não
-  foi escrito: você pediu explicitamente para parar aqui, porque uma
-  auditoria sem o Gadgetbridge (o de licença mais restritiva do conjunto,
-  a confirmar) seria incompleta.
+  **As 6 fichas planejadas estão prontas.** Gadgetbridge seguia BLOQUEADA
+  (codeberg.org barrado pelo proxy) e não contava para as 7 — por isso
+  `docs/LICENSE-AUDIT.md` não foi escrito neste ciclo.
+- **Ciclo 7 (prep) — ficha do Gadgetbridge fora do ambiente.** Criado
+  `docs/recon/gadgetbridge.md` com conteúdo produzido fora deste ambiente,
+  por leitura no navegador (LICENSE, README, `app/build.gradle`) — sem
+  clone, sem build, porque `codeberg.org` continua bloqueado pelo proxy
+  daqui. Commit avaliado `24ab57aa32`. Licença **AGPL-3.0**, a mais
+  restritiva do conjunto, com licenças divergentes por subdiretório
+  (OsmAnd GPLv3, Bouncy Castle MIT, nQuant Apache, Concentus BSD-3,
+  greenDAO GPLv3, SearchPreference MIT). Recomendação registrada na ficha:
+  FEDERATE via Android Health Connect, não WRAP — decisão de licença e de
+  manutenção, não deste ciclo (fica para ADR-4/ADR-5). Ficha marcada
+  PRONTA com a ressalva de que não houve clone nem build; nenhuma
+  afirmação técnica dela foi verificada por execução.
