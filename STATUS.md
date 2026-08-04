@@ -5,8 +5,8 @@
 > partir de outra branch estão lendo estado desatualizado.
 
 **Fase:** 0 — Reconhecimento
-**Ciclo atual:** 3
-**Objetivo do ciclo 3:** produzir `docs/recon/foodyou.md`
+**Ciclo atual:** 4
+**Objetivo do ciclo 4:** produzir `docs/recon/opennutritracker.md`
 
 ## Progresso
 
@@ -15,7 +15,7 @@
 | 0 | Ficha MLC LLM | pronta (`docs/recon/mlc-llm.md`) |
 | 0 | Ficha OpenTracks | pronta (`docs/recon/opentracks.md`) |
 | 0 | Ficha Gadgetbridge | **BLOQUEADA** desde 2026-08-04 — codeberg.org barrado pelo proxy do ambiente (`connect_rejected`, 403 na CONNECT). Não conta para as 7; retomar quando o acesso for liberado. |
-| 0 | Ficha FoodYou | pendente |
+| 0 | Ficha FoodYou | pronta (`docs/recon/foodyou.md`) |
 | 0 | Ficha OpenNutriTracker | pendente |
 | 0 | Ficha wger | pendente |
 | 0 | Ficha Fasten Health | pendente |
@@ -78,3 +78,11 @@
   tentado (`./gradlew tasks`): Gradle 9.0.0 baixou ok, falhou resolvendo o
   Android Gradle Plugin — `dl.google.com` bloqueado pelo proxy do ambiente
   (403), e não há Android SDK instalado.
+- **Ciclo 3 — ficha de reconhecimento do FoodYou.** Criado
+  `docs/recon/foodyou.md`: commit `00637df9`, licença GPL-3.0 lida
+  literalmente de `LICENSE`. Stack real é Kotlin Multiplatform (600 `.kt`),
+  não "Android/Compose" como `docs/PRODUTO.md` descrevia — não corrigido
+  neste ciclo, anotado para o próximo que tocar aquele arquivo. Build
+  tentado (`./gradlew tasks`): mesma causa raiz do OpenTracks —
+  `dl.google.com` bloqueado pelo proxy, plugin `com.android.application`
+  não resolvido.
