@@ -5,8 +5,8 @@
 > partir de outra branch estão lendo estado desatualizado.
 
 **Fase:** 0 — Reconhecimento
-**Ciclo atual:** 7
-**Objetivo do ciclo 7:** `docs/LICENSE-AUDIT.md` — as 7 fichas estão prontas.
+**Ciclo atual:** 8
+**Objetivo do ciclo 8:** `docs/VIABILITY.md`
 
 ## Progresso
 
@@ -19,7 +19,7 @@
 | 0 | Ficha OpenNutriTracker | pronta (`docs/recon/opennutritracker.md`) |
 | 0 | Ficha wger | pronta (`docs/recon/wger.md`) |
 | 0 | Ficha Fasten Health | pronta (`docs/recon/fasten-health.md`) |
-| 0 | docs/LICENSE-AUDIT.md | pendente |
+| 0 | docs/LICENSE-AUDIT.md | pronta (`docs/LICENSE-AUDIT.md`) |
 | 0 | docs/VIABILITY.md | pendente |
 | 1 | ADR-1 a ADR-10 | pendente |
 
@@ -126,3 +126,21 @@
   manutenção, não deste ciclo (fica para ADR-4/ADR-5). Ficha marcada
   PRONTA com a ressalva de que não houve clone nem build; nenhuma
   afirmação técnica dela foi verificada por execução.
+- **Ciclo 7 — `docs/LICENSE-AUDIT.md`.** Acrescentado ADR-4a a
+  `docs/adr/000-pendentes.md` (Gadgetbridge: FEDERATE via Health Connect ou
+  fork sob AGPL?). Investigação em `gadgetbridge.org`: bloqueado pelo proxy
+  deste ambiente (mesmo padrão do codeberg.org, ao contrário do assumido);
+  achado via `WebSearch` (duas fontes convergentes) registrado em
+  `docs/recon/gadgetbridge.md`: Gadgetbridge **escreve** no Health Connect,
+  com ressalva de que a fonte é busca indexada, não leitura direta.
+  Criado `docs/LICENSE-AUDIT.md`: matriz das 7 licenças com sublicenças por
+  subdiretório, e os dois cenários pedidos (A: tudo linkado — resultado
+  AGPL-3.0, obriga `/source` no painel B2B, App Store é risco histórico não
+  resolvido; B: Gadgetbridge/wger/Fasten federados — cliente ainda
+  GPL-3.0 por causa de FoodYou/OpenNutriTracker, obrigação de fonte do B2B
+  sobre o wger é conservadoramente já coberta por `docs/B2B.md:31-33`, mas
+  se estende ao resto do painel B2B é interpretação legal em aberto, não
+  fato verificável — marcado como tal). `gnu.org/licenses/*` bloqueou
+  `WebFetch` (403 do próprio site, não do proxy); afirmações de
+  compatibilidade de licença vêm de `WebSearch`, não de leitura primária —
+  registrado como ressalva de método no próprio documento.
