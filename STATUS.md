@@ -5,8 +5,10 @@
 > partir de outra branch estão lendo estado desatualizado.
 
 **Fase:** 0 — Reconhecimento
-**Ciclo atual:** 6
-**Objetivo do ciclo 6:** produzir `docs/recon/fasten-health.md`
+**Ciclo atual:** 7 — BLOQUEADO
+**Objetivo do ciclo 7:** `docs/LICENSE-AUDIT.md`, mas não deve ser escrito
+enquanto a ficha do Gadgetbridge continuar bloqueada (decisão explícita do
+Ciclo 1-6: auditoria sem o Gadgetbridge é incompleta).
 
 ## Progresso
 
@@ -18,7 +20,7 @@
 | 0 | Ficha FoodYou | pronta (`docs/recon/foodyou.md`) |
 | 0 | Ficha OpenNutriTracker | pronta (`docs/recon/opennutritracker.md`) |
 | 0 | Ficha wger | pronta (`docs/recon/wger.md`) |
-| 0 | Ficha Fasten Health | pendente |
+| 0 | Ficha Fasten Health | pronta (`docs/recon/fasten-health.md`) |
 | 0 | docs/LICENSE-AUDIT.md | pendente |
 | 0 | docs/VIABILITY.md | pendente |
 | 1 | ADR-1 a ADR-10 | pendente |
@@ -102,3 +104,17 @@
   próprio produto. Build tentado: `uv sync --python 3.12` instalou tudo
   sem erro; `manage.py check` parou por falta de `DJANGO_DB_ENGINE`
   (configuração de ambiente ausente, não defeito de build).
+- **Ciclo 6 — ficha de reconhecimento do Fasten Health.** Criado
+  `docs/recon/fasten-health.md`: commit `36d92446`, licença GPL-3.0 lida
+  literalmente de `LICENSE.md`. Nuance registrada: "Fasten Connect" é
+  produto proprietário separado, fora deste repositório e fora das 7.
+  Stack: Go (backend) + Angular 14 (frontend). Build tentado (`go build
+  ./...`): maioria das dependências resolvida via `proxy.golang.org`, mas
+  falhou em `fasten-sources@v0.6.25` — módulo não publicado em proxy,
+  precisa de `git ls-remote` direto no GitHub, bloqueado pela política de
+  autenticação/rede do ambiente. Frontend Angular não testado neste ciclo.
+  **As 6 fichas planejadas estão prontas.** Gadgetbridge segue BLOQUEADA
+  (ver acima) e não conta para as 7 — por isso `docs/LICENSE-AUDIT.md` não
+  foi escrito: você pediu explicitamente para parar aqui, porque uma
+  auditoria sem o Gadgetbridge (o de licença mais restritiva do conjunto,
+  a confirmar) seria incompleta.
