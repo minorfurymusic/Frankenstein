@@ -5,14 +5,14 @@
 > partir de outra branch estão lendo estado desatualizado.
 
 **Fase:** 0 — Reconhecimento
-**Ciclo atual:** 1
-**Objetivo do ciclo 1:** produzir `docs/recon/mlc-llm.md`
+**Ciclo atual:** 2
+**Objetivo do ciclo 2:** produzir `docs/recon/opentracks.md`
 
 ## Progresso
 
 | Fase | Item | Status |
 |---|---|---|
-| 0 | Ficha MLC LLM | pendente |
+| 0 | Ficha MLC LLM | pronta (`docs/recon/mlc-llm.md`) |
 | 0 | Ficha OpenTracks | pendente |
 | 0 | Ficha Gadgetbridge | **BLOQUEADA** desde 2026-08-04 — codeberg.org barrado pelo proxy do ambiente (`connect_rejected`, 403 na CONNECT). Não conta para as 7; retomar quando o acesso for liberado. |
 | 0 | Ficha FoodYou | pendente |
@@ -35,7 +35,16 @@
 
 ## Débito técnico
 
-(vazio)
+- `docs/recon/_MODELO.md` contém o template de ADR, não um template de ficha
+  de repositório. Descoberto no Ciclo 1. As fichas usam a estrutura de campos
+  pedida no Ciclo 1-6 (commit, licença literal, build) em vez do modelo.
+  // TODO(frankstein): decidir e escrever o template correto de ficha em
+  `docs/recon/_MODELO.md`, ou renomear o atual para o lugar certo em
+  `docs/adr/`.
+- Licenças dos 6 submódulos de `3rdparty/` do MLC LLM (`argparse`,
+  `tokenizers-cpp`, `googletest`, `tvm`/`relax`, `stb`, `xgrammar`) não
+  avaliadas — clone raso não trouxe o conteúdo. Bloqueia fechamento do ADR-5
+  para este repositório.
 
 ## Histórico de ciclos
 
@@ -56,3 +65,9 @@
   que o pedômetro do celular não vem de nenhum dos 7 — é código próprio.
   Clone ainda não executado; licença do OpenTracks (permissiva vs. copyleft)
   segue não verificada até a ficha de reconhecimento.
+- **Ciclo 1 — ficha de reconhecimento do MLC LLM.** Criado
+  `docs/recon/mlc-llm.md`: commit `2f78caa4`, licença Apache-2.0 lida
+  literalmente de `LICENSE`/`NOTICE`. Build não tentado (submódulos
+  `3rdparty/` vazios por clone raso; build real exige TVM + LLVM + backend
+  de GPU, fora de escopo). Achado: `docs/recon/_MODELO.md` é o template de
+  ADR, não de ficha — registrado em "Débito técnico".
