@@ -5,8 +5,8 @@
 > partir de outra branch estão lendo estado desatualizado.
 
 **Fase:** 0 — Reconhecimento
-**Ciclo atual:** 4
-**Objetivo do ciclo 4:** produzir `docs/recon/opennutritracker.md`
+**Ciclo atual:** 5
+**Objetivo do ciclo 5:** produzir `docs/recon/wger.md`
 
 ## Progresso
 
@@ -16,7 +16,7 @@
 | 0 | Ficha OpenTracks | pronta (`docs/recon/opentracks.md`) |
 | 0 | Ficha Gadgetbridge | **BLOQUEADA** desde 2026-08-04 — codeberg.org barrado pelo proxy do ambiente (`connect_rejected`, 403 na CONNECT). Não conta para as 7; retomar quando o acesso for liberado. |
 | 0 | Ficha FoodYou | pronta (`docs/recon/foodyou.md`) |
-| 0 | Ficha OpenNutriTracker | pendente |
+| 0 | Ficha OpenNutriTracker | pronta (`docs/recon/opennutritracker.md`) |
 | 0 | Ficha wger | pendente |
 | 0 | Ficha Fasten Health | pendente |
 | 0 | docs/LICENSE-AUDIT.md | pendente |
@@ -86,3 +86,9 @@
   tentado (`./gradlew tasks`): mesma causa raiz do OpenTracks —
   `dl.google.com` bloqueado pelo proxy, plugin `com.android.application`
   não resolvido.
+- **Ciclo 4 — ficha de reconhecimento do OpenNutriTracker.** Criado
+  `docs/recon/opennutritracker.md`: commit `9ab14fe3`, licença GPL-3.0
+  lida literalmente de `LICENSE`, bate com o badge do README. Stack
+  confirmada: Flutter/Dart, 451 arquivos `.dart` — único Flutter confirmado
+  entre os 5 avaliados até agora. Build não tentado: `flutter`/`dart` não
+  estão instalados neste ambiente.
