@@ -5,15 +5,15 @@
 > partir de outra branch estão lendo estado desatualizado.
 
 **Fase:** 0 — Reconhecimento
-**Ciclo atual:** 2
-**Objetivo do ciclo 2:** produzir `docs/recon/opentracks.md`
+**Ciclo atual:** 3
+**Objetivo do ciclo 3:** produzir `docs/recon/foodyou.md`
 
 ## Progresso
 
 | Fase | Item | Status |
 |---|---|---|
 | 0 | Ficha MLC LLM | pronta (`docs/recon/mlc-llm.md`) |
-| 0 | Ficha OpenTracks | pendente |
+| 0 | Ficha OpenTracks | pronta (`docs/recon/opentracks.md`) |
 | 0 | Ficha Gadgetbridge | **BLOQUEADA** desde 2026-08-04 — codeberg.org barrado pelo proxy do ambiente (`connect_rejected`, 403 na CONNECT). Não conta para as 7; retomar quando o acesso for liberado. |
 | 0 | Ficha FoodYou | pendente |
 | 0 | Ficha OpenNutriTracker | pendente |
@@ -71,3 +71,10 @@
   `3rdparty/` vazios por clone raso; build real exige TVM + LLVM + backend
   de GPU, fora de escopo). Achado: `docs/recon/_MODELO.md` é o template de
   ADR, não de ficha — registrado em "Débito técnico".
+- **Ciclo 2 — ficha de reconhecimento do OpenTracks.** Criado
+  `docs/recon/opentracks.md`: commit `3c23a9f5`, licença Apache-2.0
+  (permissiva pura — único caso assim no conjunto até agora, relevante para
+  ADR-5). Stack confirmada: Android/Java puro (não Flutter). Build
+  tentado (`./gradlew tasks`): Gradle 9.0.0 baixou ok, falhou resolvendo o
+  Android Gradle Plugin — `dl.google.com` bloqueado pelo proxy do ambiente
+  (403), e não há Android SDK instalado.
