@@ -35,4 +35,10 @@
 
 ## Histórico de ciclos
 
-(vazio)
+- **Ciclo 0 — organizar estrutura de diretórios do kit inicial.** O kit havia
+  sido desempacotado com todos os arquivos soltos na raiz do repositório, sem
+  a estrutura que `CLAUDE.md`/`COMECE-AQUI.md` pressupõem. Movidos para
+  `docs/`, `docs/adr/`, `docs/recon/`, `.claude/rules/`, `.claude/commands/`
+  e `scripts/`. Adicionado `.gitignore` (ausente). Nenhuma ficha de
+  reconhecimento foi criada; ciclo 1 (`docs/recon/mlc-llm.md`) continua
+  pendente.

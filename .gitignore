@@ -1,0 +1,10 @@
+refs/
+build/
+.dart_tool/
+*.log
+.env
+.env.*
+node_modules/
+*.apk
+*.aab
+models/
