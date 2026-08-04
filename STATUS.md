@@ -14,7 +14,7 @@
 |---|---|---|
 | 0 | Ficha MLC LLM | pendente |
 | 0 | Ficha OpenTracks | pendente |
-| 0 | Ficha Gadgetbridge | pendente |
+| 0 | Ficha Gadgetbridge | **BLOQUEADA** desde 2026-08-04 — codeberg.org barrado pelo proxy do ambiente (`connect_rejected`, 403 na CONNECT). Não conta para as 7; retomar quando o acesso for liberado. |
 | 0 | Ficha FoodYou | pendente |
 | 0 | Ficha OpenNutriTracker | pendente |
 | 0 | Ficha wger | pendente |
