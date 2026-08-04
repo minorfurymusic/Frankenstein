@@ -11,13 +11,13 @@ mkdir -p "$DEST"
 # "Flutter Steps Tracker" tem vários repositórios homônimos — escolha um e anote
 # a URL exata na ficha de reconhecimento.
 REPOS=(
-  "mlc-llm|<https://github.com/mlc-ai/mlc-llm.git>"
-  "flutter-steps-tracker|<https://github.com/TarekAlabd/Flutter-Steps-Tracker.git>"
-  "gadgetbridge|<https://github.com/Freeyourgadget/Gadgetbridge.git>"
-  "foodyou|<https://github.com/maksimowiczm/FoodYou.git>"
-  "opennutritracker|<https://github.com/simonoppowa/OpenNutriTracker.git>"
-  "wger|<https://github.com/wger-project/wger.git>"
-  "fasten-health|<https://github.com/fastenhealth/fasten-onprem>"
+  "mlc-llm|"https://github.com/mlc-ai/mlc-llm.git"
+  "flutter-steps-tracker|"https://github.com/TarekAlabd/Flutter-Steps-Tracker.git"
+  "gadgetbridge|"https://github.com/Freeyourgadget/Gadgetbridge.git"
+  "foodyou|"https://github.com/maksimowiczm/FoodYou.git"
+  "opennutritracker|"https://github.com/simonoppowa/OpenNutriTracker.git"
+  "wger|"https://github.com/wger-project/wger.git"
+  "fasten-health|"https://github.com/fastenhealth/fasten-onprem"
 )
 
 for entry in "${REPOS[@]}"; do
