@@ -105,6 +105,47 @@ prova a direção**. É preciso confirmar, na documentação do projeto ou no c�
 - Se **só lê**: as alternativas passam a ser exportação de arquivo, ou fork com
   toda a carga de AGPL e manutenção. Vira portão de decisão.
 
+### Achado (Ciclo 7) — Gadgetbridge ESCREVE no Health Connect
+
+**Ressalva de método, primeiro:** tentei abrir `gadgetbridge.org` diretamente
+(`WebFetch`) e a busca voltou 403; investiguei o log do proxy deste ambiente
+(`curl -sS "$HTTPS_PROXY/__agentproxy/status"`) e confirmei que o **proxy
+rejeitou a CONNECT para `gadgetbridge.org:443`** (`connect_rejected`, 403) —
+ou seja, ao contrário do que se assumiu ao propor este ciclo, `gadgetbridge.org`
+**também está bloqueado** por este ambiente, no mesmo padrão do `codeberg.org`.
+Não consegui renderizar a página diretamente. O que segue vem de `WebSearch`
+(que não passa pelo proxy local bloqueado) — trechos indexados da própria
+página oficial e de um catálogo de permissões de terceiro, não uma leitura
+direta do HTML.
+
+Duas fontes independentes, via `WebSearch`, convergem na mesma resposta:
+
+1. A página oficial `gadgetbridge.org/basics/integrations/health-connect/`
+   (indexada, não renderizada diretamente) descreve: "Gadgetbridge has the
+   permissions to write steps, resting heart rate, sleep, and other health
+   data to Health Connect", citando as permissões
+   `android.permission.health.WRITE_STEPS`,
+   `android.permission.health.WRITE_HEART_RATE` e
+   `android.permission.health.WRITE_SLEEP`. Lista de tipos sincronizados:
+   passos, distância, FC, SpO₂, glicemia, HRV, temperatura, frequência
+   respiratória, FC de repouso, sessões de sono, peso, VO₂ máx, sessões de
+   exercício.
+2. A listagem de permissões do F-Droid para o pacote
+   `nodomain.freeyourgadget.gadgetbridge` (derivada do manifesto do APK, fonte
+   mais primária que um resumo de blog) confirma `WRITE_STEPS` e outras
+   permissões `WRITE_*` de saúde declaradas pelo app, junto com a ausência da
+   permissão `INTERNET` — consistente com o que já estava confirmado nesta
+   ficha via `app/build.gradle` (`INTERNET_ACCESS false` no sabor mainline).
+
+**Conclusão, com o nível de confiança disponível:** o Gadgetbridge **escreve**
+no Health Connect (não é integração só de leitura). Rota **FEDERATE via Health
+Connect confirmada** para efeito de ADR-4a, com a ressalva de que a fonte é
+busca indexada e catálogo de permissões de terceiro, não o código-fonte lido
+diretamente — o proxy deste ambiente impediu ler o manifesto ou o código real.
+Se o ADR-4a exigir certeza de primeira mão, isso ainda precisa ser confirmado
+lendo `AndroidManifest.xml`/o código de sync do Gadgetbridge quando o acesso a
+`codeberg.org` (ou um mirror) for liberado.
+
 ## Riscos
 1. **Contaminação de licença** ao copiar qualquer trecho sem ADR — inclusive
    "só para consultar como faz". Risco alto, dano permanente.
