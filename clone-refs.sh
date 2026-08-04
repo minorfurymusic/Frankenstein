@@ -12,7 +12,7 @@ mkdir -p "$DEST"
 # a URL exata na ficha de reconhecimento.
 REPOS=(
   "mlc-llm|https://github.com/mlc-ai/mlc-llm.git"
-  "flutter-steps-tracker|https://github.com/TarekAlabd/Flutter-Steps-Tracker.git"
+  "OpenTracks|https://github.com/OpenTracksApp/OpenTracks.git"
   "gadgetbridge|https://codeberg.org/Freeyourgadget/Gadgetbridge.git"
   "foodyou|https://github.com/maksimowiczm/FoodYou.git"
   "opennutritracker|https://github.com/simonoppowa/OpenNutriTracker.git"
@@ -23,16 +23,19 @@ REPOS=(
 for entry in "${REPOS[@]}"; do
   name="${entry%%|*}"
   url="${entry##*|}"
-  if [[ "$url" == "<URL>" ]]; then
-    echo "PULANDO $name — URL não preenchida"
+
+  if [[ "$url" == *"<"* || "$url" == *">"* || "$url" == "<URL>" ]]; then
+    echo "PULANDO $name — URL inválida: $url"
     continue
   fi
+
   if [[ -d "$DEST/$name" ]]; then
     echo "JÁ EXISTE $name"
     continue
   fi
   echo "Clonando $name..."
   git clone --depth 1 "$url" "$DEST/$name"
+
 done
 
 echo
