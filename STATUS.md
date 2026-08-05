@@ -5,10 +5,9 @@
 > partir de outra branch estão lendo estado desatualizado.
 
 **Fase:** 1 — ADRs
-**Ciclo atual:** 11
-**Objetivo do ciclo 11:** ADR-9 (GPS: precisão x bateria x privacidade),
-como "proposto" — sigo pela ordem de `docs/adr/000-pendentes.md`,
-priorizando os que já têm dado suficiente das fichas/regras existentes.
+**Ciclo atual:** 12
+**Objetivo do ciclo 12:** ADR-10 (substitutos livres de dependências
+proprietárias), como "proposto" — já bem embasado por `.claude/rules/licenca.md`.
 
 ## Progresso
 
@@ -25,7 +24,8 @@ priorizando os que já têm dado suficiente das fichas/regras existentes.
 | 0 | docs/VIABILITY.md | pronta (`docs/VIABILITY.md`) |
 | 1 | ADR-6 (sem anúncios) | **aceito** (`docs/adr/006-sem-anuncios.md`) |
 | 1 | ADR-1 (shell/multiplataforma) | **proposto** (`docs/adr/001-shell-multiplataforma.md`) |
-| 1 | ADR-2, 3, 4, 4a, 5, 7, 8, 9, 10 | pendente — entram como "proposto", não "aceito", sem confirmação sua |
+| 1 | ADR-9 (GPS) | **proposto** (`docs/adr/009-gps.md`) |
+| 1 | ADR-2, 3, 4, 4a, 5, 7, 8, 10 | pendente — entram como "proposto", não "aceito", sem confirmação sua |
 
 ## Decisões já tomadas (não reabrir sem motivo novo)
 
@@ -193,3 +193,11 @@ priorizando os que já têm dado suficiente das fichas/regras existentes.
   não investigado). Proponho `docs/PLATFORM-PARITY.md` como ciclo futuro
   para registrar isso — não criado agora. **Status: proposto**, não aceito
   — é portão de arquitetura.
+- **Ciclo 11 — ADR-9, proposto.** `docs/adr/009-gps.md`: testa as regras
+  já escritas em `.claude/rules/activity.md` contra a ficha do OpenTracks
+  e a ADR-1 (WRAP no Android via platform channel, PORT nativo no iOS).
+  Regras técnicas mantidas sem alteração (precisão 20 m, gravação
+  incremental, teto de bateria 8%/h, ofuscação de 300 m). Pendências
+  expostas: `docs/PERF.md` não existe, comportamento de background
+  location no iOS não investigado. **Status: proposto** — dado de
+  saúde/localização é portão explícito do `CLAUDE.md`.
