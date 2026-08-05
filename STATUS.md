@@ -4,11 +4,10 @@
 > merge para `main` antes do próximo começar — sessões futuras que abrirem a
 > partir de outra branch estão lendo estado desatualizado.
 
-**Fase:** 0 — Reconhecimento
-**Ciclo atual:** 9
-**Objetivo do ciclo 9:** consertar o débito técnico do `docs/recon/_MODELO.md`
-(está com o conteúdo de template de ADR) e começar a formalizar ADR-6 (sem
-anúncios — já decidido, só falta registrar).
+**Fase:** 0 concluída → 1 — ADRs
+**Ciclo atual:** 10
+**Objetivo do ciclo 10:** ADR-1 (shell do app e estratégia multiplataforma),
+como "proposto" — é portão de arquitetura, não decido como "aceito" sozinho.
 
 ## Progresso
 
@@ -23,7 +22,8 @@ anúncios — já decidido, só falta registrar).
 | 0 | Ficha Fasten Health | pronta (`docs/recon/fasten-health.md`) |
 | 0 | docs/LICENSE-AUDIT.md | pronta (`docs/LICENSE-AUDIT.md`) |
 | 0 | docs/VIABILITY.md | pronta (`docs/VIABILITY.md`) |
-| 1 | ADR-1 a ADR-10 | pendente |
+| 1 | ADR-6 (sem anúncios) | **aceito** (`docs/adr/006-sem-anuncios.md`) |
+| 1 | ADR-1, 2, 3, 4, 4a, 5, 7, 8, 9, 10 | pendente — entram como "proposto", não "aceito", sem confirmação sua |
 
 ## Decisões já tomadas (não reabrir sem motivo novo)
 
@@ -37,12 +37,6 @@ anúncios — já decidido, só falta registrar).
 
 ## Débito técnico
 
-- `docs/recon/_MODELO.md` contém o template de ADR, não um template de ficha
-  de repositório. Descoberto no Ciclo 1. As fichas usam a estrutura de campos
-  pedida no Ciclo 1-6 (commit, licença literal, build) em vez do modelo.
-  // TODO(frankstein): decidir e escrever o template correto de ficha em
-  `docs/recon/_MODELO.md`, ou renomear o atual para o lugar certo em
-  `docs/adr/`.
 - Licenças dos 6 submódulos de `3rdparty/` do MLC LLM (`argparse`,
   `tokenizers-cpp`, `googletest`, `tvm`/`relax`, `stb`, `xgrammar`) não
   avaliadas — clone raso não trouxe o conteúdo. Bloqueia fechamento do ADR-5
@@ -165,3 +159,23 @@ anúncios — já decidido, só falta registrar).
   Health Connect, não embutir o código. wger e Fasten confirmados como
   pós-MVP (F13), federados, consistente com `docs/ARQUITETURA.md` e
   `docs/MONETIZACAO.md`.
+
+> O loop dinâmico (`ScheduleWakeup`) agendado ao fim do Ciclo 8 não
+> continuou sozinho — nenhum commit novo apareceu entre 2026-08-04T23:39Z e
+> a checagem do usuário em 2026-08-05T09:03Z (06:03 em São Paulo, já depois
+> das 05:00 combinadas). Causa não determinada de dentro da sessão — não
+> invento explicação. A partir do Ciclo 9 a continuação é conduzida com o
+> usuário presente na conversa, não por agendamento.
+
+- **Ciclo 9 — consertar `docs/recon/_MODELO.md` e formalizar ADR-6.**
+  `docs/recon/_MODELO.md` (que continha o template de ADR, débito técnico
+  do Ciclo 1) movido para `docs/adr/_MODELO.md`, onde pertence. Escrito um
+  template correto de ficha de repositório em `docs/recon/_MODELO.md`,
+  refletindo a estrutura já usada nas 7 fichas prontas. `docs/adr/006-sem-anuncios.md`
+  criado com **Status: aceito** — não é decisão nova, só formaliza o que já
+  estava em `CLAUDE.md`, `STATUS.md` ("Decisões já tomadas"),
+  `docs/MONETIZACAO.md:3-4` e `.claude/rules/monetizacao.md:12`, e cita o
+  motivo de licença confirmado em `docs/LICENSE-AUDIT.md` (4 dos 7
+  repositórios são copyleft, incompatível com SDK de anúncio proprietário).
+  `docs/adr/000-pendentes.md` atualizado. Fase 0 declarada concluída — as 7
+  fichas, `LICENSE-AUDIT.md` e `VIABILITY.md` estão prontos.
