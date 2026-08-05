@@ -6,11 +6,8 @@
 
 **Fase:** 1 concluída (11/11 ADRs registradas, 1 aceita + 10 propostas) →
 **aguardando você** para revisar as propostas antes da Fase 2 começar.
-**Ciclo atual:** 19 (último desta sequência autônoma)
-**Próximo objetivo, quando você confirmar:** revisão humana das 10 ADRs
-propostas — nenhum código de aplicativo começa antes disso. `CLAUDE.md`
-ainda diz "Fase 0... Nenhum código de aplicativo ainda" e eu não mudo isso
-sozinho.
+**Ciclo atual:** 21 (Ciclos A/B/C, autorizados sem esperar decisão de licença)
+**Objetivo do Ciclo B:** ler licenças dos submódulos do MLC LLM.
 
 ## Progresso
 
@@ -279,3 +276,16 @@ sozinho.
   arquivo. **Fase 1 concluída.** Fase 2 (código de aplicativo) não começa
   sozinha — `CLAUDE.md` ainda declara Fase 0/nenhum código, e as 10 ADRs
   propostas precisam da sua revisão antes de qualquer uma virar "aceita".
+- **Ciclo A — hooks de PreToolUse/PostToolUse (`.claude/settings.json` +
+  `.claude/hooks/`).** Schema confirmado em code.claude.com/docs/en/hooks
+  antes de escrever. Três bloqueios: (1) commit sem `make test` no ciclo;
+  (2) dependência da lista proibida de `.claude/rules/licenca.md`, via
+  instalador de pacote ou edição de manifesto; (3) escrita em `packages/`
+  ou `server/` antes de ADR-1/2/3 aceitas. Testado disparando cada
+  condição ao vivo nesta sessão — saída literal de cada bloqueio colada no
+  chat. Dois bugs achados e corrigidos durante o teste: regex de fronteira
+  não tratava `;` colado (`make test;`), e o schema real de `PostToolUse`
+  desta implementação usa `tool_response.stdout/stderr`, não `tool_error`
+  como a documentação pública descreve — lógica ajustada para não
+  depender de um sinal de sucesso/falha que não existe no input real.
+  Commit `707bcda`.
