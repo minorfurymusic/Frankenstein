@@ -1,114 +1,200 @@
 # ADR-5 — Licenciamento e modelo de distribuição
 
 **Status:** proposto
-**Data:** 2026-08-05
+**Data:** 2026-08-05 (revisão 2, mesmo dia — três correções pedidas em revisão)
+
+## Nota de revisão (o que mudou e por quê)
+
+A versão anterior desta ADR cometeu três erros, todos apontados em
+revisão:
+
+1. Descartou a opção de reimplementar (PORT) o OpenNutriTracker citando a
+   regra 3 do `CLAUDE.md` ("não reabrir decisão sem motivo novo") —
+   **errado**. `docs/VIABILITY.md` (Ciclo 8) decidiu **qual repositório**
+   usar para nutrição (OpenNutriTracker em vez de FoodYou). Nunca decidiu
+   **como absorver** esse repositório (link de código vs. reimplementação).
+   São perguntas diferentes. Reabrir a segunda não reabre a primeira.
+2. Tratou "aberto" e "copyleft" como sinônimos. Não são: Apache-2.0 é
+   código aberto e não é copyleft. GPL-3.0 é código aberto e é copyleft.
+   A decisão "copyleft aceito" em `STATUS.md` significa que o projeto
+   **aceita** copyleft quando um repositório absorvido o exige por
+   licença — não que o projeto **busca** copyleft por si só. Esta versão
+   distingue os dois em vez de misturar.
+3. A versão anterior registrava o conflito histórico GPL-3.0 × Termos da
+   App Store como "herdado, não resolvido por esta ADR" — e a ADR-7,
+   escrita ao mesmo tempo, mantinha a App Store como canal, sem que
+   ninguém batesse as duas pontas. Duas ADRs do mesmo dia se contradizendo
+   sem aviso é exatamente o tipo de coisa que este projeto existe para
+   evitar. Esta versão resolve, não herda.
 
 ## Contexto
 
-Esta é a ADR que `docs/adr/000-pendentes.md` marca como bloqueando "tudo"
-— e a única que só faz sentido depois de todas as outras, porque a
-licença final do produto é consequência do que cada ADR anterior decidiu
-sobre onde cada um dos 7 repositórios entra. Não decido nada aqui que já
-não esteja implícito nas ADRs propostas nos Ciclos 10-18; esta ADR só
-junta as peças:
+`docs/adr/000-pendentes.md` marca esta ADR como bloqueando "tudo" — a
+licença final do produto é consequência de onde cada um dos 7
+repositórios entra:
 
-- **ADR-1 (proposta):** Flutter shell. OpenTracks (Apache-2.0) e MLC LLM
-  (Apache-2.0 core) entram por WRAP — linkados ao cliente.
+- **ADR-1 (aceita):** Flutter shell. MLC LLM e OpenTracks entram por WRAP
+  no Android (bindings/código nativo chamado por platform channel) — os
+  dois são Apache-2.0, então WRAP não traz copyleft nenhum, linkar ou não
+  linkar dá na mesma para fins de licença.
 - **ADR-4 (proposta):** wger (AGPL-3.0) e Fasten (GPL-3.0) opcionais,
-  **federados** — não linkados ao cliente nem ao binário do Frankstein.
+  **federados** — nunca linkados ao cliente.
 - **ADR-4a (proposta):** Gadgetbridge (AGPL-3.0) via Health Connect — nem
-  federado, nem linkado, sem contato de código nenhum.
-- **`docs/VIABILITY.md` (Ciclo 8):** recomenda OpenNutriTracker
-  (GPL-3.0) sobre FoodYou (GPL-3.0) para o módulo de nutrição — os dois
-  são GPL-3.0, então a escolha entre eles não muda a licença resultante,
-  só qual código de fato entra linkado.
-
-Isso é, na estrutura de `docs/LICENSE-AUDIT.md` (Ciclo 7), o **Cenário B**
-quase exato: só que em vez de nenhum dos GPL-3.0 entrar linkado, um deles
-(OpenNutriTracker) entra — porque nutrição, ao contrário de wger/Fasten/
-Gadgetbridge, está no núcleo do MVP grátis, sem depender de rede.
-
-`STATUS.md`, em "Decisões já tomadas", já registra "Código aberto,
-copyleft aceito" — isto não é uma pergunta em aberto sobre *se* o projeto
-é copyleft, é sobre *qual* copyleft e *onde* ele se aplica.
+  federado, nem linkado, zero contato de código.
+- **OpenNutriTracker (GPL-3.0):** o único dos 7 cuja licença é copyleft
+  **e** que `docs/VIABILITY.md` recomenda usar dentro do núcleo grátis do
+  MVP (não federado, porque roda no aparelho, offline). É o único ponto
+  onde a pergunta "linkar ou reimplementar" muda a licença do cliente
+  inteiro — por isso é o centro desta ADR.
 
 ## Opções consideradas
 
-1. **Seguir o Cenário B de `docs/LICENSE-AUDIT.md` até o fim:** cliente
-   GPL-3.0 (forçado pelo OpenNutriTracker linkado, compatível com
-   Apache-2.0 do MLC LLM/OpenTracks numa via só); qualquer componente de
-   servidor autoral do Frankstein (B2B, entitlements, relay de sync — ADR-3,
-   ADR-8) **não é legalmente forçado** a AGPL só por chamar a API do wger
-   por rede (leitura permissiva registrada em `docs/LICENSE-AUDIT.md`),
-   mas o projeto **escolhe** AGPL-3.0 para esses componentes por
-   princípio, não por obrigação — coerente com "copyleft aceito" já
-   decidido, e evita depender da leitura permissiva se ela nunca for
-   testada em tribunal.
-2. **Cliente GPL-3.0, servidor autoral proprietário** (só o que é
-   legalmente obrigatório fica aberto: o wger, se hospedado). Tecnicamente
-   permitido pela leitura permissiva de `docs/LICENSE-AUDIT.md`, mas
-   contradiz "Código aberto, copyleft aceito" já registrado em `STATUS.md`
-   — não é uma opção real dado o que já foi decidido, só registro que
-   existiria.
-3. **Descartar OpenNutriTracker também** (harvest/reescrever), deixando só
-   Apache-2.0 (MLC LLM, OpenTracks) linkado no cliente — abriria caminho
-   para um cliente permissivo em vez de GPL-3.0. Não é o que
-   `docs/VIABILITY.md` recomendou, e reabriria a decisão de nutrição do
-   Ciclo 8 sem motivo novo — `CLAUDE.md` regra 3 pede para não reabrir
-   decisão sem motivo.
+1. **Cliente GPL-3.0, via VENDOR/link do código do OpenNutriTracker.**
+   Usa o código Dart do OpenNutriTracker como dependência dentro do app
+   Flutter (é o mesmo processo/binário — não há fronteira de processo
+   como há entre apps Android nativos via platform channel). Isso é
+   linkagem de verdade: o app inteiro, compilado num único binário Dart
+   AOT, vira GPL-3.0 por força da própria licença.
+2. **Cliente GPL-3.0, servidor autoral proprietário** (só o legalmente
+   obrigatório fica aberto). Continua rejeitada: contradiz "Código
+   aberto, copyleft aceito" (`STATUS.md`) sem motivo novo para reabrir —
+   aqui sim a regra 3 do `CLAUDE.md` se aplica de verdade, porque é a
+   mesma pergunta (abrir ou não o servidor) já respondida antes.
+3. **Cliente Apache-2.0, via PORT (reimplementação) do OpenNutriTracker.**
+   Reaberta nesta revisão. O Frankstein escreve seu próprio módulo de
+   diário alimentar/macros/código de barras, informado pelo que o
+   OpenNutriTracker faz (é a referência de produto — `docs/VIABILITY.md`
+   continua valendo nisso), mas sem copiar o código dele. Nenhuma licença
+   copyleft entra no cliente por essa via: MLC LLM e OpenTracks já são
+   Apache-2.0: o cliente inteiro pode ser Apache-2.0.
+
+## A pergunta que a revisão pediu, respondida direto
+
+**O OpenNutriTracker entra por cópia de código ou por PORT?**
+
+**PORT.** Não é cópia. Recomendo a opção 3.
+
+Motivo, em ordem de peso:
+
+1. **Resolve a contradição GPL × App Store sem tirar o iOS do plano**
+   (ver seção seguinte) — sozinho, isso já decidiria a favor.
+2. `docs/adr/009-gps.md` (aceita) já escolheu PORT para o equivalente
+   iOS do OpenTracks — reimplementar informado por um repositório de
+   referência, sem copiar, já é padrão aceito neste projeto, não é
+   novidade sendo inventada agora só para fugir da GPL.
+3. Apache-2.0 no cliente **continua sendo código aberto** — não é uma
+   escolha "menos aberta", é uma escolha não-copyleft. `docs/adr/006-sem-anuncios.md`
+   e o resto do projeto continuam de pé sem depender de o cliente ser
+   copyleft especificamente.
+4. Custo: reimplementar diário alimentar/macros/código de barras é
+   trabalho real, não é grátis — o OpenNutriTracker foi escolhido
+   originalmente (`docs/PRODUTO.md`) exatamente para evitar esse esforço.
+   Isto **não é decidido de graça**: é a troca de um custo de engenharia
+   (reescrever) por uma redução de risco jurídico e de plataforma (App
+   Store). Registro o custo, não finjo que é zero.
+
+**Ressalva de interpretação jurídica, não fato:** "PORT" no sentido de
+`docs/PRODUTO.md` (reimplementar a lógica) não é automaticamente livre de
+risco de "obra derivada" em todas as leituras possíveis de direito
+autoral — ideias e funcionalidade não são protegidas por copyright, só a
+expressão (o código em si) é; ter lido o código GPL do OpenNutriTracker
+para entender como ele resolve um problema, e depois escrever código
+próprio diferente que resolve o mesmo problema, é a prática comum e
+geralmente aceita, mas "geralmente aceita" não é "juridicamente
+garantida em todo caso". Isso é opinião jurídica, que não tenho
+autoridade para dar. Se quiser blindar ainda mais, a prática de
+"clean room" (quem escreve o PORT nunca abre o código-fonte do
+OpenNutriTracker, só a especificação de comportamento) reduz esse risco
+residual — não decido isso aqui, é detalhe de processo de implementação.
+
+## Resolução da contradição GPL × App Store
+
+A versão anterior desta ADR aceitava GPL-3.0 no cliente (herdando o
+risco histórico de conflito com os Termos da App Store,
+`docs/LICENSE-AUDIT.md`, caso FSF x Apple/GNU Go 2010) **e** a ADR-7
+mantinha a App Store como canal — duas ADRs do mesmo dia se
+contradizendo. Com a opção 3 (PORT, cliente Apache-2.0):
+
+- **Não há mais GPL no cliente.** MLC LLM (Apache-2.0) + OpenTracks
+  (Apache-2.0, WRAP) + OpenNutriTracker-como-PORT (código próprio,
+  licença própria) = cliente inteiro Apache-2.0.
+- **O conflito não existe mais para o cliente.** Apache-2.0 nunca teve o
+  problema que gerou o caso FSF x Apple — a cláusula de "sem restrições
+  adicionais" que a GPL tem (e que colide com os Termos de Uso da App
+  Store) não existe na Apache-2.0.
+- **O iOS continua no plano, a App Store continua no plano** — a
+  contradição não precisou ser resolvida abrindo mão de uma das duas,
+  porque a premissa (cliente tem que ser GPL) deixou de ser verdadeira.
+- O **servidor** autoral (entitlements, B2B, relay de sync — ADR-3/ADR-8)
+  não é distribuído em loja nenhuma, então nada disso o afeta: ele pode
+  continuar AGPL-3.0 por escolha, como já estava, sem reabrir a discussão
+  de App Store.
 
 ## Decisão
 
-**Opção 1.** Modelo de licenciamento proposto:
+**Opção 3.** Modelo de licenciamento revisado:
 
-- **Cliente (app):** GPL-3.0. Todo binário distribuído (Play Store, App
-  Store, F-Droid, APK direto) carrega essa licença e a obrigação padrão de
-  oferecer código-fonte a quem recebe o binário.
+- **Cliente (app):** **Apache-2.0**. OpenNutriTracker entra por PORT
+  (reimplementação informada, não cópia de código) — decisão desta ADR,
+  não mais "a decidir depois". MLC LLM e OpenTracks continuam por WRAP
+  (ADR-1), sem alteração — já eram Apache-2.0, WRAP nunca foi o problema.
+  FoodYou continua fora (`docs/VIABILITY.md`), redundante com
+  OpenNutriTracker independente de licença.
 - **Componentes de servidor autorais do Frankstein** (entitlements, B2B,
-  relay de sync — ADR-3/ADR-8): **AGPL-3.0 por escolha**, não por
-  obrigação legal estrita nesta configuração federada. Cobre uso via rede
-  (§13) para qualquer usuário do painel B2B ou da API de sync.
+  relay de sync — ADR-3/ADR-8): **AGPL-3.0 por escolha**, sem alteração
+  em relação à versão anterior — continua sendo escolha de princípio, não
+  obrigação legal estrita, e continua sem afetar o cliente porque servidor
+  e cliente são licenciados separadamente.
 - **wger, se hospedado para B2B:** expõe o próprio código-fonte via rota
-  `/source`, decisão já tomada em `docs/B2B.md:31-33` — mantida sem
-  alteração.
-- **Modelo de distribuição:** multi-canal, conforme ADR-7 (proposta) —
-  Google Play, App Store, F-Droid/APK direto, Web como preferencial para
-  pagamento.
+  `/source` (`docs/B2B.md:31-33`), sem alteração.
+- **Modelo de distribuição:** multi-canal conforme ADR-7 — agora sem a
+  tensão GPL×App Store que a versão anterior carregava.
 
-**Isto está proposto, não aceito.** É a ADR mais consequente do projeto —
-"bloqueia tudo" segundo `docs/adr/000-pendentes.md`. Não deveria ser
-aceita sem você revisar as 8 ADRs que ela sintetiza, e sem resolver as
-pendências que herda de cada uma (submódulos do MLC LLM, direção do
-Gadgetbridge, isolamento multi-tenant, regras de loja no Brasil).
+**Isto está proposto, não aceito.** Continua sendo a ADR mais consequente
+do projeto. A diferença desta revisão: a decisão não depende mais de
+resolver uma contradição entre duas ADRs — resolvi a contradição aqui.
 
 ## Consequências
 
-- **Fica mais fácil:** o modelo de licenciamento deixa de ser uma
-  incógnita por repositório — vira uma regra única (GPL-3.0 cliente,
-  AGPL-3.0 servidor autoral) aplicável a qualquer código novo que o
-  projeto escrever, sem precisar reabrir a pergunta a cada módulo.
-- **Fica mais difícil:** GPL-3.0 no cliente carrega o mesmo risco
-  histórico de atrito com os Termos de Uso da App Store já registrado em
-  `docs/LICENSE-AUDIT.md` (caso FSF x Apple/GNU Go, 2010) — não resolvido
-  por esta ADR, só herdado. AGPL-3.0 por escolha no servidor (não por
-  obrigação) significa manter uma rota `/source` também para componentes
-  que a leitura permissiva não exigiria — custo de implementação que uma
-  leitura mais permissiva evitaria.
-- **Passa a ser proibido:** qualquer distribuição do cliente sem oferta de
-  código-fonte correspondente; qualquer componente de servidor autoral
-  fechado "porque a lei não obriga" — a escolha de princípio desta ADR
-  fecha essa porta mesmo onde a obrigação legal é discutível.
+- **Fica mais fácil:** não há mais tensão entre a licença do cliente e o
+  canal de distribuição — App Store, Play Store, F-Droid, APK direto
+  funcionam todos sem risco de conflito de licença específico do cliente.
+  O modelo de licença vira uma regra simples: cliente permissivo, servidor
+  copyleft por escolha.
+- **Fica mais difícil:**
+  - Custo de engenharia real de reimplementar o módulo de nutrição em vez
+    de linkar o OpenNutriTracker pronto — não quantifiquei esse custo
+    (não é dado que eu tenha; estimativa de esforço não é meu papel aqui).
+  - **AGPL no servidor permite que clientes B2B se auto-hospedem e
+    deixem de pagar.** Como o servidor autoral é AGPL-3.0 por escolha, e
+    AGPL obriga a oferecer o código-fonte a quem interage com ele pela
+    rede, qualquer clínica/academia cliente do B2B (`docs/B2B.md`) pode
+    pegar esse código-fonte publicado e rodar a própria instância, sem
+    pagar pela hospedagem do Frankstein — o mesmo modelo que
+    `docs/B2B.md:31-33` já assumia para o wger hospedado se aplica agora
+    ao próprio produto B2B do Frankstein. `docs/MONETIZACAO.md` conta com
+    receita de hospedagem B2B ("20 nutricionistas a R$ 80/mês valem
+    mais..."); isso é uma tensão real entre a escolha de licença por
+    princípio e o modelo de receita, não resolvida aqui — fica registrada
+    para quem for aceitar esta ADR pesar.
+- **Passa a ser proibido:** copiar/portar código do OpenNutriTracker
+  literalmente sob pretexto de "PORT" — se for reimplementação, tem que
+  ser reimplementação de verdade, não cópia com nomes trocados (isso
+  seria pior que linkar abertamente: violaria a GPL escondendo a origem).
 
-## Não verificado (herdado das ADRs anteriores, não resolvido aqui)
+## Não verificado
 
-- ~~Licenças dos 6 submódulos do MLC LLM~~ — resolvido no Ciclo B
-  (2026-08-05), todas permissivas, não muda esta ADR.
+- ~~Licenças dos 6 submódulos do MLC LLM~~ — resolvido no Ciclo B, todas
+  permissivas, não muda esta ADR.
 - Direção real do Gadgetbridge no Health Connect, confirmada só por busca
   indexada (ADR-4a).
-- Se o App Store aceita GPL-3.0 hoje na prática para contas novas — só
-  precedente histórico, não regra atual verificada (`docs/LICENSE-AUDIT.md`).
 - Regras de link de pagamento externo confirmadas para o Brasil
-  especificamente (ADR-7).
+  especificamente — ver ADR-7 revisão 2, que reduz a dependência disso
+  com a Opção 4.
 - Texto primário da FSF sobre compatibilidade de licença — só resumo de
-  `WebSearch` em todo o projeto até aqui, nunca leitura direta de
-  `gnu.org` (bloqueado neste ambiente).
+  `WebSearch` em todo o projeto até aqui.
+- **Novo:** custo de engenharia de reimplementar (PORT) o módulo de
+  nutrição — não estimado nesta ADR.
+- **Novo:** se "clean room" é necessário ou só recomendável para o PORT
+  do OpenNutriTracker — é interpretação jurídica, sinalizada, não
+  resolvida.

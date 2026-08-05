@@ -1,6 +1,6 @@
 # ADR-2 — Modelo LLM, quantização, RAM mínima, perfis A/B/C
 
-**Status:** proposto
+**Status:** aceito
 **Data:** 2026-08-05
 
 ## Contexto
@@ -49,9 +49,11 @@ verdade, só herdado da documentação upstream do MLC LLM.
   descarregar da RAM em segundo plano/GPS, teto térmico com degradação
   para o roteador.
 
-**Isto está proposto, não aceito.** Portão de arquitetura — e depende de
-ADR-1 (shell/WRAP) e parcialmente de ADR-5 (licença), também propostas,
-não aceitas.
+**Isto está aceito** (2026-08-05). Dependia de ADR-1 (shell/WRAP), agora
+aceita — condição satisfeita. O motor (MLC LLM, Apache-2.0) e os perfis
+A/B/C não dependem do resultado da ADR-5 (ainda em revisão): MLC LLM é
+Apache-2.0 em qualquer cenário de licenciamento do cliente considerado
+lá, então esta decisão fica de pé independente de como a ADR-5 fechar.
 
 ## Consequências
 

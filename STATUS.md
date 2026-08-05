@@ -4,11 +4,11 @@
 > merge para `main` antes do próximo começar — sessões futuras que abrirem a
 > partir de outra branch estão lendo estado desatualizado.
 
-**Fase:** 1 concluída (11/11 ADRs registradas, 1 aceita + 10 propostas) →
-**aguardando você** para revisar as propostas antes da Fase 2 começar.
-**Ciclo atual:** 23 — Ciclos A, B e C concluídos. Voltando a aguardar
-revisão humana das ADRs propostas; nenhum novo ciclo autônomo até você
-decidir o próximo passo.
+**Fase:** 1 concluída (11/11 ADRs registradas, **6 aceitas** + 5 propostas) →
+**aguardando você** para revisar as 5 propostas restantes (ADR-4, 4a, 5, 7,
+8) antes da Fase 2 começar.
+**Ciclo atual:** 24 — revisão de ADR-5/ADR-7 (revisão 2) e aceite de
+ADR-1/2/3/9/10.
 
 ## Progresso
 
@@ -24,17 +24,17 @@ decidir o próximo passo.
 | 0 | docs/LICENSE-AUDIT.md | pronta (`docs/LICENSE-AUDIT.md`) |
 | 0 | docs/VIABILITY.md | pronta (`docs/VIABILITY.md`) |
 | 1 | ADR-6 (sem anúncios) | **aceito** (`docs/adr/006-sem-anuncios.md`) |
-| 1 | ADR-1 (shell/multiplataforma) | **proposto** (`docs/adr/001-shell-multiplataforma.md`) |
-| 1 | ADR-9 (GPS) | **proposto** (`docs/adr/009-gps.md`) |
-| 1 | ADR-10 (substitutos livres) | **proposto** (`docs/adr/010-substitutos-livres.md`) |
-| 1 | ADR-3 (fonte da verdade/sync) | **proposto** (`docs/adr/003-fonte-verdade-sync.md`) |
-| 1 | ADR-4 (wger/Fasten) | **proposto** (`docs/adr/004-wger-fasten.md`) |
-| 1 | ADR-4a (Gadgetbridge) | **proposto** (`docs/adr/004a-gadgetbridge.md`) |
-| 1 | ADR-2 (modelo LLM) | **proposto** (`docs/adr/002-modelo-llm.md`) |
-| 1 | ADR-7 (canais/pagamento) | **proposto** (`docs/adr/007-canais-distribuicao-pagamento.md`) |
-| 1 | ADR-8 (multi-tenant B2B/consentimento) | **proposto** (`docs/adr/008-multitenant-b2b-consentimento.md`) |
-| 1 | ADR-5 (licenciamento) | **proposto** (`docs/adr/005-licenciamento-distribuicao.md`) — sintetiza ADR-1/4/4a/7/10 |
-| 1 | **11/11 ADRs registradas** | 1 aceita (ADR-6), 10 propostas — nenhuma decidida sozinha |
+| 1 | ADR-1 (shell/multiplataforma) | **aceito** (`docs/adr/001-shell-multiplataforma.md`) |
+| 1 | ADR-9 (GPS) | **aceito** (`docs/adr/009-gps.md`) |
+| 1 | ADR-10 (substitutos livres) | **aceito** (`docs/adr/010-substitutos-livres.md`) |
+| 1 | ADR-3 (fonte da verdade/sync) | **aceito** (`docs/adr/003-fonte-verdade-sync.md`) |
+| 1 | ADR-2 (modelo LLM) | **aceito** (`docs/adr/002-modelo-llm.md`) |
+| 1 | ADR-4 (wger/Fasten) | proposto (`docs/adr/004-wger-fasten.md`) |
+| 1 | ADR-4a (Gadgetbridge) | proposto (`docs/adr/004a-gadgetbridge.md`) |
+| 1 | ADR-7 (canais/pagamento) | proposto, **revisão 2** (`docs/adr/007-canais-distribuicao-pagamento.md`) — Opção 4 acrescentada: sem interface de pagamento no app, entitlement lido do site |
+| 1 | ADR-8 (multi-tenant B2B/consentimento) | proposto (`docs/adr/008-multitenant-b2b-consentimento.md`) |
+| 1 | ADR-5 (licenciamento) | proposto, **revisão 2** (`docs/adr/005-licenciamento-distribuicao.md`) — cliente agora Apache-2.0 (PORT do OpenNutriTracker, não link), servidor autoral segue AGPL-3.0 por escolha |
+| 1 | **11/11 ADRs registradas** | **6 aceitas** (ADR-1, 2, 3, 6, 9, 10), 5 propostas (ADR-4, 4a, 5, 7, 8) |
 
 ## Decisões já tomadas (não reabrir sem motivo novo)
 
@@ -311,3 +311,32 @@ decidir o próximo passo.
   registrado como "Não verificado", não deduzido. `docs/adr/001-shell-multiplataforma.md`
   atualizada para apontar pro documento em vez de reclamar que ele não
   existe.
+- **Ciclo 24 — revisão da ADR-5/ADR-7 e aceite de 5 ADRs.** Três erros
+  corrigidos na ADR-5, apontados em revisão:
+  (1) a opção de PORT do OpenNutriTracker tinha sido descartada citando a
+  regra 3 do `CLAUDE.md` por engano — `docs/VIABILITY.md` decidiu **qual**
+  repositório usar (OpenNutriTracker x FoodYou), nunca **como** absorvê-lo;
+  reaberta. (2) "aberto" e "copyleft" estavam tratados como sinônimos —
+  Apache-2.0 é aberto e não é copyleft; distinção registrada explicitamente
+  na ADR. (3) a ADR-5 herdava o conflito GPL-3.0 × Termos da App Store
+  enquanto a ADR-7 mantinha a App Store como canal, sem ninguém bater as
+  duas pontas — resolvido: OpenNutriTracker entra por **PORT**
+  (reimplementação informada, não cópia de código), não por link/VENDOR,
+  então o cliente fica **Apache-2.0** inteiro (MLC LLM + OpenTracks já
+  eram Apache-2.0) e o conflito de licença com a App Store deixa de
+  existir para o cliente — iOS e App Store continuam no plano. Servidor
+  autoral segue AGPL-3.0 por escolha (ADR-3/ADR-8), separado do cliente.
+  Consequência nova registrada: AGPL no servidor permite que clientes B2B
+  se auto-hospedem e deixem de pagar — tensão real com
+  `docs/MONETIZACAO.md`, não resolvida, só sinalizada.
+  `docs/VIABILITY.md` corrigida (linha do OpenNutriTracker contradizia a
+  nova decisão).
+  ADR-7 ganhou a **Opção 4** (nenhuma interface de pagamento no app,
+  assinatura só no site, app só lê o entitlement assinado) — elimina a
+  maior parte da incerteza regulatória sobre o Brasil que a revisão
+  anterior carregava; decisão passou a ser Opção 4 agora + Opção 1 como
+  evolução condicional, não decidida.
+  **ADR-1, 2, 3, 9 e 10 marcadas como aceitas**, por instrução direta —
+  linguagem interna de cada uma ("proposto, não aceito") corrigida para
+  refletir isso, inclusive cross-references entre elas (ex.: ADR-9 citava
+  "ADR-1, ainda proposto"). ADR-4, 4a, 5, 7 e 8 continuam propostas.

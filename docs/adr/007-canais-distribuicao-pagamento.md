@@ -1,111 +1,141 @@
 # ADR-7 — Canais de distribuição e meios de pagamento
 
 **Status:** proposto
-**Data:** 2026-08-05
+**Data:** 2026-08-05 (revisão 2, mesmo dia — Opção 4 acrescentada em revisão)
 
 ## Contexto
 
 `docs/MONETIZACAO.md:47-56` já lista os 4 canais candidatos (Google Play,
 App Store, F-Droid/APK direto, Web) e pede explicitamente: "Confirme as
 regras vigentes da loja antes de implementar e cite a fonte no ADR-7." Fiz
-essa pesquisa agora, via `WebSearch` (não é leitura de documentação oficial
-primária linha a linha — ressalva de método no fim). O achado muda o peso
-relativo dos 4 canais: em 2026, tanto Google quanto Apple abriram (ou estão
-abrindo) checkout externo por decisão judicial, algo que não estava
-garantido quando `docs/MONETIZACAO.md` chamou a Web de "preferível".
+essa pesquisa via `WebSearch` (não é leitura de documentação oficial
+primária linha a linha — ressalva de método no fim).
 
 **Google Play:** a partir de 30/06/2026, EUA/Reino Unido/EEE ganham
 pagamento externo com escolha lado a lado (Play Billing x link externo) e
 taxa de 5% (Play Billing) ou isenta de taxa de billing no link externo,
 mais uma taxa de serviço de 10% sobre o primeiro US$1 milhão/ano
-independente do método. **Brasil está na lista de países com opção de
-sistema de faturamento alternativo** (programa mais antigo, escolha
-in-app entre processadores), mas a onda mais nova de **link externo**
-(a mesma do EUA/UK/EEE) só chega a mercados globais, Brasil incluso, até
-30/09/2027 segundo uma das fontes — não é o mesmo prazo do EUA.
+independente do método. Brasil está na lista de países com opção de
+sistema de faturamento alternativo (programa mais antigo, escolha in-app
+entre processadores), mas a onda mais nova de **link externo** só chega a
+mercados globais, Brasil incluso, até 30/09/2027 segundo uma das fontes.
 [Google Play external billing](https://developer.android.com/google/play/billing/externalpaymentlinks),
 [9to5google](https://9to5google.com/2026/06/24/google-play-store-external-billing-june-30/),
 [PagBrasil sobre alternative billing no Brasil](https://www.pagbrasil.com/blog/markets/gaming/google-play-alternative-billing-in-brazil-a-guide-to-d2c-monetization-on-android/).
 
-**Apple App Store:** nos EUA, desde a decisão de maio/2025 no caso Epic
-(apelação da Apple negada), apps no storefront americano podem incluir
-botões e links externos para pagamento fora do app, via
-`StoreKit External Purchase` entitlement. Na UE existe uma entitlement
-separada (`External Purchase Link (EU)`) com termos próprios. **Não
-encontrei confirmação de que isso se aplica ao Brasil** — as fontes falam
-especificamente de EUA e UE.
+**Apple App Store:** nos EUA, desde maio/2025 (caso Epic), apps no
+storefront americano podem incluir links externos de pagamento via
+`StoreKit External Purchase` entitlement. Na UE existe entitlement
+separada. Não encontrei confirmação de que isso vale para o Brasil.
 [Apple Developer — External Purchase](https://developer.apple.com/documentation/storekit/external-purchase),
-[Apple Developer — comunicação de ofertas na UE](https://developer.apple.com/support/communication-and-promotion-of-offers-on-the-app-store-in-the-eu/).
+[Apple Developer — UE](https://developer.apple.com/support/communication-and-promotion-of-offers-on-the-app-store-in-the-eu/).
+
+**Ligação com a ADR-5 (revisão 2):** o cliente agora é proposto como
+Apache-2.0 (não mais GPL-3.0) — o risco histórico de conflito de licença
+com os Termos da App Store (`docs/LICENSE-AUDIT.md`) não se aplica mais.
+Essa parte da tensão que existia entre as duas ADRs está resolvida na
+ADR-5, não aqui; esta ADR trata só de canal/pagamento.
 
 ## Opções consideradas
 
-1. **Web como canal primário de pagamento** (Pix, cartão, boleto, checkout
-   fora do app), com Google Play e App Store como canais de distribuição
-   que **apontam** para o checkout web quando a política da loja/região
-   permitir — mais margem, sem depender de comissão de loja.
-2. **Billing nativo de cada loja como primário** (Play Billing, StoreKit),
-   Web como alternativa secundária — mais simples de implementar (sem
-   entitlement extra, sem tela de escolha), mas com comissão de loja
-   sempre, inclusive nos casos em que a política já permite evitar.
-3. **F-Droid/APK direto como canal principal** — sem comissão nenhuma,
-   mas alcance de usuário muito menor que as lojas oficiais; coerente com
-   o resto do projeto ser copyleft/F-Droid-friendly (`docs/LICENSE-AUDIT.md`),
-   mas não decide a questão de meio de pagamento por si só.
+1. **Web como canal primário de pagamento** (Pix, cartão, boleto,
+   checkout fora do app), com Google Play e App Store como canais de
+   distribuição que **apontam** para o checkout web quando a política da
+   loja/região permitir.
+2. **Billing nativo de cada loja como primário** (Play Billing,
+   StoreKit) — comissão de loja sempre, inclusive quando a política já
+   permite evitar.
+3. **F-Droid/APK direto como canal principal** — sem comissão, alcance
+   bem menor.
+4. **Nenhuma interface de pagamento dentro do app — acrescentada nesta
+   revisão.** O app não vende nada, não tem botão de assinar, não tem
+   link, não menciona onde pagar. Ele só lê e valida um entitlement
+   assinado (`docs/MONETIZACAO.md`: `Entitlement { sub, plan, features,
+   exp, sig: Ed25519 }`, já é a estrutura de dados que o projeto pretende
+   usar). A assinatura é vendida **só no site** do Frankstein, fora do
+   app, por qualquer meio (Pix, cartão, boleto). Como não há link, não há
+   menção, não há botão — nenhuma regra de "external purchase link", de
+   "reader app", ou de anti-steering das lojas é acionada, porque nenhuma
+   delas regula um app que simplesmente não vende nada dentro de si.
+
+## Por que a Opção 4 muda o peso da decisão
+
+Toda a incerteza registrada nesta ADR (datas de rollout no Brasil,
+percentuais de taxa, se a Apple já libera link externo para conta
+brasileira) é sobre **como vender por link dentro do fluxo da loja**. A
+Opção 4 não usa esse fluxo — não precisa da entitlement de link externo,
+não precisa esperar a onda de 2027 chegar ao Brasil, não depende de
+nenhuma das duas fontes que divergem entre si. É **implementável hoje**,
+sem depender de nenhuma confirmação regulatória pendente.
+
+O que ela custa: a compra fica fora do fluxo do app — o usuário precisa
+sair, ir ao site, comprar, e só então o app reconhece o entitlement. Pior
+conversão que um botão "assinar" dentro do app teria, provavelmente. É
+uma troca de conveniência de checkout por zero risco de política de loja
+e zero dependência de prazo regulatório incerto — mesmo tipo de troca que
+a ADR-5 fez entre custo de engenharia e redução de risco jurídico.
 
 ## Decisão
 
-**Opção 1, com uma condição regional explícita.** Web como canal
-preferencial de pagamento (Pix, cartão, boleto — `docs/MONETIZACAO.md:52`
-já pede isso), mantendo Google Play e App Store como canais de
-**distribuição** sempre. O uso de link de pagamento externo dentro do
-fluxo da loja (evitando a comissão) só entra quando a política da loja
-**já estiver confirmada para o Brasil** — não antes, e não por suposição
-de que a regra dos EUA/UE se estende automaticamente. F-Droid/APK direto
-continua disponível, sem comissão, como já estava.
+**Opção 4 como caminho inicial, Opção 1 como evolução condicional.**
 
-**Isto está proposto, não aceito.** É portão de custo/monetização — e a
-parte mais importante da decisão (quando o link externo é legal e sem
-retaliação de política no Brasil, especificamente no Google Play) ainda
-não está confirmada com a mesma força que a dos EUA/UE.
+- **Agora:** nenhuma interface de pagamento no app. O app só lê/valida o
+  entitlement assinado. Assinatura vendida exclusivamente no site
+  (Pix, cartão, boleto — `docs/MONETIZACAO.md:52`). Distribuição nas 4
+  frentes (Google Play, App Store, F-Droid, APK direto) sem nenhuma delas
+  precisar de tratamento especial de billing, porque o app não vende nada
+  nelas.
+- **Evolução condicional, não decidida agora:** se/quando a política de
+  link externo for confirmada para contas brasileiras (Google Play e/ou
+  App Store), reavaliar se vale trazer um link de checkout **dentro** do
+  app (Opção 1) para melhorar conversão — nesse ponto, sem o risco que
+  motivou a Opção 4 na largada.
+- F-Droid/APK direto continua disponível como sempre, sem comissão.
+
+**Isto está proposto, não aceito.** Portão de custo/monetização — mas a
+Opção 4 elimina a maior parte da incerteza regulatória que a versão
+anterior desta ADR carregava sem resolver.
 
 ## Consequências
 
-- **Fica mais fácil:** se/quando a onda de link externo chegar ao Brasil
-  (Google já lista o país no programa mais antigo de billing alternativo;
-  a extensão específica de link externo tem data-alvo de até 09/2027 por
-  uma fonte), o Frankstein já está desenhado para Web como canal
-  preferencial — não precisa reestruturar o fluxo de pagamento depois.
-- **Fica mais difícil:** o Brasil não tem, hoje (confirmado só até
-  onde a busca alcançou), a mesma clareza jurídica que EUA/UE sobre link
-  externo em app — decisão de implementação real (ADR-7 aceito) só deveria
-  travar depois de alguém confirmar a regra vigente lendo a documentação
-  oficial do Google Play Console/Apple Developer para a conta e a região
-  específicas do Frankstein, não por uma busca de agente.
-- **Passa a ser proibido:** implementar link de pagamento externo dentro
-  do fluxo da loja sem antes confirmar, na conta de desenvolvedor real, que
-  a política vigente permite para o Brasil — risco de suspensão de conta
-  se a suposição estiver errada.
+- **Fica mais fácil:** zero dependência de confirmar regras de loja para
+  o Brasil antes de lançar — a Opção 4 funciona sob a política de hoje,
+  em qualquer loja, sem entitlement especial. Nenhum risco de suspensão
+  de conta por má leitura de uma política em transição.
+- **Fica mais difícil:** conversão de assinatura pior (fricção de sair do
+  app para pagar no site) — troca deliberada, registrada, não escondida.
+  Se a Opção 1 entrar depois, o projeto precisa manter os dois fluxos
+  (leitura de entitlement já existe nos dois; o link de checkout é
+  aditivo, não substitui).
+- **Passa a ser proibido:** qualquer menção a preço, assinatura ou link de
+  pagamento dentro do app na fase da Opção 4 — é exatamente essa ausência
+  que evita acionar as políticas de loja; um único texto "assine no nosso
+  site" dentro do app pode já ser lido como "menção", dependendo da
+  política de cada loja — não testei esse limite, trate como proibido até
+  confirmar.
 
 ## Não verificado
 
 - Se a política de link externo do Google Play já vale para o Brasil
-  hoje (2026-08-05) ou só a partir de uma data futura — as fontes
-  divergem em nível de detalhe (uma cita Brasil na lista de billing
-  alternativo já disponível, outra cita 09/2027 como prazo de rollout
-  global do link externo especificamente).
-- Se a Apple já permite link externo para contas no storefront brasileiro
-  — não encontrei fonte que confirme isso, só EUA e UE.
-- Percentuais exatos de taxa (Google: 5%/10%; Apple: não confirmado) —
-  mudam com frequência e por programa; não trave a implementação nesses
-  números sem reconferir na fonte oficial no momento de implementar.
-- Preço por região (`price_book`, `docs/MONETIZACAO.md:55`) não foi
-  tocado por esta ADR — é decisão separada.
+  hoje ou só a partir de uma data futura — relevante só para a evolução
+  condicional (Opção 1), não para a Opção 4.
+- Se a Apple já permite link externo para contas no storefront
+  brasileiro — mesma ressalva.
+- Percentuais exatos de taxa (Google 5%/10%; Apple não confirmado) —
+  relevantes só se/quando migrar para Opção 1.
+- Onde exatamente fica a linha entre "app não menciona pagamento" (Opção
+  4, seguro) e "app menciona sem linkar" (zona cinzenta, não avaliada) —
+  registrado acima como proibido por precaução, não porque testei o
+  limite.
+- Preço por região (`price_book`, `docs/MONETIZACAO.md:55`) — decisão
+  separada, não tocada aqui.
 
 ## Ressalva de método
 
-Toda a pesquisa desta ADR foi via `WebSearch` (resumos de busca, não
-leitura direta e completa dos textos oficiais do Google/Apple linha a
-linha) — mesma limitação de método já registrada em `docs/LICENSE-AUDIT.md`.
-Antes de aceitar esta ADR e implementar, reconfirme lendo
+Toda a pesquisa desta ADR foi via `WebSearch`, não leitura direta dos
+textos oficiais do Google/Apple linha a linha. Antes de aceitar esta ADR
+e implementar a evolução condicional (Opção 1), reconfirme lendo
 `developer.android.com`/`developer.apple.com` diretamente para a conta
-real do Frankstein.
+real do Frankstein. A Opção 4 (decisão inicial) depende menos dessa
+ressalva — é conservadora o bastante para não precisar da confirmação
+regulatória fina que a Opção 1 exigiria.

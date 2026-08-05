@@ -1,6 +1,6 @@
 # ADR-1 — Shell do app e estratégia multiplataforma
 
-**Status:** proposto
+**Status:** aceito
 **Data:** 2026-08-05
 
 ## Contexto
@@ -52,16 +52,17 @@ formalização do que já está implícito em `docs/ARQUITETURA.md` e
 `mlc4j`/`MLCSwift`, OpenTracks no Android) entram por **WRAP**: platform
 channel chamando o código nativo já existente, sem reescrever a lógica.
 
-**Isto está proposto, não aceito.** É portão de arquitetura — decisão que,
-segundo `CLAUDE.md`, exige parar e perguntar antes de codificar. Formalizo
-a análise; a aceitação é sua.
+**Isto está aceito** (2026-08-05, revisão do usuário).
 
 ## Consequências
 
 - **Fica mais fácil:** OpenNutriTracker integra quase nativamente (mesma
-  stack do shell). Os bindings do MLC LLM (`mlc4j`, `MLCSwift`) já foram
-  desenhados para serem chamados de fora — o platform channel é ponte
-  esperada, não workaround. A UI fica única, como já assumido.
+  stack do shell) — esta ADR não define se isso é por link de código ou
+  por reimplementação (PORT); essa escolha específica, com peso de
+  licença, foi decidida em `docs/adr/005-licenciamento-distribuicao.md`
+  (PORT, cliente Apache-2.0). Os bindings do MLC LLM (`mlc4j`, `MLCSwift`)
+  já foram desenhados para serem chamados de fora — o platform channel é
+  ponte esperada, não workaround. A UI fica única, como já assumido.
 - **Fica mais difícil:**
   - **OpenTracks no iOS não tem caminho.** É Android-only, sem
     equivalente Flutter encontrado nas fichas. Precisa de PORT

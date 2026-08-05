@@ -1,6 +1,6 @@
 # ADR-10 — Substitutos livres de dependências proprietárias
 
-**Status:** proposto
+**Status:** aceito
 **Data:** 2026-08-05
 
 ## Contexto
@@ -40,7 +40,7 @@ nome, versão e licença registrados no relatório do ciclo; se a licença não
 for permissiva ou compatível com o copyleft do projeto (ver
 `docs/LICENSE-AUDIT.md`), o ciclo para e pergunta — não decide sozinho.
 
-**Isto está proposto, não aceito.** É portão de licença.
+**Isto está aceito** (2026-08-05).
 
 ## Consequências
 

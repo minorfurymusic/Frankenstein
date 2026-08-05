@@ -1,6 +1,6 @@
 # ADR-3 — Fonte da verdade dos dados e estratégia de sync
 
-**Status:** proposto
+**Status:** aceito
 **Data:** 2026-08-05
 
 ## Contexto
@@ -55,8 +55,7 @@ log de eventos**, não como autoridade:
   correção", e duas correções concorrentes viram dois eventos, não uma
   colisão que precisa de merge.
 
-**Isto está proposto, não aceito.** É portão de arquitetura e de dado de
-saúde ao mesmo tempo — dobro de motivo para não decidir sozinho.
+**Isto está aceito** (2026-08-05).
 
 ## Consequências
 
