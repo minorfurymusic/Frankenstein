@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+
+jobs:
+  build-test-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          flutter-version: "3.35.5"
+          channel: "stable"
+
+      # Runners ubuntu-latest já vêm com Android SDK/build-tools instalados
+      # — diferente do sandbox de desenvolvimento usado no Ciclo 1 da
+      # Fase 2, onde dl.google.com é bloqueado pela política de rede do
+      # ambiente. Se este passo falhar por SDK ausente, o runner mudou;
+      # não assuma, confira a saída.
+      - name: flutter doctor
+        run: flutter doctor -v
+
+      - name: lint
+        run: make lint
+
+      - name: test
+        run: make test
+
+      - name: build
+        run: make build

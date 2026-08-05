@@ -67,5 +67,9 @@ Nenhum ciclo termina sem `make test` executado e a saída colada.
 
 ## FASE ATUAL
 
-**Fase 0 — reconhecimento dos 7 repositórios em `refs/`.**
-Nenhum código de aplicativo ainda. Nenhuma dependência instalada.
+**Fase 2 — esqueleto do monorepo (F2, `docs/PRODUTO.md`).**
+Fases 0 (reconhecimento) e 1 (ADRs) concluídas — ver `docs/adr/000-pendentes.md`.
+Shell Flutter em `app/`, pacotes vazios em `packages/*` conforme
+`docs/ARQUITETURA.md`. Nenhum módulo, LLM ou banco implementado ainda —
+isso entra fase a fase, cada um com sua própria ADR/ficha já aceita antes
+de codificar.

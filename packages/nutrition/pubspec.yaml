@@ -1,0 +1,13 @@
+name: frankstein_nutrition
+description: >-
+  Diário alimentar por PORT do OpenNutriTracker — ver docs/specs/nutricao.md, .claude/rules/port.md e ADR-5. NUNCA implementar a partir do código-fonte ou da ficha de reconhecimento.
+  Esqueleto vazio — Fase 2, Ciclo 1. Nenhuma lógica ainda.
+publish_to: 'none'
+version: 0.0.1
+
+environment:
+  sdk: ^3.9.0
+
+dev_dependencies:
+  lints: ^5.0.0
+  test: ^1.25.0

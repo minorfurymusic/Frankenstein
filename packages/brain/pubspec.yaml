@@ -1,0 +1,13 @@
+name: frankstein_brain
+description: >-
+  Camada do cérebro — roteador determinístico, LLM com tool-calling, validação, confirmação humana (docs/ARQUITETURA.md, .claude/rules/brain.md, ADR-2).
+  Esqueleto vazio — Fase 2, Ciclo 1. Nenhuma lógica ainda.
+publish_to: 'none'
+version: 0.0.1
+
+environment:
+  sdk: ^3.9.0
+
+dev_dependencies:
+  lints: ^5.0.0
+  test: ^1.25.0

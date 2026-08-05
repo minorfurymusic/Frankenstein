@@ -4,14 +4,27 @@
 > merge para `main` antes do próximo começar — sessões futuras que abrirem a
 > partir de outra branch estão lendo estado desatualizado.
 
-**Fase:** 1 concluída (11/11 ADRs registradas, **7 aceitas** + 4 propostas) →
-**aguardando você** para revisar as 4 propostas restantes (ADR-4, 4a, 5, 8)
-antes da Fase 2 começar.
-**Ciclo atual:** 26 concluído — ADR-7 aceita (revisão 3); ADR-5 revisão 3
-(ainda proposta).
-**Próximo ciclo, quando você mandar:** ADR-8 (multi-tenant B2B) revisada
-depois de ler `docs/CUSTOS.md` de verdade (ainda não lido nesta sessão) —
-pedido explícito seu, ainda não executado, é objetivo de ciclo próprio.
+**Fase:** 2 — esqueleto do monorepo. Iniciada por instrução direta, com
+ADR-4/4a/5/8 ainda propostas (você decidiu não esperar — não são
+bloqueadas por elas, ver Contexto do Ciclo 27 no histórico).
+**Ciclo atual:** 27 — **BLOQUEADO parcialmente**, ver "Bloqueio" abaixo.
+**Pendência anterior mantida:** ADR-8 (multi-tenant B2B) revisada depois
+de ler `docs/CUSTOS.md` de verdade — ainda não executado, ciclo próprio.
+
+## Bloqueio do Ciclo 27
+
+`make build` (Android) e "o app abre no emulador Android" **não passam
+neste ambiente**, por limite de infraestrutura, não por trabalho
+faltando: sem `/dev/kvm` (sem emulador possível de jeito nenhum) e com
+`dl.google.com` bloqueado pelo proxy (SDK Android não instala — mesma
+causa que já travou os builds do OpenTracks/FoodYou na Fase 0). Confirmado
+por 3 caminhos independentes: `curl` direto, pacote `.deb` "instalador"
+do SDK, e o próprio `flutter build apk`. Prova literal de cada um no
+relatório do ciclo. `make test` e `make lint` passam de verdade — saída
+colada abaixo. O app roda de verdade em Linux desktop via Xvfb (prova
+alternativa de que abre, só que não no Android). CI (`.github/workflows/ci.yml`)
+deve funcionar em runners `ubuntu-latest` normais, que já vêm com SDK
+Android — o bloqueio é deste sandbox específico, não do código.
 
 ## Progresso
 
@@ -38,6 +51,7 @@ pedido explícito seu, ainda não executado, é objetivo de ciclo próprio.
 | 1 | ADR-8 (multi-tenant B2B/consentimento) | proposto (`docs/adr/008-multitenant-b2b-consentimento.md`) — pendente revisão após leitura de `docs/CUSTOS.md` |
 | 1 | ADR-5 (licenciamento) | proposto, **revisão 3** (`docs/adr/005-licenciamento-distribuicao.md`) — fundamentação principal agora é não herdar manutenção de repo de terceiro (não mais o precedente de 2010 não verificado); clean room obrigatório; `docs/recon/opennutritracker.md` removida das fontes válidas de implementação |
 | 1 | **11/11 ADRs registradas** | **7 aceitas** (ADR-1, 2, 3, 6, 7, 9, 10), 4 propostas (ADR-4, 4a, 5, 8) |
+| 2 | Esqueleto do monorepo (F2) | **PARCIAL** — `make test`/`make lint` passam; `make build` (Android) e "abre no emulador" bloqueados por infra deste ambiente, não por código faltando |
 
 ## Decisões já tomadas (não reabrir sem motivo novo)
 
@@ -378,3 +392,54 @@ pedido explícito seu, ainda não executado, é objetivo de ciclo próprio.
   válidas para implementação; `docs/specs/nutricao.md` vira a única
   fonte. `.claude/rules/port.md` atualizada para reforçar isso, não só a
   ADR em texto. **Status: continua proposto.**
+- **Ciclo 27 — Fase 2, esqueleto do monorepo. PARCIAL, bloqueio de
+  infraestrutura documentado.** Instalado Flutter 3.35.5 stable (SDK
+  baixado de `storage.googleapis.com`, liberado). `app/` criado via
+  `flutter create` — `lib/main.dart` reescrito pra tela em branco
+  (`Scaffold(body: SizedBox.shrink())`), teste ajustado. 7 pacotes vazios
+  em `packages/` (`health_core`, `brain`, `tool_registry`, `activity`,
+  `nutrition`, `entitlements`, `share`), cada um espelhando um `.claude/rules/*.md`
+  ou camada de `docs/ARQUITETURA.md` já existente — nenhum invenção nova
+  de estrutura. `Makefile` reescrito com `build`/`test`/`lint` reais
+  (não mais erro proposital). CI em `.github/workflows/ci.yml`.
+
+  **Tentativa de SDK Android:** `dl.google.com` bloqueado pelo proxy
+  (mesma causa já registrada nas fichas de OpenTracks/FoodYou na Fase 0),
+  confirmado de novo por `curl` direto e pelos pacotes `.deb`
+  "instaladores" do Android SDK que existem no apt deste ambiente (também
+  falham no mesmo `wget` a `dl.google.com`). Sem `/dev/kvm` — nenhum
+  emulador Android roda aqui de jeito nenhum, independente do SDK.
+  **Não insisti uma 3ª vez** (regra do `CLAUDE.md`) — três evidências
+  independentes já bastam.
+
+  **Prova real, colada literal:**
+  ```
+  $ make lint
+  [... dart analyze de cada um dos 7 pacotes + flutter analyze do app ...]
+  No issues found!  (repetido por pacote/app)
+  EXIT LINT: 0
+
+  $ make test
+  [... dart test de cada um dos 7 pacotes + flutter test do app ...]
+  All tests passed!  (repetido por pacote/app)
+  EXIT TEST: 0
+
+  $ make build
+     [!] No Android SDK found. Try setting the ANDROID_HOME environment variable.
+  make: *** [Makefile:10: build] Error 1
+  EXIT BUILD: 2
+  ```
+  Saída completa de cada comando está no chat do ciclo, não resumida aqui.
+
+  **"O app abre":** não no emulador Android (impossível neste sandbox).
+  Prova alternativa real: `flutter build linux --debug` compilou de
+  verdade, e o binário rodou sob `xvfb-run` (Dart VM service subiu,
+  processo ficou ativo até eu matar pelo timeout, sem crash) — evidência
+  de que o Flutter/Dart do app está correto, só a plataforma Android
+  específica que está bloqueada aqui.
+
+  **Não verificado:** se `make build`/`make test`/`make lint` passam num
+  ambiente com Android SDK de verdade (dev machine ou CI) — o
+  `.github/workflows/ci.yml` criado deveria funcionar em runners
+  `ubuntu-latest` (vêm com SDK Android pré-instalado), mas isso não foi
+  executado, só inferido da documentação do runner.

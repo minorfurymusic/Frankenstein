@@ -1,13 +1,31 @@
 .PHONY: build test lint recon
 
+# Requer Flutter 3.35.5 (stable) e Dart 3.9.x no PATH — mesma versão usada
+# para criar este esqueleto (Fase 2, Ciclo 1). `flutter build apk` requer
+# Android SDK além disso; ambiente de dev/CI precisa ter os dois.
+
+PACKAGES := health_core brain tool_registry activity nutrition entitlements share
+
 build:
-	@echo "ERRO: alvo 'build' ainda não implementado. Fase 2 do plano." && exit 1
+	@cd app && flutter build apk --debug
 
 test:
-	@echo "ERRO: alvo 'test' ainda não implementado. Fase 2 do plano." && exit 1
+	@set -e; \
+	for pkg in $(PACKAGES); do \
+		echo "== dart test: $$pkg =="; \
+		(cd packages/$$pkg && dart test); \
+	done; \
+	echo "== flutter test: app =="; \
+	(cd app && flutter test)
 
 lint:
-	@echo "ERRO: alvo 'lint' ainda não implementado. Fase 2 do plano." && exit 1
+	@set -e; \
+	for pkg in $(PACKAGES); do \
+		echo "== dart analyze: $$pkg =="; \
+		(cd packages/$$pkg && dart analyze --fatal-infos); \
+	done; \
+	echo "== flutter analyze: app =="; \
+	(cd app && flutter analyze --fatal-infos)
 
 recon:
 	@ls -1 docs/recon/*.md | grep -v _MODELO | wc -l | xargs -I{} echo "Fichas de reconhecimento prontas: {}/7"
