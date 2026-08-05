@@ -4,12 +4,13 @@
 > merge para `main` antes do próximo começar — sessões futuras que abrirem a
 > partir de outra branch estão lendo estado desatualizado.
 
-**Fase:** 1 — ADRs
-**Ciclo atual:** 19
-**Objetivo do ciclo 19:** ADR-5 (licenciamento e modelo de distribuição) —
-a última ADR pendente, e a que depende de todas as outras (`docs/adr/000-pendentes.md`:
-"Bloqueia: tudo"). Preciso reler `docs/LICENSE-AUDIT.md` e as 8 ADRs já
-propostas antes de escrever.
+**Fase:** 1 concluída (11/11 ADRs registradas, 1 aceita + 10 propostas) →
+**aguardando você** para revisar as propostas antes da Fase 2 começar.
+**Ciclo atual:** 19 (último desta sequência autônoma)
+**Próximo objetivo, quando você confirmar:** revisão humana das 10 ADRs
+propostas — nenhum código de aplicativo começa antes disso. `CLAUDE.md`
+ainda diz "Fase 0... Nenhum código de aplicativo ainda" e eu não mudo isso
+sozinho.
 
 ## Progresso
 
@@ -34,7 +35,8 @@ propostas antes de escrever.
 | 1 | ADR-2 (modelo LLM) | **proposto** (`docs/adr/002-modelo-llm.md`) |
 | 1 | ADR-7 (canais/pagamento) | **proposto** (`docs/adr/007-canais-distribuicao-pagamento.md`) |
 | 1 | ADR-8 (multi-tenant B2B/consentimento) | **proposto** (`docs/adr/008-multitenant-b2b-consentimento.md`) |
-| 1 | ADR-5 (licenciamento) | pendente — última, entra como "proposto" |
+| 1 | ADR-5 (licenciamento) | **proposto** (`docs/adr/005-licenciamento-distribuicao.md`) — sintetiza ADR-1/4/4a/7/10 |
+| 1 | **11/11 ADRs registradas** | 1 aceita (ADR-6), 10 propostas — nenhuma decidida sozinha |
 
 ## Decisões já tomadas (não reabrir sem motivo novo)
 
@@ -266,3 +268,14 @@ propostas antes de escrever.
   HealthEvent log, não duplica dado). Lacuna técnica exposta e não
   decidida: isolamento de dados entre Organizations (banco separado vs.
   escopo compartilhado por organization_id) — falta dado de custo/escala.
+- **Ciclo 19 — ADR-5, proposto, e Fase 1 encerrada.**
+  `docs/adr/005-licenciamento-distribuicao.md` sintetiza ADR-1/4/4a/7/10:
+  cliente GPL-3.0 (forçado por OpenNutriTracker linkado via WRAP, ADR-1),
+  componentes de servidor autorais AGPL-3.0 **por escolha de princípio**
+  ("copyleft aceito" já em `STATUS.md`), não por obrigação legal estrita
+  na configuração federada (wger/Fasten opcionais, ADR-4). Distribuição
+  multi-canal conforme ADR-7. `docs/adr/000-pendentes.md` reescrito como
+  índice das 11 ADRs (10 propostas + ADR-6 aceita), com link para cada
+  arquivo. **Fase 1 concluída.** Fase 2 (código de aplicativo) não começa
+  sozinha — `CLAUDE.md` ainda declara Fase 0/nenhum código, e as 10 ADRs
+  propostas precisam da sua revisão antes de qualquer uma virar "aceita".

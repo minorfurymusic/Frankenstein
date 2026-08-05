@@ -1,15 +1,21 @@
-# ADRs pendentes
+# ADRs
 
-| ADR | Assunto | Bloqueia |
-|---|---|---|
-| ADR-1 | Shell do app e estratégia multiplataforma (o que degrada no iOS) | F2 |
-| ADR-2 | Modelo LLM, quantização, RAM mínima, perfis A/B/C | F5 |
-| ADR-3 | Fonte da verdade dos dados e estratégia de sync | F3 |
-| ADR-4 | wger/Fasten: obrigatório, opcional ou substituído? | F13 |
-| ADR-4a | Gadgetbridge: FEDERATE via Health Connect ou fork sob AGPL? A pergunta que decide é se o Gadgetbridge escreve passos, FC e sono no Android Health Connect ou apenas lê de lá — `androidx.health.connect.client` prova integração, não a direção. Investigado no Ciclo 7 — achado (com ressalva de fonte) em `docs/recon/gadgetbridge.md`, seção "Achado (Ciclo 7)": Gadgetbridge escreve no Health Connect, via `WebSearch` (site bloqueado pelo proxy para leitura direta). | F9 |
-| ADR-5 | Licenciamento e modelo de distribuição | tudo |
-| ADR-6 | ~~**Sem anúncios**~~ — **ACEITA**, registrada em `docs/adr/006-sem-anuncios.md` | — |
-| ADR-7 | Canais de distribuição e meios de pagamento | F11 |
-| ADR-8 | Multi-tenant B2B e modelo de consentimento | F14 |
-| ADR-9 | GPS: precisão x bateria x privacidade | F8 |
-| ADR-10 | Substitutos livres de dependências proprietárias | F2 |
+Todas as 11 estão registradas (Ciclos 9-19). Só ADR-6 está **aceita** — as
+outras 10 estão **propostas**: análise pronta, decisão ainda sua. Nenhuma
+vira "aceita" sem confirmação explícita.
+
+| ADR | Assunto | Bloqueia | Status |
+|---|---|---|---|
+| [ADR-1](001-shell-multiplataforma.md) | Shell do app e estratégia multiplataforma | F2 | proposto |
+| [ADR-2](002-modelo-llm.md) | Modelo LLM, quantização, RAM mínima, perfis A/B/C | F5 | proposto |
+| [ADR-3](003-fonte-verdade-sync.md) | Fonte da verdade dos dados e estratégia de sync | F3 | proposto |
+| [ADR-4](004-wger-fasten.md) | wger/Fasten: obrigatório, opcional ou substituído? | F13 | proposto |
+| [ADR-4a](004a-gadgetbridge.md) | Gadgetbridge: FEDERATE via Health Connect ou fork sob AGPL? | F9 | proposto |
+| [ADR-5](005-licenciamento-distribuicao.md) | Licenciamento e modelo de distribuição | tudo | proposto |
+| [ADR-6](006-sem-anuncios.md) | Sem anúncios em nenhuma superfície | — | **aceito** |
+| [ADR-7](007-canais-distribuicao-pagamento.md) | Canais de distribuição e meios de pagamento | F11 | proposto |
+| [ADR-8](008-multitenant-b2b-consentimento.md) | Multi-tenant B2B e modelo de consentimento | F14 | proposto |
+| [ADR-9](009-gps.md) | GPS: precisão x bateria x privacidade | F8 | proposto |
+| [ADR-10](010-substitutos-livres.md) | Substitutos livres de dependências proprietárias | F2 | proposto |
+
+`_MODELO.md` neste diretório é o template usado em todas.
