@@ -5,9 +5,9 @@
 > partir de outra branch estão lendo estado desatualizado.
 
 **Fase:** 1 — ADRs
-**Ciclo atual:** 12
-**Objetivo do ciclo 12:** ADR-10 (substitutos livres de dependências
-proprietárias), como "proposto" — já bem embasado por `.claude/rules/licenca.md`.
+**Ciclo atual:** 13
+**Objetivo do ciclo 13:** ADR-3 (fonte da verdade dos dados e estratégia de
+sync), como "proposto" — embasado por `docs/ARQUITETURA.md` (Health Data Core).
 
 ## Progresso
 
@@ -25,7 +25,8 @@ proprietárias), como "proposto" — já bem embasado por `.claude/rules/licenca
 | 1 | ADR-6 (sem anúncios) | **aceito** (`docs/adr/006-sem-anuncios.md`) |
 | 1 | ADR-1 (shell/multiplataforma) | **proposto** (`docs/adr/001-shell-multiplataforma.md`) |
 | 1 | ADR-9 (GPS) | **proposto** (`docs/adr/009-gps.md`) |
-| 1 | ADR-2, 3, 4, 4a, 5, 7, 8, 10 | pendente — entram como "proposto", não "aceito", sem confirmação sua |
+| 1 | ADR-10 (substitutos livres) | **proposto** (`docs/adr/010-substitutos-livres.md`) |
+| 1 | ADR-2, 3, 4, 4a, 5, 7, 8 | pendente — entram como "proposto", não "aceito", sem confirmação sua |
 
 ## Decisões já tomadas (não reabrir sem motivo novo)
 
@@ -201,3 +202,11 @@ proprietárias), como "proposto" — já bem embasado por `.claude/rules/licenca
   expostas: `docs/PERF.md` não existe, comportamento de background
   location no iOS não investigado. **Status: proposto** — dado de
   saúde/localização é portão explícito do `CLAUDE.md`.
+- **Ciclo 12 — ADR-10, proposto.** `docs/adr/010-substitutos-livres.md`:
+  formaliza a lista já existente em `.claude/rules/licenca.md`
+  (ZXing/Tesseract/MapLibre-osmdroid/notificação local/share sheet nativo).
+  Registrado honestamente o que **não** foi verificado: só a ficha do
+  Gadgetbridge checou ausência explícita de Firebase/Play Services/SDK de
+  anúncio; as outras 6 não tiveram auditoria de dependência transitiva
+  contra essa lista (MLC LLM/OpenTracks/FoodYou nem build completo
+  tiveram). Proposto um ciclo de auditoria de dependência antes da Fase 2.
