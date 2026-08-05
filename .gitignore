@@ -8,3 +8,4 @@ node_modules/
 *.apk
 *.aab
 models/
+.claude/state/
