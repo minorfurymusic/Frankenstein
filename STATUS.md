@@ -5,10 +5,10 @@
 > partir de outra branch estão lendo estado desatualizado.
 
 **Fase:** 1 — ADRs
-**Ciclo atual:** 15
-**Objetivo do ciclo 15:** ADR-4a formalizada como documento próprio
-(`docs/adr/004a-gadgetbridge.md`) — já investigada no Ciclo 7, só falta o
-arquivo de ADR em si.
+**Ciclo atual:** 16
+**Objetivo do ciclo 16:** ADR-2 (modelo LLM, quantização, RAM mínima,
+perfis A/B/C) — preciso ler `docs/OFFLINE-IA.md` primeiro (ainda não lido
+nesta sessão).
 
 ## Progresso
 
@@ -29,7 +29,8 @@ arquivo de ADR em si.
 | 1 | ADR-10 (substitutos livres) | **proposto** (`docs/adr/010-substitutos-livres.md`) |
 | 1 | ADR-3 (fonte da verdade/sync) | **proposto** (`docs/adr/003-fonte-verdade-sync.md`) |
 | 1 | ADR-4 (wger/Fasten) | **proposto** (`docs/adr/004-wger-fasten.md`) |
-| 1 | ADR-2, 4a, 5, 7, 8 | pendente — entram como "proposto", não "aceito", sem confirmação sua |
+| 1 | ADR-4a (Gadgetbridge) | **proposto** (`docs/adr/004a-gadgetbridge.md`) |
+| 1 | ADR-2, 5, 7, 8 | pendente — entram como "proposto", não "aceito", sem confirmação sua |
 
 ## Decisões já tomadas (não reabrir sem motivo novo)
 
@@ -231,3 +232,9 @@ arquivo de ADR em si.
   Nenhum dos dois obrigatório para o MVP. Não verificado: se a API do wger
   permite federar só o catálogo sem hospedar o app inteiro; UX de dois
   sistemas de treino coexistindo, deixado para ciclo de UX.
+- **Ciclo 15 — ADR-4a formalizada.** `docs/adr/004a-gadgetbridge.md`:
+  propõe FEDERATE via Health Connect, citando o achado do Ciclo 7
+  (Gadgetbridge escreve no Health Connect). **Condição explícita para
+  aceitar, não só para propor:** a fonte é busca indexada, não leitura
+  direta do manifesto/código — antes de F9 depender disso, confirmar lendo
+  o `AndroidManifest.xml`/código de sync direto, fora deste ambiente.
