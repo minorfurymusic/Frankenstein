@@ -24,6 +24,12 @@ jobs:
       - name: flutter doctor
         run: flutter doctor -v
 
+      # Achado real do primeiro run desta CI (Ciclo 27): o SDK está
+      # presente, mas as licenças não estão aceitas por padrão — sem
+      # isso, `flutter build apk` falha mesmo com o SDK instalado.
+      - name: aceitar licenças do Android SDK
+        run: yes | flutter doctor --android-licenses || true
+
       - name: lint
         run: make lint
 
