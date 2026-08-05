@@ -5,10 +5,10 @@
 > partir de outra branch estão lendo estado desatualizado.
 
 **Fase:** 1 — ADRs
-**Ciclo atual:** 14
-**Objetivo do ciclo 14:** ADR-4 (wger/Fasten: obrigatório, opcional ou
-substituído?) — embasado por `docs/VIABILITY.md` e `docs/recon/wger.md`/
-`docs/recon/fasten-health.md`.
+**Ciclo atual:** 15
+**Objetivo do ciclo 15:** ADR-4a formalizada como documento próprio
+(`docs/adr/004a-gadgetbridge.md`) — já investigada no Ciclo 7, só falta o
+arquivo de ADR em si.
 
 ## Progresso
 
@@ -28,7 +28,8 @@ substituído?) — embasado por `docs/VIABILITY.md` e `docs/recon/wger.md`/
 | 1 | ADR-9 (GPS) | **proposto** (`docs/adr/009-gps.md`) |
 | 1 | ADR-10 (substitutos livres) | **proposto** (`docs/adr/010-substitutos-livres.md`) |
 | 1 | ADR-3 (fonte da verdade/sync) | **proposto** (`docs/adr/003-fonte-verdade-sync.md`) |
-| 1 | ADR-2, 4, 4a, 5, 7, 8 | pendente — entram como "proposto", não "aceito", sem confirmação sua |
+| 1 | ADR-4 (wger/Fasten) | **proposto** (`docs/adr/004-wger-fasten.md`) |
+| 1 | ADR-2, 4a, 5, 7, 8 | pendente — entram como "proposto", não "aceito", sem confirmação sua |
 
 ## Decisões já tomadas (não reabrir sem motivo novo)
 
@@ -221,3 +222,12 @@ substituído?) — embasado por `docs/VIABILITY.md` e `docs/recon/wger.md`/
   verificado, registrado como pendência: conflito de correções
   concorrentes entre dois aparelhos offline; custo de servidor do relay
   (não li `docs/CUSTOS.md` neste ciclo, fora da área tocada).
+- **Ciclo 14 — ADR-4, proposto.** `docs/adr/004-wger-fasten.md`: achado —
+  o módulo próprio "Academia" (`docs/PRODUTO.md:27-30`, escrito do zero) se
+  sobrepõe ao papel do wger, mesmo padrão de redundância que o Ciclo 8
+  achou entre FoodYou/OpenNutriTracker. Decisão proposta: wger opcional
+  (catálogo estendido/B2B, não substitui a Academia própria), Fasten
+  opcional (sem substituto próprio, função exclusiva de prontuário B2B).
+  Nenhum dos dois obrigatório para o MVP. Não verificado: se a API do wger
+  permite federar só o catálogo sem hospedar o app inteiro; UX de dois
+  sistemas de treino coexistindo, deixado para ciclo de UX.
