@@ -5,10 +5,9 @@
 > partir de outra branch estão lendo estado desatualizado.
 
 **Fase:** 1 — ADRs
-**Ciclo atual:** 16
-**Objetivo do ciclo 16:** ADR-2 (modelo LLM, quantização, RAM mínima,
-perfis A/B/C) — preciso ler `docs/OFFLINE-IA.md` primeiro (ainda não lido
-nesta sessão).
+**Ciclo atual:** 17
+**Objetivo do ciclo 17:** ADR-7 (canais de distribuição e meios de
+pagamento) — embasado por `docs/MONETIZACAO.md` (já lido nesta sessão).
 
 ## Progresso
 
@@ -30,7 +29,8 @@ nesta sessão).
 | 1 | ADR-3 (fonte da verdade/sync) | **proposto** (`docs/adr/003-fonte-verdade-sync.md`) |
 | 1 | ADR-4 (wger/Fasten) | **proposto** (`docs/adr/004-wger-fasten.md`) |
 | 1 | ADR-4a (Gadgetbridge) | **proposto** (`docs/adr/004a-gadgetbridge.md`) |
-| 1 | ADR-2, 5, 7, 8 | pendente — entram como "proposto", não "aceito", sem confirmação sua |
+| 1 | ADR-2 (modelo LLM) | **proposto** (`docs/adr/002-modelo-llm.md`) |
+| 1 | ADR-5, 7, 8 | pendente — entram como "proposto", não "aceito", sem confirmação sua |
 
 ## Decisões já tomadas (não reabrir sem motivo novo)
 
@@ -238,3 +238,10 @@ nesta sessão).
   aceitar, não só para propor:** a fonte é busca indexada, não leitura
   direta do manifesto/código — antes de F9 depender disso, confirmar lendo
   o `AndroidManifest.xml`/código de sync direto, fora deste ambiente.
+- **Ciclo 16 — ADR-2, proposto.** `docs/adr/002-modelo-llm.md`: formaliza
+  a especificação já detalhada em `docs/OFFLINE-IA.md` (perfis A/B/C,
+  RAM/modelo/download, regras operacionais) como decisão, usando MLC LLM
+  via `mlc4j`/`MLCSwift` (WRAP, ADR-1). Nenhum número de RAM/desempenho foi
+  medido de verdade — build do MLC LLM nunca tentado (Ciclo 1). Condicionada
+  a ADR-1 e parcialmente a ADR-5 (licenças de submódulo do MLC LLM ainda
+  pendentes).
