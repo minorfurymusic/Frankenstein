@@ -4,10 +4,11 @@
 > merge para `main` antes do próximo começar — sessões futuras que abrirem a
 > partir de outra branch estão lendo estado desatualizado.
 
-**Fase:** 0 concluída → 1 — ADRs
-**Ciclo atual:** 10
-**Objetivo do ciclo 10:** ADR-1 (shell do app e estratégia multiplataforma),
-como "proposto" — é portão de arquitetura, não decido como "aceito" sozinho.
+**Fase:** 1 — ADRs
+**Ciclo atual:** 11
+**Objetivo do ciclo 11:** ADR-9 (GPS: precisão x bateria x privacidade),
+como "proposto" — sigo pela ordem de `docs/adr/000-pendentes.md`,
+priorizando os que já têm dado suficiente das fichas/regras existentes.
 
 ## Progresso
 
@@ -23,7 +24,8 @@ como "proposto" — é portão de arquitetura, não decido como "aceito" sozinho
 | 0 | docs/LICENSE-AUDIT.md | pronta (`docs/LICENSE-AUDIT.md`) |
 | 0 | docs/VIABILITY.md | pronta (`docs/VIABILITY.md`) |
 | 1 | ADR-6 (sem anúncios) | **aceito** (`docs/adr/006-sem-anuncios.md`) |
-| 1 | ADR-1, 2, 3, 4, 4a, 5, 7, 8, 9, 10 | pendente — entram como "proposto", não "aceito", sem confirmação sua |
+| 1 | ADR-1 (shell/multiplataforma) | **proposto** (`docs/adr/001-shell-multiplataforma.md`) |
+| 1 | ADR-2, 3, 4, 4a, 5, 7, 8, 9, 10 | pendente — entram como "proposto", não "aceito", sem confirmação sua |
 
 ## Decisões já tomadas (não reabrir sem motivo novo)
 
@@ -179,3 +181,15 @@ como "proposto" — é portão de arquitetura, não decido como "aceito" sozinho
   repositórios são copyleft, incompatível com SDK de anúncio proprietário).
   `docs/adr/000-pendentes.md` atualizado. Fase 0 declarada concluída — as 7
   fichas, `LICENSE-AUDIT.md` e `VIABILITY.md` estão prontos.
+- **Ciclo 10 — ADR-1, proposto.** `docs/adr/001-shell-multiplataforma.md`:
+  formaliza Flutter como shell único (já implícito em
+  `docs/ARQUITETURA.md:6` e `.claude/rules/brain.md:2-5`, não decisão
+  nova). Tabela de compatibilidade por repositório a partir das 7 fichas:
+  OpenNutriTracker nativo, MLC LLM e OpenTracks via WRAP/platform channel,
+  FoodYou sem rota natural (reforça `docs/VIABILITY.md`), Gadgetbridge/wger/
+  Fasten fora do shell (federados). Dois gaps de iOS expostos e não
+  resolvidos: OpenTracks (Android-only, sem equivalente Flutter) e
+  Gadgetbridge/Health Connect (não existe no iOS, precisa HealthKit,
+  não investigado). Proponho `docs/PLATFORM-PARITY.md` como ciclo futuro
+  para registrar isso — não criado agora. **Status: proposto**, não aceito
+  — é portão de arquitetura.
