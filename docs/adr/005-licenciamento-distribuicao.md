@@ -107,6 +107,33 @@ autoridade para dar. Se quiser blindar ainda mais, a prática de
 OpenNutriTracker, só a especificação de comportamento) reduz esse risco
 residual — não decido isso aqui, é detalhe de processo de implementação.
 
+## Condições verificáveis do PORT — se violadas, o cliente vira GPL-3.0
+
+"PORT, não cópia" não é uma promessa de intenção — é uma condição
+técnica que passou a ser verificável neste mesmo ciclo:
+
+- `docs/specs/nutricao.md` é a especificação funcional (telas, fluxos,
+  cálculos, modelo de dados) que a implementação do módulo de nutrição
+  tem que nascer dela — não do código-fonte do OpenNutriTracker.
+- `.claude/rules/port.md` (`paths: packages/nutrition/**`) proíbe copiar
+  código, estrutura de arquivo, nomes de classe ou comentários do
+  OpenNutriTracker; exige que todo arquivo do módulo declare no
+  cabeçalho que é implementação original; e reduz
+  `docs/recon/opennutritracker.md` a referência de **o que** o módulo
+  faz, nunca de **como**.
+- Essa regra carrega `paths`, então carrega sozinha sempre que o Claude
+  Code mexer em `packages/nutrition/**` — não depende de alguém lembrar
+  de aplicá-la manualmente.
+
+**Consequência automática, registrada aqui para não haver dúvida
+depois:** se essas condições forem violadas — código copiado, estrutura
+espelhada, implementação partindo do repositório em vez da especificação
+— a premissa que justifica Apache-2.0 no cliente deixa de existir. Nesse
+caso **o cliente é GPL-3.0**, pela própria lógica da GPL, não por nova
+decisão de ADR: um PORT que na prática é cópia não deixa de ser cópia
+por estar rotulado de outro jeito. Esta ADR não precisa ser reaberta para
+essa consequência valer — ela já está registrada como automática.
+
 ## Resolução da contradição GPL × App Store
 
 A versão anterior desta ADR aceitava GPL-3.0 no cliente (herdando o
@@ -180,7 +207,10 @@ resolver uma contradição entre duas ADRs — resolvi a contradição aqui.
 - **Passa a ser proibido:** copiar/portar código do OpenNutriTracker
   literalmente sob pretexto de "PORT" — se for reimplementação, tem que
   ser reimplementação de verdade, não cópia com nomes trocados (isso
-  seria pior que linkar abertamente: violaria a GPL escondendo a origem).
+  seria pior que linkar abertamente: violaria a GPL escondendo a
+  origem). Regra verificável em `.claude/rules/port.md`, não só intenção
+  registrada em texto de ADR — ver seção "Condições verificáveis do PORT"
+  acima.
 
 ## Não verificado
 
@@ -198,3 +228,10 @@ resolver uma contradição entre duas ADRs — resolvi a contradição aqui.
 - **Novo:** se "clean room" é necessário ou só recomendável para o PORT
   do OpenNutriTracker — é interpretação jurídica, sinalizada, não
   resolvida.
+- **Novo:** `docs/specs/nutricao.md` foi escrita a partir do `README.md`
+  e da documentação pública do OpenNutriTracker (features anunciadas,
+  screenshots, comportamento descrito em prosa), não de uma exploração
+  completa do app rodando nem do código-fonte Dart — pode estar
+  incompleta em relação ao comportamento real. Lacunas aparecem durante a
+  implementação viram atualização da especificação, não desculpa para
+  abrir o código deles.

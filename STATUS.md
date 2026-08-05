@@ -7,8 +7,10 @@
 **Fase:** 1 concluída (11/11 ADRs registradas, **6 aceitas** + 5 propostas) →
 **aguardando você** para revisar as 5 propostas restantes (ADR-4, 4a, 5, 7,
 8) antes da Fase 2 começar.
-**Ciclo atual:** 24 — revisão de ADR-5/ADR-7 (revisão 2) e aceite de
-ADR-1/2/3/9/10.
+**Ciclo atual:** 25 concluído — PORT da ADR-5 virou regra verificável.
+**Próximo ciclo, quando você mandar:** ADR-8 (multi-tenant B2B) revisada
+depois de ler `docs/CUSTOS.md` de verdade (ainda não lido nesta sessão) —
+pedido explícito seu, ainda não executado, é objetivo de ciclo próprio.
 
 ## Progresso
 
@@ -340,3 +342,17 @@ ADR-1/2/3/9/10.
   linguagem interna de cada uma ("proposto, não aceito") corrigida para
   refletir isso, inclusive cross-references entre elas (ex.: ADR-9 citava
   "ADR-1, ainda proposto"). ADR-4, 4a, 5, 7 e 8 continuam propostas.
+- **Ciclo 25 — PORT vira regra verificável.** `docs/specs/nutricao.md`
+  criado: especificação funcional do módulo de nutrição (telas, fluxos,
+  cálculos, modelo de dados em termos do `HealthEvent` do Frankstein) —
+  derivada do `README.md`/documentação pública do OpenNutriTracker
+  (features anunciadas) e de `docs/PRODUTO.md`, não do código-fonte Dart
+  dele; schema de exportação específico do repositório (nomes de campo
+  JSON) explicitamente não copiado. `.claude/rules/port.md` criado, com
+  `paths: packages/nutrition/**`: proíbe copiar código/estrutura/nomes/
+  comentários do OpenNutriTracker, exige que a implementação parta da
+  especificação (não do repo), exige declaração de originalidade no
+  cabeçalho de cada arquivo, e reduz `docs/recon/opennutritracker.md` a
+  referência de "o quê", nunca de "como". `docs/adr/005-licenciamento-distribuicao.md`
+  atualizada com a condição: se essas regras forem violadas, o cliente
+  vira GPL-3.0 automaticamente, sem precisar reabrir a ADR.
