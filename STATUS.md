@@ -5,9 +5,11 @@
 > partir de outra branch estão lendo estado desatualizado.
 
 **Fase:** 1 — ADRs
-**Ciclo atual:** 18
-**Objetivo do ciclo 18:** ADR-8 (multi-tenant B2B e modelo de consentimento)
-— embasado por `docs/B2B.md` (já lido nesta sessão).
+**Ciclo atual:** 19
+**Objetivo do ciclo 19:** ADR-5 (licenciamento e modelo de distribuição) —
+a última ADR pendente, e a que depende de todas as outras (`docs/adr/000-pendentes.md`:
+"Bloqueia: tudo"). Preciso reler `docs/LICENSE-AUDIT.md` e as 8 ADRs já
+propostas antes de escrever.
 
 ## Progresso
 
@@ -31,7 +33,8 @@
 | 1 | ADR-4a (Gadgetbridge) | **proposto** (`docs/adr/004a-gadgetbridge.md`) |
 | 1 | ADR-2 (modelo LLM) | **proposto** (`docs/adr/002-modelo-llm.md`) |
 | 1 | ADR-7 (canais/pagamento) | **proposto** (`docs/adr/007-canais-distribuicao-pagamento.md`) |
-| 1 | ADR-5, 8 | pendente — entram como "proposto", não "aceito", sem confirmação sua |
+| 1 | ADR-8 (multi-tenant B2B/consentimento) | **proposto** (`docs/adr/008-multitenant-b2b-consentimento.md`) |
+| 1 | ADR-5 (licenciamento) | pendente — última, entra como "proposto" |
 
 ## Decisões já tomadas (não reabrir sem motivo novo)
 
@@ -257,3 +260,9 @@
   link externo dentro do fluxo da loja só entra quando confirmado para o
   Brasil especificamente — não por suposição. Ressalva de método: só
   `WebSearch`, não leitura primária da documentação oficial.
+- **Ciclo 18 — ADR-8, proposto.** `docs/adr/008-multitenant-b2b-consentimento.md`:
+  formaliza o modelo Organization/Seat/CareLink já especificado em
+  `docs/B2B.md`, conectado à ADR-3 (CareLink concede escopo sobre o mesmo
+  HealthEvent log, não duplica dado). Lacuna técnica exposta e não
+  decidida: isolamento de dados entre Organizations (banco separado vs.
+  escopo compartilhado por organization_id) — falta dado de custo/escala.
