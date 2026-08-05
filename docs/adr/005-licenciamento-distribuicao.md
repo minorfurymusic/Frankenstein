@@ -1,237 +1,204 @@
 # ADR-5 — Licenciamento e modelo de distribuição
 
 **Status:** proposto
-**Data:** 2026-08-05 (revisão 2, mesmo dia — três correções pedidas em revisão)
+**Data:** 2026-08-05 (revisão 3 — fundamentação corrigida, clean room decidido, vazamento da ficha fechado)
 
-## Nota de revisão (o que mudou e por quê)
+## Nota de revisão 3 (o que mudou nesta volta)
 
-A versão anterior desta ADR cometeu três erros, todos apontados em
-revisão:
+Três correções pedidas:
 
-1. Descartou a opção de reimplementar (PORT) o OpenNutriTracker citando a
-   regra 3 do `CLAUDE.md` ("não reabrir decisão sem motivo novo") —
-   **errado**. `docs/VIABILITY.md` (Ciclo 8) decidiu **qual repositório**
-   usar para nutrição (OpenNutriTracker em vez de FoodYou). Nunca decidiu
-   **como absorver** esse repositório (link de código vs. reimplementação).
-   São perguntas diferentes. Reabrir a segunda não reabre a primeira.
-2. Tratou "aberto" e "copyleft" como sinônimos. Não são: Apache-2.0 é
-   código aberto e não é copyleft. GPL-3.0 é código aberto e é copyleft.
-   A decisão "copyleft aceito" em `STATUS.md` significa que o projeto
-   **aceita** copyleft quando um repositório absorvido o exige por
-   licença — não que o projeto **busca** copyleft por si só. Esta versão
-   distingue os dois em vez de misturar.
-3. A versão anterior registrava o conflito histórico GPL-3.0 × Termos da
-   App Store como "herdado, não resolvido por esta ADR" — e a ADR-7,
-   escrita ao mesmo tempo, mantinha a App Store como canal, sem que
-   ninguém batesse as duas pontas. Duas ADRs do mesmo dia se contradizendo
-   sem aviso é exatamente o tipo de coisa que este projeto existe para
-   evitar. Esta versão resolve, não herda.
+1. **Consequência que faltava:** Apache-2.0 permite a terceiros fechar o
+   código do cliente e redistribuir sem devolver nada — o oposto do que
+   copyleft garantiria. Adicionada às Consequências.
+2. **Fundamentação invertida:** a revisão 2 apoiava a decisão
+   principalmente em evitar o conflito GPL×App Store — que descansa num
+   precedente de 2010 (FSF x Apple, GNU Go) que a própria seção "Não
+   verificado" já listava como não confirmado hoje. Decisão apoiada em
+   fato não verificado como razão principal é fundamentação fraca. O peso
+   principal passa para um motivo que não depende disso: não herdar
+   dependência de manutenção de um repositório de terceiro. O conflito
+   GPL×App Store continua registrado, mas como bônus, não como pilar.
+3. **Clean room decidido, não mais "detalhe de implementação".** E um
+   vazamento fechado: `docs/recon/opennutritracker.md` foi escrita **lendo
+   o código-fonte** do OpenNutriTracker (Ciclo 4 desta sessão — clone
+   aberto, `pubspec.yaml`, árvore de `lib/` inspecionada). Tratá-la como
+   referência limpa de "o quê" — como a revisão anterior desta ADR e
+   `.claude/rules/port.md` faziam — contamina a cadeia: quem lê a ficha
+   está a um passo de quem leu o código. `docs/specs/nutricao.md` passa a
+   ser a **única** fonte permitida para a implementação. A ficha continua
+   valendo para o que já valia desde a Fase 0 — licença, stack, decisão de
+   ADR-5/ADR-1 — só não vale mais como referência de comportamento para
+   quem implementa.
 
 ## Contexto
 
-`docs/adr/000-pendentes.md` marca esta ADR como bloqueando "tudo" — a
-licença final do produto é consequência de onde cada um dos 7
-repositórios entra:
-
-- **ADR-1 (aceita):** Flutter shell. MLC LLM e OpenTracks entram por WRAP
-  no Android (bindings/código nativo chamado por platform channel) — os
-  dois são Apache-2.0, então WRAP não traz copyleft nenhum, linkar ou não
-  linkar dá na mesma para fins de licença.
-- **ADR-4 (proposta):** wger (AGPL-3.0) e Fasten (GPL-3.0) opcionais,
-  **federados** — nunca linkados ao cliente.
-- **ADR-4a (proposta):** Gadgetbridge (AGPL-3.0) via Health Connect — nem
-  federado, nem linkado, zero contato de código.
-- **OpenNutriTracker (GPL-3.0):** o único dos 7 cuja licença é copyleft
-  **e** que `docs/VIABILITY.md` recomenda usar dentro do núcleo grátis do
-  MVP (não federado, porque roda no aparelho, offline). É o único ponto
-  onde a pergunta "linkar ou reimplementar" muda a licença do cliente
-  inteiro — por isso é o centro desta ADR.
+(sem alteração de fundo da revisão 2) `docs/adr/000-pendentes.md` marca
+esta ADR como bloqueando "tudo". ADR-1 (aceita): Flutter shell, MLC LLM e
+OpenTracks por WRAP, ambos Apache-2.0. ADR-4/ADR-4a (propostas): wger e
+Gadgetbridge federados, fora do cliente. OpenNutriTracker (GPL-3.0) é o
+único dos 7 cuja licença é copyleft **e** que `docs/VIABILITY.md`
+recomenda dentro do núcleo grátis do MVP — o único ponto onde "linkar ou
+reimplementar" muda a licença do cliente inteiro.
 
 ## Opções consideradas
 
 1. **Cliente GPL-3.0, via VENDOR/link do código do OpenNutriTracker.**
-   Usa o código Dart do OpenNutriTracker como dependência dentro do app
-   Flutter (é o mesmo processo/binário — não há fronteira de processo
-   como há entre apps Android nativos via platform channel). Isso é
-   linkagem de verdade: o app inteiro, compilado num único binário Dart
-   AOT, vira GPL-3.0 por força da própria licença.
-2. **Cliente GPL-3.0, servidor autoral proprietário** (só o legalmente
-   obrigatório fica aberto). Continua rejeitada: contradiz "Código
-   aberto, copyleft aceito" (`STATUS.md`) sem motivo novo para reabrir —
-   aqui sim a regra 3 do `CLAUDE.md` se aplica de verdade, porque é a
-   mesma pergunta (abrir ou não o servidor) já respondida antes.
-3. **Cliente Apache-2.0, via PORT (reimplementação) do OpenNutriTracker.**
-   Reaberta nesta revisão. O Frankstein escreve seu próprio módulo de
-   diário alimentar/macros/código de barras, informado pelo que o
-   OpenNutriTracker faz (é a referência de produto — `docs/VIABILITY.md`
-   continua valendo nisso), mas sem copiar o código dele. Nenhuma licença
-   copyleft entra no cliente por essa via: MLC LLM e OpenTracks já são
-   Apache-2.0: o cliente inteiro pode ser Apache-2.0.
+   Mesmo processo/binário Dart AOT — linkagem de verdade, o app inteiro
+   vira GPL-3.0 por força da própria licença.
+2. **Cliente GPL-3.0, servidor autoral proprietário.** Continua rejeitada
+   — contradiz "Código aberto, copyleft aceito" (`STATUS.md`) sem motivo
+   novo; aqui a regra 3 do `CLAUDE.md` se aplica de verdade.
+3. **Cliente Apache-2.0, via PORT (reimplementação) do OpenNutriTracker,
+   com clean room obrigatório.** O Frankstein escreve seu próprio módulo
+   de nutrição a partir de `docs/specs/nutricao.md` — nunca do código nem
+   da ficha de reconhecimento. Nenhuma licença copyleft entra no cliente:
+   MLC LLM e OpenTracks já são Apache-2.0, o cliente inteiro pode ser
+   Apache-2.0.
 
-## A pergunta que a revisão pediu, respondida direto
+## A pergunta que a revisão pediu, respondida direto (fundamentação corrigida)
 
 **O OpenNutriTracker entra por cópia de código ou por PORT?**
 
-**PORT.** Não é cópia. Recomendo a opção 3.
+**PORT, com clean room obrigatório.** Recomendo a opção 3. Motivo, **em
+ordem de peso corrigida** — o principal agora é o que não depende de
+nenhum fato não verificado:
 
-Motivo, em ordem de peso:
+1. **Motivo principal: não herdar dependência de manutenção de um
+   repositório de terceiro.** Se o cliente linka o código do
+   OpenNutriTracker, o Frankstein herda o ritmo de release dele, corre o
+   risco de mudança incompatível a cada atualização upstream (ou fica
+   preso a um commit congelado, perdendo correções), e amarra a evolução
+   do módulo de nutrição — que precisa se integrar ao cérebro
+   (`.claude/rules/brain.md`, ferramenta `log_meal` já esboçada em
+   `docs/ARQUITETURA.md:47-63`) e à UI própria do Frankstein — ao ritmo e
+   às decisões de design de um app standalone de terceiros, que não foi
+   desenhado para isso. PORT devolve controle total do módulo ao
+   Frankstein, sem depender de nada externo continuar existindo,
+   mantendo-se compatível, ou aceitando PRs. **Este motivo vale
+   independente de qualquer questão de licença de loja.**
+2. Apache-2.0 no cliente **continua sendo código aberto** — aberto ≠
+   copyleft, distinção já registrada. Não é escolha "menos aberta".
+3. `docs/adr/009-gps.md` (aceita) já usou PORT para o equivalente iOS do
+   OpenTracks — padrão já aceito neste projeto.
+4. **Bônus, não fundamento principal:** reduz o risco histórico de
+   conflito GPL×Termos da App Store (`docs/LICENSE-AUDIT.md`, caso FSF x
+   Apple/GNU Go, **2010**). A seção "Não verificado" desta própria ADR já
+   lista "se o App Store aceita GPL-3.0 hoje na prática" como não
+   confirmado — apoiar a decisão principalmente nisso seria construir
+   sobre fato não verificado. Registro como consequência favorável, não
+   como razão de decidir.
+5. Custo: reimplementar é trabalho real, não grátis — o OpenNutriTracker
+   foi escolhido originalmente (`docs/PRODUTO.md`) exatamente para evitar
+   esse esforço. Troca de custo de engenharia por controle total do
+   módulo (motivo 1) e por redução de risco jurídico (motivo 4, bônus) —
+   não decidido de graça.
 
-1. **Resolve a contradição GPL × App Store sem tirar o iOS do plano**
-   (ver seção seguinte) — sozinho, isso já decidiria a favor.
-2. `docs/adr/009-gps.md` (aceita) já escolheu PORT para o equivalente
-   iOS do OpenTracks — reimplementar informado por um repositório de
-   referência, sem copiar, já é padrão aceito neste projeto, não é
-   novidade sendo inventada agora só para fugir da GPL.
-3. Apache-2.0 no cliente **continua sendo código aberto** — não é uma
-   escolha "menos aberta", é uma escolha não-copyleft. `docs/adr/006-sem-anuncios.md`
-   e o resto do projeto continuam de pé sem depender de o cliente ser
-   copyleft especificamente.
-4. Custo: reimplementar diário alimentar/macros/código de barras é
-   trabalho real, não é grátis — o OpenNutriTracker foi escolhido
-   originalmente (`docs/PRODUTO.md`) exatamente para evitar esse esforço.
-   Isto **não é decidido de graça**: é a troca de um custo de engenharia
-   (reescrever) por uma redução de risco jurídico e de plataforma (App
-   Store). Registro o custo, não finjo que é zero.
+## Clean room — decidido, não mais detalhe de implementação
 
-**Ressalva de interpretação jurídica, não fato:** "PORT" no sentido de
-`docs/PRODUTO.md` (reimplementar a lógica) não é automaticamente livre de
-risco de "obra derivada" em todas as leituras possíveis de direito
-autoral — ideias e funcionalidade não são protegidas por copyright, só a
-expressão (o código em si) é; ter lido o código GPL do OpenNutriTracker
-para entender como ele resolve um problema, e depois escrever código
-próprio diferente que resolve o mesmo problema, é a prática comum e
-geralmente aceita, mas "geralmente aceita" não é "juridicamente
-garantida em todo caso". Isso é opinião jurídica, que não tenho
-autoridade para dar. Se quiser blindar ainda mais, a prática de
-"clean room" (quem escreve o PORT nunca abre o código-fonte do
-OpenNutriTracker, só a especificação de comportamento) reduz esse risco
-residual — não decido isso aqui, é detalhe de processo de implementação.
+**Decisão:** obrigatório. Regras concretas, reforçadas em
+`.claude/rules/port.md`:
 
-## Condições verificáveis do PORT — se violadas, o cliente vira GPL-3.0
+- Quem (qual sessão, qual pessoa) escreve código em
+  `packages/nutrition/**` **não pode ter aberto**, na mesma sessão ou
+  em qualquer momento anterior que informe o código que está escrevendo:
+  o código-fonte do OpenNutriTracker (`refs/opennutritracker/` ou o
+  repositório upstream), **nem `docs/recon/opennutritracker.md`** — pelo
+  motivo da seção seguinte.
+- **Única fonte permitida para a implementação: `docs/specs/nutricao.md`.**
+  Se um comportamento não está lá, não existe até alguém atualizar a
+  especificação primeiro — e quem atualiza a especificação também não
+  deveria estar simultaneamente implementando a partir do código-fonte
+  deles no mesmo fôlego; a barreira só funciona se as duas atividades
+  ficam separadas.
+- Isso não é uma preferência de estilo. `docs/adr/005-licenciamento-distribuicao.md`
+  (esta ADR) e `.claude/rules/port.md` tratam violação como o gatilho que
+  derruba a licença Apache-2.0 do cliente automaticamente — ver seção
+  seguinte.
 
-"PORT, não cópia" não é uma promessa de intenção — é uma condição
-técnica que passou a ser verificável neste mesmo ciclo:
-
-- `docs/specs/nutricao.md` é a especificação funcional (telas, fluxos,
-  cálculos, modelo de dados) que a implementação do módulo de nutrição
-  tem que nascer dela — não do código-fonte do OpenNutriTracker.
-- `.claude/rules/port.md` (`paths: packages/nutrition/**`) proíbe copiar
-  código, estrutura de arquivo, nomes de classe ou comentários do
-  OpenNutriTracker; exige que todo arquivo do módulo declare no
-  cabeçalho que é implementação original; e reduz
-  `docs/recon/opennutritracker.md` a referência de **o que** o módulo
-  faz, nunca de **como**.
-- Essa regra carrega `paths`, então carrega sozinha sempre que o Claude
-  Code mexer em `packages/nutrition/**` — não depende de alguém lembrar
-  de aplicá-la manualmente.
-
-**Consequência automática, registrada aqui para não haver dúvida
-depois:** se essas condições forem violadas — código copiado, estrutura
-espelhada, implementação partindo do repositório em vez da especificação
-— a premissa que justifica Apache-2.0 no cliente deixa de existir. Nesse
-caso **o cliente é GPL-3.0**, pela própria lógica da GPL, não por nova
-decisão de ADR: um PORT que na prática é cópia não deixa de ser cópia
-por estar rotulado de outro jeito. Esta ADR não precisa ser reaberta para
-essa consequência valer — ela já está registrada como automática.
-
-## Resolução da contradição GPL × App Store
-
-A versão anterior desta ADR aceitava GPL-3.0 no cliente (herdando o
-risco histórico de conflito com os Termos da App Store,
-`docs/LICENSE-AUDIT.md`, caso FSF x Apple/GNU Go 2010) **e** a ADR-7
-mantinha a App Store como canal — duas ADRs do mesmo dia se
-contradizendo. Com a opção 3 (PORT, cliente Apache-2.0):
-
-- **Não há mais GPL no cliente.** MLC LLM (Apache-2.0) + OpenTracks
-  (Apache-2.0, WRAP) + OpenNutriTracker-como-PORT (código próprio,
-  licença própria) = cliente inteiro Apache-2.0.
-- **O conflito não existe mais para o cliente.** Apache-2.0 nunca teve o
-  problema que gerou o caso FSF x Apple — a cláusula de "sem restrições
-  adicionais" que a GPL tem (e que colide com os Termos de Uso da App
-  Store) não existe na Apache-2.0.
-- **O iOS continua no plano, a App Store continua no plano** — a
-  contradição não precisou ser resolvida abrindo mão de uma das duas,
-  porque a premissa (cliente tem que ser GPL) deixou de ser verdadeira.
-- O **servidor** autoral (entitlements, B2B, relay de sync — ADR-3/ADR-8)
-  não é distribuído em loja nenhuma, então nada disso o afeta: ele pode
-  continuar AGPL-3.0 por escolha, como já estava, sem reabrir a discussão
-  de App Store.
-
-## Decisão
-
-**Opção 3.** Modelo de licenciamento revisado:
-
-- **Cliente (app):** **Apache-2.0**. OpenNutriTracker entra por PORT
-  (reimplementação informada, não cópia de código) — decisão desta ADR,
-  não mais "a decidir depois". MLC LLM e OpenTracks continuam por WRAP
-  (ADR-1), sem alteração — já eram Apache-2.0, WRAP nunca foi o problema.
-  FoodYou continua fora (`docs/VIABILITY.md`), redundante com
-  OpenNutriTracker independente de licença.
-- **Componentes de servidor autorais do Frankstein** (entitlements, B2B,
-  relay de sync — ADR-3/ADR-8): **AGPL-3.0 por escolha**, sem alteração
-  em relação à versão anterior — continua sendo escolha de princípio, não
-  obrigação legal estrita, e continua sem afetar o cliente porque servidor
-  e cliente são licenciados separadamente.
-- **wger, se hospedado para B2B:** expõe o próprio código-fonte via rota
-  `/source` (`docs/B2B.md:31-33`), sem alteração.
-- **Modelo de distribuição:** multi-canal conforme ADR-7 — agora sem a
-  tensão GPL×App Store que a versão anterior carregava.
-
-**Isto está proposto, não aceito.** Continua sendo a ADR mais consequente
-do projeto. A diferença desta revisão: a decisão não depende mais de
-resolver uma contradição entre duas ADRs — resolvi a contradição aqui.
+**Por que a ficha de reconhecimento sai da lista de fontes permitidas:**
+`docs/recon/opennutritracker.md` foi escrita depois de clonar o
+repositório e abrir `pubspec.yaml`, a árvore de `lib/`, e (para a ficha
+de licença) o `LICENSE` — leitura direta do código-fonte, ainda que
+superficial. Tratar essa ficha como referência limpa de "o que o módulo
+faz" — o que a revisão anterior desta ADR e a primeira versão de
+`.claude/rules/port.md` faziam — quebra a barreira do clean room por
+definição: a ficha é, ela mesma, um produto de ter lido o código.
+`docs/specs/nutricao.md`, em contraste, foi escrita a partir do
+`README.md` público do projeto (texto de divulgação, não lógica de
+negócio) — mais perto da linha, mas ainda não perfeitamente limpo (ver
+"Não verificado"). É a fonte que fica.
 
 ## Consequências
 
-- **Fica mais fácil:** não há mais tensão entre a licença do cliente e o
-  canal de distribuição — App Store, Play Store, F-Droid, APK direto
-  funcionam todos sem risco de conflito de licença específico do cliente.
-  O modelo de licença vira uma regra simples: cliente permissivo, servidor
-  copyleft por escolha.
+- **Fica mais fácil:** o cliente inteiro pode ser Apache-2.0. Nenhuma
+  tensão entre licença do cliente e canal de distribuição. O módulo de
+  nutrição evolui no ritmo do Frankstein, integrado ao cérebro e à UI
+  próprios, sem depender de decisões de design de um app de terceiros.
 - **Fica mais difícil:**
-  - Custo de engenharia real de reimplementar o módulo de nutrição em vez
-    de linkar o OpenNutriTracker pronto — não quantifiquei esse custo
-    (não é dado que eu tenha; estimativa de esforço não é meu papel aqui).
+  - Custo de engenharia real de reimplementar em vez de linkar — não
+    quantificado.
   - **AGPL no servidor permite que clientes B2B se auto-hospedem e
-    deixem de pagar.** Como o servidor autoral é AGPL-3.0 por escolha, e
-    AGPL obriga a oferecer o código-fonte a quem interage com ele pela
-    rede, qualquer clínica/academia cliente do B2B (`docs/B2B.md`) pode
-    pegar esse código-fonte publicado e rodar a própria instância, sem
-    pagar pela hospedagem do Frankstein — o mesmo modelo que
-    `docs/B2B.md:31-33` já assumia para o wger hospedado se aplica agora
-    ao próprio produto B2B do Frankstein. `docs/MONETIZACAO.md` conta com
-    receita de hospedagem B2B ("20 nutricionistas a R$ 80/mês valem
-    mais..."); isso é uma tensão real entre a escolha de licença por
-    princípio e o modelo de receita, não resolvida aqui — fica registrada
-    para quem for aceitar esta ADR pesar.
-- **Passa a ser proibido:** copiar/portar código do OpenNutriTracker
-  literalmente sob pretexto de "PORT" — se for reimplementação, tem que
-  ser reimplementação de verdade, não cópia com nomes trocados (isso
-  seria pior que linkar abertamente: violaria a GPL escondendo a
-  origem). Regra verificável em `.claude/rules/port.md`, não só intenção
-  registrada em texto de ADR — ver seção "Condições verificáveis do PORT"
-  acima.
+    deixem de pagar** — servidor autoral AGPL-3.0 por escolha obriga a
+    oferecer código-fonte a quem interage pela rede; qualquer
+    clínica/academia B2B pode rodar a própria instância sem pagar
+    hospedagem ao Frankstein. Tensão real com `docs/MONETIZACAO.md`, não
+    resolvida aqui.
+  - **Nova — o oposto do risco acima: Apache-2.0 no cliente permite que
+    terceiros fechem o código e redistribuam sem devolver nada.**
+    Qualquer empresa pode pegar o cliente Apache-2.0 do Frankstein,
+    modificar, e lançar uma versão proprietária concorrente — sem
+    publicar o que mudou, sem contribuir de volta, sem nem citar a
+    origem além do aviso de copyright exigido pela licença. Copyleft
+    (GPL) impediria isso especificamente; Apache-2.0, por escolha desta
+    ADR, não. É o preço de evitar o copyleft no cliente — registrado
+    explicitamente, não escondido atrás do "fica mais fácil".
+  - Disciplina de clean room tem custo operacional: quem escreve a
+    especificação e quem implementa precisam ser separados na prática, o
+    que trava paralelismo (não dá pra uma mesma sessão fazer as duas
+    coisas ao mesmo tempo sobre o mesmo trecho).
+- **Passa a ser proibido:** copiar/portar código do OpenNutriTracker sob
+  pretexto de "PORT"; usar `docs/recon/opennutritracker.md` ou o
+  código-fonte deles como referência de implementação — regra verificável
+  em `.claude/rules/port.md`.
+
+## Resolução da contradição GPL × App Store (mantida como bônus, não como pilar)
+
+Com o cliente Apache-2.0 (opção 3): MLC LLM + OpenTracks + OpenNutriTracker-PORT
+= cliente inteiro Apache-2.0, que nunca teve a cláusula de "sem
+restrições adicionais" que colidiu com os Termos da App Store no caso
+FSF x Apple de 2010. iOS e App Store continuam no plano. **Mas isto não é
+mais o motivo principal da decisão** (ver seção de fundamentação acima) —
+é consequência favorável de uma decisão tomada por outro motivo. O
+servidor autoral segue AGPL-3.0 por escolha, sem afetar distribuição em
+loja (servidor não é distribuído em loja nenhuma).
+
+## Decisão
+
+**Opção 3, com clean room obrigatório.** Cliente Apache-2.0.
+OpenNutriTracker por PORT a partir de `docs/specs/nutricao.md`, nunca do
+código-fonte nem de `docs/recon/opennutritracker.md`. MLC LLM e
+OpenTracks continuam WRAP (ADR-1), Apache-2.0, sem alteração. Servidor
+autoral AGPL-3.0 por escolha (ADR-3/ADR-8), sem alteração. wger hospedado
+expõe fonte via `/source` (`docs/B2B.md:31-33`), sem alteração.
+Distribuição multi-canal conforme ADR-7 (aceita).
+
+**Isto está proposto, não aceito.**
 
 ## Não verificado
 
-- ~~Licenças dos 6 submódulos do MLC LLM~~ — resolvido no Ciclo B, todas
-  permissivas, não muda esta ADR.
-- Direção real do Gadgetbridge no Health Connect, confirmada só por busca
-  indexada (ADR-4a).
-- Regras de link de pagamento externo confirmadas para o Brasil
-  especificamente — ver ADR-7 revisão 2, que reduz a dependência disso
-  com a Opção 4.
-- Texto primário da FSF sobre compatibilidade de licença — só resumo de
-  `WebSearch` em todo o projeto até aqui.
-- **Novo:** custo de engenharia de reimplementar (PORT) o módulo de
-  nutrição — não estimado nesta ADR.
-- **Novo:** se "clean room" é necessário ou só recomendável para o PORT
-  do OpenNutriTracker — é interpretação jurídica, sinalizada, não
-  resolvida.
-- **Novo:** `docs/specs/nutricao.md` foi escrita a partir do `README.md`
-  e da documentação pública do OpenNutriTracker (features anunciadas,
-  screenshots, comportamento descrito em prosa), não de uma exploração
-  completa do app rodando nem do código-fonte Dart — pode estar
-  incompleta em relação ao comportamento real. Lacunas aparecem durante a
-  implementação viram atualização da especificação, não desculpa para
-  abrir o código deles.
+- ~~Licenças dos 6 submódulos do MLC LLM~~ — resolvido no Ciclo B.
+- Direção real do Gadgetbridge no Health Connect (ADR-4a).
+- Regras de link de pagamento externo para o Brasil — ver ADR-7 (aceita).
+- Texto primário da FSF sobre compatibilidade de licença — só `WebSearch`.
+- Custo de engenharia de reimplementar (PORT) o módulo de nutrição.
+- **`docs/specs/nutricao.md` não é perfeitamente limpa.** Foi escrita a
+  partir do `README.md` do OpenNutriTracker — texto de divulgação
+  pública, não lógica de negócio, mas ainda assim conteúdo do repositório
+  GPL, lido dentro do clone. É mais perto da linha do clean room do que a
+  ficha de reconhecimento (que leu código e configuração de build), mas
+  "mais perto da linha" não é "na linha". Se quiser blindar mais: alguém
+  que nunca abriu `refs/opennutritracker/` de forma alguma poderia
+  reescrever `docs/specs/nutricao.md` a partir da descrição desta ADR e
+  de conhecimento geral de apps de diário alimentar, sem tocar no
+  repositório — não fiz isso aqui, registro como opção mais conservadora
+  não tomada.

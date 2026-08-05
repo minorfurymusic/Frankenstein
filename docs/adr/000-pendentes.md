@@ -1,7 +1,7 @@
 # ADRs
 
 Todas as 11 estão registradas (Ciclos 9-19, revisões em curso a partir daí).
-**6 aceitas** (ADR-1, 2, 3, 6, 9, 10), **5 propostas** (ADR-4, 4a, 5, 7, 8)
+**7 aceitas** (ADR-1, 2, 3, 6, 7, 9, 10), **4 propostas** (ADR-4, 4a, 5, 8)
 — análise pronta, decisão ainda sua. Nenhuma vira "aceita" sem confirmação
 explícita.
 
@@ -12,10 +12,10 @@ explícita.
 | [ADR-3](003-fonte-verdade-sync.md) | Fonte da verdade dos dados e estratégia de sync | F3 | **aceito** |
 | [ADR-4](004-wger-fasten.md) | wger/Fasten: obrigatório, opcional ou substituído? | F13 | proposto |
 | [ADR-4a](004a-gadgetbridge.md) | Gadgetbridge: FEDERATE via Health Connect ou fork sob AGPL? | F9 | proposto |
-| [ADR-5](005-licenciamento-distribuicao.md) | Licenciamento e modelo de distribuição (revisão 2: cliente Apache-2.0 via PORT do OpenNutriTracker) | tudo | proposto |
+| [ADR-5](005-licenciamento-distribuicao.md) | Licenciamento e modelo de distribuição (revisão 3: fundamentação corrigida, clean room obrigatório, ficha fora das fontes de implementação) | tudo | proposto |
 | [ADR-6](006-sem-anuncios.md) | Sem anúncios em nenhuma superfície | — | **aceito** |
-| [ADR-7](007-canais-distribuicao-pagamento.md) | Canais de distribuição e meios de pagamento (revisão 2: Opção 4, sem interface de pagamento no app) | F11 | proposto |
-| [ADR-8](008-multitenant-b2b-consentimento.md) | Multi-tenant B2B e modelo de consentimento | F14 | proposto |
+| [ADR-7](007-canais-distribuicao-pagamento.md) | Canais de distribuição e meios de pagamento (revisão 3: mecanismo de vínculo do entitlement definido, regra de comunicação de plano utilizável) | F11 | **aceito** |
+| [ADR-8](008-multitenant-b2b-consentimento.md) | Multi-tenant B2B e modelo de consentimento — **pendente revisão após leitura de `docs/CUSTOS.md`** | F14 | proposto |
 | [ADR-9](009-gps.md) | GPS: precisão x bateria x privacidade | F8 | **aceito** |
 | [ADR-10](010-substitutos-livres.md) | Substitutos livres de dependências proprietárias | F2 | **aceito** |
 

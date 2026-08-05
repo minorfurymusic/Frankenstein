@@ -4,10 +4,11 @@
 > merge para `main` antes do próximo começar — sessões futuras que abrirem a
 > partir de outra branch estão lendo estado desatualizado.
 
-**Fase:** 1 concluída (11/11 ADRs registradas, **6 aceitas** + 5 propostas) →
-**aguardando você** para revisar as 5 propostas restantes (ADR-4, 4a, 5, 7,
-8) antes da Fase 2 começar.
-**Ciclo atual:** 25 concluído — PORT da ADR-5 virou regra verificável.
+**Fase:** 1 concluída (11/11 ADRs registradas, **7 aceitas** + 4 propostas) →
+**aguardando você** para revisar as 4 propostas restantes (ADR-4, 4a, 5, 8)
+antes da Fase 2 começar.
+**Ciclo atual:** 26 concluído — ADR-7 aceita (revisão 3); ADR-5 revisão 3
+(ainda proposta).
 **Próximo ciclo, quando você mandar:** ADR-8 (multi-tenant B2B) revisada
 depois de ler `docs/CUSTOS.md` de verdade (ainda não lido nesta sessão) —
 pedido explícito seu, ainda não executado, é objetivo de ciclo próprio.
@@ -33,10 +34,10 @@ pedido explícito seu, ainda não executado, é objetivo de ciclo próprio.
 | 1 | ADR-2 (modelo LLM) | **aceito** (`docs/adr/002-modelo-llm.md`) |
 | 1 | ADR-4 (wger/Fasten) | proposto (`docs/adr/004-wger-fasten.md`) |
 | 1 | ADR-4a (Gadgetbridge) | proposto (`docs/adr/004a-gadgetbridge.md`) |
-| 1 | ADR-7 (canais/pagamento) | proposto, **revisão 2** (`docs/adr/007-canais-distribuicao-pagamento.md`) — Opção 4 acrescentada: sem interface de pagamento no app, entitlement lido do site |
-| 1 | ADR-8 (multi-tenant B2B/consentimento) | proposto (`docs/adr/008-multitenant-b2b-consentimento.md`) |
-| 1 | ADR-5 (licenciamento) | proposto, **revisão 2** (`docs/adr/005-licenciamento-distribuicao.md`) — cliente agora Apache-2.0 (PORT do OpenNutriTracker, não link), servidor autoral segue AGPL-3.0 por escolha |
-| 1 | **11/11 ADRs registradas** | **6 aceitas** (ADR-1, 2, 3, 6, 9, 10), 5 propostas (ADR-4, 4a, 5, 7, 8) |
+| 1 | ADR-7 (canais/pagamento) | **aceito, revisão 3** (`docs/adr/007-canais-distribuicao-pagamento.md`) — mecanismo de vínculo do entitlement (e-mail + código de uso único) definido; regra "estado do plano sim, venda não" substitui a proibição-tudo |
+| 1 | ADR-8 (multi-tenant B2B/consentimento) | proposto (`docs/adr/008-multitenant-b2b-consentimento.md`) — pendente revisão após leitura de `docs/CUSTOS.md` |
+| 1 | ADR-5 (licenciamento) | proposto, **revisão 3** (`docs/adr/005-licenciamento-distribuicao.md`) — fundamentação principal agora é não herdar manutenção de repo de terceiro (não mais o precedente de 2010 não verificado); clean room obrigatório; `docs/recon/opennutritracker.md` removida das fontes válidas de implementação |
+| 1 | **11/11 ADRs registradas** | **7 aceitas** (ADR-1, 2, 3, 6, 7, 9, 10), 4 propostas (ADR-4, 4a, 5, 8) |
 
 ## Decisões já tomadas (não reabrir sem motivo novo)
 
@@ -356,3 +357,24 @@ pedido explícito seu, ainda não executado, é objetivo de ciclo próprio.
   referência de "o quê", nunca de "como". `docs/adr/005-licenciamento-distribuicao.md`
   atualizada com a condição: se essas regras forem violadas, o cliente
   vira GPL-3.0 automaticamente, sem precisar reabrir a ADR.
+- **Ciclo 26 — ADR-7 aceita (revisão 3); ADR-5 revisão 3.**
+  ADR-7: definido o elo que faltava — entitlement chega ao app por e-mail
+  + código de uso único trocado numa única chamada de rede explícita
+  (tela "Já assinei", sem preço, sem menção de compra), sem conflitar com
+  o "sem cadastro" do degrau grátis (`docs/MONETIZACAO.md:9` — o fluxo só
+  existe pra quem já paga). "Proibido qualquer menção" trocado por regra
+  utilizável: app pode dizer que um recurso não está no plano atual, sem
+  preço/link/onde comprar — registrado como limite conservador escolhido,
+  não leitura confirmada de política de loja. **Status: aceito.**
+  ADR-5: três correções. (a) Consequência nova: Apache-2.0 permite
+  terceiro fechar o cliente e redistribuir sem devolver nada — oposto do
+  copyleft. (b) Fundamentação invertida — motivo principal passa a ser
+  não herdar dependência de manutenção de repositório de terceiro
+  (independente de licença de loja); o conflito GPL×App Store (precedente
+  de 2010, já listado como não verificado) vira bônus, não pilar. (c)
+  Clean room decidido como obrigatório, não mais "detalhe de
+  implementação" — e vazamento fechado: `docs/recon/opennutritracker.md`
+  foi escrita lendo código-fonte, então sai da lista de referências
+  válidas para implementação; `docs/specs/nutricao.md` vira a única
+  fonte. `.claude/rules/port.md` atualizada para reforçar isso, não só a
+  ADR em texto. **Status: continua proposto.**
