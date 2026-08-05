@@ -74,11 +74,12 @@ não aceitas.
 
 ## Não verificado
 
-- As 6 licenças de submódulo do MLC LLM (`docs/recon/mlc-llm.md`,
-  `docs/LICENSE-AUDIT.md`) continuam pendentes — bloqueia o fechamento
-  completo do ADR-5 para este repositório especificamente, o que por
-  transitividade deixa esta ADR também condicionada a isso.
-- RAM de pico e desempenho real por perfil — zero medição própria feita.
+- ~~As 6 licenças de submódulo do MLC LLM continuam pendentes~~ —
+  **resolvido no Ciclo B** (2026-08-05): todas permissivas, ver
+  `docs/recon/mlc-llm.md`. Não muda a decisão proposta nesta ADR.
+- RAM de pico e desempenho real por perfil — zero medição própria feita
+  (submódulos agora presentes, mas build continua não tentado — ver
+  `docs/recon/mlc-llm.md`, seção Build).
 - Se o subconjunto brasileiro do Open Food Facts (`docs/OFFLINE-IA.md:31-35`)
   tem alguma relação com o motor de inferência ou é módulo separado — não
   investiguei, é escopo de nutrição, não desta ADR.

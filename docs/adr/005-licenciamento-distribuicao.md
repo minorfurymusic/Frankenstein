@@ -101,7 +101,8 @@ Gadgetbridge, isolamento multi-tenant, regras de loja no Brasil).
 
 ## Não verificado (herdado das ADRs anteriores, não resolvido aqui)
 
-- Licenças dos 6 submódulos do MLC LLM (ADR-2, `docs/LICENSE-AUDIT.md`).
+- ~~Licenças dos 6 submódulos do MLC LLM~~ — resolvido no Ciclo B
+  (2026-08-05), todas permissivas, não muda esta ADR.
 - Direção real do Gadgetbridge no Health Connect, confirmada só por busca
   indexada (ADR-4a).
 - Se o App Store aceita GPL-3.0 hoje na prática para contas novas — só

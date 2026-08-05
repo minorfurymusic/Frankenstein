@@ -15,7 +15,7 @@ sinalizado na tabela.
 
 | Repositório | Licença (literal) | Sublicenças por subdiretório | Verificação |
 |---|---|---|---|
-| MLC LLM | Apache-2.0 | 6 submódulos `3rdparty/` (`argparse`, `tokenizers-cpp`, `googletest`, `tvm`/`relax`, `stb`, `xgrammar`) **NÃO AVALIADOS** — clone raso deixou os diretórios vazios | clone + leitura direta |
+| MLC LLM | Apache-2.0 | 6 submódulos `3rdparty/` lidos no Ciclo B (2026-08-05): `argparse` MIT, `googletest` BSD-3-Clause, `stb` MIT/Unlicense, `tokenizers-cpp` Apache-2.0, `tvm`/`relax` Apache-2.0 (+ 6 licenças vendorizadas em `tvm/licenses/`, todas permissivas), `xgrammar` Apache-2.0. Todas permissivas, nenhuma copyleft — não muda a conclusão desta auditoria | clone + leitura direta |
 | OpenTracks | Apache-2.0 | nenhuma encontrada | clone + leitura direta |
 | FoodYou | GPL-3.0 | nenhuma encontrada | clone + leitura direta |
 | OpenNutriTracker | GPL-3.0 | nenhuma encontrada | clone + leitura direta |
@@ -182,8 +182,9 @@ desta auditoria.
   deste ambiente, como foi feito para a ficha do Gadgetbridge.
 - A ficha do Gadgetbridge não teve clone nem build — toda a linha dela
   nesta matriz carrega essa ressalva.
-- As 6 licenças de submódulo do MLC LLM (`3rdparty/`) não foram lidas —
-  clone raso. `docs/recon/mlc-llm.md` já registra isso como débito.
+- ~~As 6 licenças de submódulo do MLC LLM (`3rdparty/`) não foram lidas~~
+  — **resolvido no Ciclo B** (2026-08-05): todas permissivas (MIT, BSD-3,
+  Apache-2.0, MIT/Unlicense). Ver `docs/recon/mlc-llm.md`.
 - Este documento não resolve o ADR-4a (Gadgetbridge escreve ou só lê do
   Health Connect) nem o ADR-5 (licenciamento e modelo de distribuição) —
   ele dá o mapa para essas decisões, não a decisão em si.

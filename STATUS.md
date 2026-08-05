@@ -6,8 +6,8 @@
 
 **Fase:** 1 concluída (11/11 ADRs registradas, 1 aceita + 10 propostas) →
 **aguardando você** para revisar as propostas antes da Fase 2 começar.
-**Ciclo atual:** 21 (Ciclos A/B/C, autorizados sem esperar decisão de licença)
-**Objetivo do Ciclo B:** ler licenças dos submódulos do MLC LLM.
+**Ciclo atual:** 22 (Ciclos A/B/C, autorizados sem esperar decisão de licença)
+**Objetivo do Ciclo C:** escrever `docs/PLATFORM-PARITY.md`.
 
 ## Progresso
 
@@ -47,10 +47,8 @@
 
 ## Débito técnico
 
-- Licenças dos 6 submódulos de `3rdparty/` do MLC LLM (`argparse`,
-  `tokenizers-cpp`, `googletest`, `tvm`/`relax`, `stb`, `xgrammar`) não
-  avaliadas — clone raso não trouxe o conteúdo. Bloqueia fechamento do ADR-5
-  para este repositório.
+- ~~Licenças dos 6 submódulos de `3rdparty/` do MLC LLM~~ — **resolvido no
+  Ciclo B** (2026-08-05): todas permissivas. Ver `docs/recon/mlc-llm.md`.
 
 ## Histórico de ciclos
 
@@ -289,3 +287,17 @@
   como a documentação pública descreve — lógica ajustada para não
   depender de um sinal de sucesso/falha que não existe no input real.
   Commit `707bcda`.
+- **Ciclo B — licenças dos 6 submódulos do MLC LLM.**
+  `git -C refs/mlc-llm submodule update --init --depth 1`. `tvm` (o maior,
+  fork `mlc-ai/relax.git`) ficou quebrado na 1ª tentativa (working tree
+  vazio, index com "deleted" em massa — provável interrupção no meio do
+  checkout); resolvido isolando e repetindo com `--force`, 2ª tentativa
+  limpa. Os outros 5 vieram completos de primeira. Todas as 6 licenças
+  lidas literalmente: `argparse` MIT, `googletest` BSD-3-Clause, `stb`
+  MIT/Unlicense, `tokenizers-cpp` Apache-2.0, `tvm` Apache-2.0 (+ 6
+  licenças vendorizadas em `tvm/licenses/`, todas permissivas também),
+  `xgrammar` Apache-2.0. **Não muda a conclusão de `docs/LICENSE-AUDIT.md`**
+  — aviso explícito conforme pedido, já que nenhuma é copyleft.
+  `docs/recon/mlc-llm.md`, `docs/LICENSE-AUDIT.md`, ADR-2 e ADR-5
+  atualizados para remover essa ressalva. Build continua não tentado
+  (submódulos agora presentes não muda isso — falta toolchain LLVM/GPU).
