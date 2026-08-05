@@ -6,8 +6,9 @@
 
 **Fase:** 1 concluída (11/11 ADRs registradas, 1 aceita + 10 propostas) →
 **aguardando você** para revisar as propostas antes da Fase 2 começar.
-**Ciclo atual:** 22 (Ciclos A/B/C, autorizados sem esperar decisão de licença)
-**Objetivo do Ciclo C:** escrever `docs/PLATFORM-PARITY.md`.
+**Ciclo atual:** 23 — Ciclos A, B e C concluídos. Voltando a aguardar
+revisão humana das ADRs propostas; nenhum novo ciclo autônomo até você
+decidir o próximo passo.
 
 ## Progresso
 
@@ -301,3 +302,12 @@
   `docs/recon/mlc-llm.md`, `docs/LICENSE-AUDIT.md`, ADR-2 e ADR-5
   atualizados para remover essa ressalva. Build continua não tentado
   (submódulos agora presentes não muda isso — falta toolchain LLVM/GPU).
+- **Ciclo C — `docs/PLATFORM-PARITY.md`.** Consolida os dois gaps de iOS
+  já conhecidos (não investiga nada novo): OpenTracks é Android-only, sem
+  equivalente Flutter (`docs/recon/opentracks.md`) — no iOS precisa de
+  PORT ou de aceitar a ausência do recurso, nenhuma das duas decidida;
+  Health Connect não existe no iOS, HealthKit é o candidato óbvio
+  (`docs/ARQUITETURA.md:74`) mas **não foi investigado** em nenhum ciclo —
+  registrado como "Não verificado", não deduzido. `docs/adr/001-shell-multiplataforma.md`
+  atualizada para apontar pro documento em vez de reclamar que ele não
+  existe.

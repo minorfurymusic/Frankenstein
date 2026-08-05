@@ -83,8 +83,7 @@ a análise; a aceitação é sua.
 
 ## Pendência que esta ADR expõe, não resolve
 
-`docs/PLATFORM-PARITY.md`, citado em `docs/ARQUITETURA.md:73`, não existe.
-Sem ele, não há onde registrar formalmente os dois gaps de iOS encontrados
-aqui (OpenTracks, Gadgetbridge/Health Connect). Proponho isso como o
-próximo ciclo depois das ADRs, não decido criar o conteúdo dele agora
-misturado a esta ADR.
+~~`docs/PLATFORM-PARITY.md`, citado em `docs/ARQUITETURA.md:73`, não
+existe.~~ **Criado no Ciclo C** (2026-08-05), consolidando os dois gaps
+de iOS encontrados aqui (OpenTracks, Gadgetbridge/Health Connect) — nenhum
+dos dois foi resolvido, só documentado num lugar formal.
