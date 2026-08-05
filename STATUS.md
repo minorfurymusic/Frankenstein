@@ -5,9 +5,10 @@
 > partir de outra branch estão lendo estado desatualizado.
 
 **Fase:** 1 — ADRs
-**Ciclo atual:** 13
-**Objetivo do ciclo 13:** ADR-3 (fonte da verdade dos dados e estratégia de
-sync), como "proposto" — embasado por `docs/ARQUITETURA.md` (Health Data Core).
+**Ciclo atual:** 14
+**Objetivo do ciclo 14:** ADR-4 (wger/Fasten: obrigatório, opcional ou
+substituído?) — embasado por `docs/VIABILITY.md` e `docs/recon/wger.md`/
+`docs/recon/fasten-health.md`.
 
 ## Progresso
 
@@ -26,7 +27,8 @@ sync), como "proposto" — embasado por `docs/ARQUITETURA.md` (Health Data Core)
 | 1 | ADR-1 (shell/multiplataforma) | **proposto** (`docs/adr/001-shell-multiplataforma.md`) |
 | 1 | ADR-9 (GPS) | **proposto** (`docs/adr/009-gps.md`) |
 | 1 | ADR-10 (substitutos livres) | **proposto** (`docs/adr/010-substitutos-livres.md`) |
-| 1 | ADR-2, 3, 4, 4a, 5, 7, 8 | pendente — entram como "proposto", não "aceito", sem confirmação sua |
+| 1 | ADR-3 (fonte da verdade/sync) | **proposto** (`docs/adr/003-fonte-verdade-sync.md`) |
+| 1 | ADR-2, 4, 4a, 5, 7, 8 | pendente — entram como "proposto", não "aceito", sem confirmação sua |
 
 ## Decisões já tomadas (não reabrir sem motivo novo)
 
@@ -210,3 +212,12 @@ sync), como "proposto" — embasado por `docs/ARQUITETURA.md` (Health Data Core)
   anúncio; as outras 6 não tiveram auditoria de dependência transitiva
   contra essa lista (MLC LLM/OpenTracks/FoodYou nem build completo
   tiveram). Proposto um ciclo de auditoria de dependência antes da Fase 2.
+- **Ciclo 13 — ADR-3, proposto.** `docs/adr/003-fonte-verdade-sync.md`:
+  SQLite local continua fonte de verdade mesmo com sync ativado (Premium);
+  servidor é relay de replicação do log de eventos, nunca autoridade —
+  compatível com o degrau GRÁTIS ser sem conta/sem servidor
+  (`docs/MONETIZACAO.md`). Reaproveita o modelo append-only/dedup já
+  decidido em `docs/ARQUITETURA.md` em vez de propor um novo. Não
+  verificado, registrado como pendência: conflito de correções
+  concorrentes entre dois aparelhos offline; custo de servidor do relay
+  (não li `docs/CUSTOS.md` neste ciclo, fora da área tocada).
