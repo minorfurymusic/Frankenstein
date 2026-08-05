@@ -5,9 +5,9 @@
 > partir de outra branch estão lendo estado desatualizado.
 
 **Fase:** 1 — ADRs
-**Ciclo atual:** 17
-**Objetivo do ciclo 17:** ADR-7 (canais de distribuição e meios de
-pagamento) — embasado por `docs/MONETIZACAO.md` (já lido nesta sessão).
+**Ciclo atual:** 18
+**Objetivo do ciclo 18:** ADR-8 (multi-tenant B2B e modelo de consentimento)
+— embasado por `docs/B2B.md` (já lido nesta sessão).
 
 ## Progresso
 
@@ -30,7 +30,8 @@ pagamento) — embasado por `docs/MONETIZACAO.md` (já lido nesta sessão).
 | 1 | ADR-4 (wger/Fasten) | **proposto** (`docs/adr/004-wger-fasten.md`) |
 | 1 | ADR-4a (Gadgetbridge) | **proposto** (`docs/adr/004a-gadgetbridge.md`) |
 | 1 | ADR-2 (modelo LLM) | **proposto** (`docs/adr/002-modelo-llm.md`) |
-| 1 | ADR-5, 7, 8 | pendente — entram como "proposto", não "aceito", sem confirmação sua |
+| 1 | ADR-7 (canais/pagamento) | **proposto** (`docs/adr/007-canais-distribuicao-pagamento.md`) |
+| 1 | ADR-5, 8 | pendente — entram como "proposto", não "aceito", sem confirmação sua |
 
 ## Decisões já tomadas (não reabrir sem motivo novo)
 
@@ -245,3 +246,14 @@ pagamento) — embasado por `docs/MONETIZACAO.md` (já lido nesta sessão).
   medido de verdade — build do MLC LLM nunca tentado (Ciclo 1). Condicionada
   a ADR-1 e parcialmente a ADR-5 (licenças de submódulo do MLC LLM ainda
   pendentes).
+- **Ciclo 17 — ADR-7, proposto.** `docs/adr/007-canais-distribuicao-pagamento.md`:
+  `docs/MONETIZACAO.md:56` pedia para confirmar regras vigentes das lojas
+  e citar fonte — pesquisei via `WebSearch`. Achado: Google Play e Apple
+  App Store abriram checkout externo por decisão judicial em 2026 (EUA/UK/EEE
+  confirmado; Brasil está no programa de billing alternativo mais antigo,
+  mas a onda de link externo específica só tem prazo confirmado até
+  09/2027 numa das fontes; Apple só confirmado para EUA/UE, não Brasil).
+  Decisão proposta: Web como canal preferencial de pagamento, mas o uso de
+  link externo dentro do fluxo da loja só entra quando confirmado para o
+  Brasil especificamente — não por suposição. Ressalva de método: só
+  `WebSearch`, não leitura primária da documentação oficial.
