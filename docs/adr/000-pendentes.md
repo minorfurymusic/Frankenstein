@@ -15,7 +15,7 @@ explícita.
 | [ADR-5](005-licenciamento-distribuicao.md) | Licenciamento e modelo de distribuição (revisão 3: fundamentação corrigida, clean room obrigatório, ficha fora das fontes de implementação) | tudo | proposto |
 | [ADR-6](006-sem-anuncios.md) | Sem anúncios em nenhuma superfície | — | **aceito** |
 | [ADR-7](007-canais-distribuicao-pagamento.md) | Canais de distribuição e meios de pagamento (revisão 3: mecanismo de vínculo do entitlement definido, regra de comunicação de plano utilizável) | F11 | **aceito** |
-| [ADR-8](008-multitenant-b2b-consentimento.md) | Multi-tenant B2B e modelo de consentimento — **pendente revisão após leitura de `docs/CUSTOS.md`** | F14 | proposto |
+| [ADR-8](008-multitenant-b2b-consentimento.md) | Multi-tenant B2B e modelo de consentimento (revisão 1: isolamento de banco decidido — schema separado por Organization, custo justificado por `docs/CUSTOS.md`) | F14 | proposto |
 | [ADR-9](009-gps.md) | GPS: precisão x bateria x privacidade | F8 | **aceito** |
 | [ADR-10](010-substitutos-livres.md) | Substitutos livres de dependências proprietárias | F2 | **aceito** |
 

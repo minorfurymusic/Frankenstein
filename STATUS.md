@@ -8,10 +8,12 @@
 ADR-4/4a/5/8 ainda propostas (você decidiu não esperar — não são
 bloqueadas por elas, ver Contexto do Ciclo 27 no histórico).
 **Ciclo atual:** 28 — leitura de `docs/CUSTOS.md` e revisão da ADR-8.
+**CONCLUÍDO** — ver histórico.
 **Ciclo 27:** **CONCLUÍDO** — bloqueio de sandbox superado via CI real
 (ver "Fechamento do Ciclo 27" abaixo).
-**Pendência anterior mantida:** ADR-8 (multi-tenant B2B) revisada depois
-de ler `docs/CUSTOS.md` de verdade — ciclo em andamento agora (28).
+**Pendência anterior:** ADR-8 revisada (revisão 1) com a lacuna de
+isolamento de banco decidida — continua **proposta**, não aceita
+(portão duplo: LGPD + arquitetura, precisa da sua confirmação explícita).
 
 ## Fechamento do Ciclo 27 — CI confirma o que o sandbox não deixa provar
 
@@ -56,7 +58,7 @@ código.
 | 1 | ADR-4 (wger/Fasten) | proposto (`docs/adr/004-wger-fasten.md`) |
 | 1 | ADR-4a (Gadgetbridge) | proposto (`docs/adr/004a-gadgetbridge.md`) |
 | 1 | ADR-7 (canais/pagamento) | **aceito, revisão 3** (`docs/adr/007-canais-distribuicao-pagamento.md`) — mecanismo de vínculo do entitlement (e-mail + código de uso único) definido; regra "estado do plano sim, venda não" substitui a proibição-tudo |
-| 1 | ADR-8 (multi-tenant B2B/consentimento) | proposto (`docs/adr/008-multitenant-b2b-consentimento.md`) — pendente revisão após leitura de `docs/CUSTOS.md` |
+| 1 | ADR-8 (multi-tenant B2B/consentimento) | proposto, **revisão 1** (`docs/adr/008-multitenant-b2b-consentimento.md`) — isolamento de banco decidido (schema por Organization), fundamentado em `docs/CUSTOS.md` |
 | 1 | ADR-5 (licenciamento) | proposto, **revisão 3** (`docs/adr/005-licenciamento-distribuicao.md`) — fundamentação principal agora é não herdar manutenção de repo de terceiro (não mais o precedente de 2010 não verificado); clean room obrigatório; `docs/recon/opennutritracker.md` removida das fontes válidas de implementação |
 | 1 | **11/11 ADRs registradas** | **7 aceitas** (ADR-1, 2, 3, 6, 7, 9, 10), 4 propostas (ADR-4, 4a, 5, 8) |
 | 2 | Esqueleto do monorepo (F2) | **CONCLUÍDO** — `make test`/`make lint`/`make build` passam de verdade em CI (`ubuntu-latest`, runs `31055829550`/`31056058975`, commit `386b711`); no sandbox de dev, `make build` Android e emulador continuam bloqueados por infra (sem SDK, sem KVM) |
@@ -514,3 +516,43 @@ código.
   literal — em CI real, não neste sandbox (sandbox não tem SDK Android
   nem `/dev/kvm`, limite de ambiente registrado e não insistido pela
   regra dos 3 attempts do `CLAUDE.md`).
+- **Ciclo 28 — ler `docs/CUSTOS.md` por completo e revisar a ADR-8.**
+  Objetivo único: resolver a pendência explícita deixada na ADR-8
+  (Opção 3, isolamento de banco entre `Organization`s) — proibido decidir
+  isso sem número de custo/escala na mão, por instrução direta.
+
+  `docs/CUSTOS.md` lido por completo (arquivo inteiro, 51 linhas, sem
+  resumir de memória). Fatos usados na decisão: VPS mínima (Hetzner
+  CX/CAX) ~EUR 5,50–6,00/mês com 20 TB de banda inclusos
+  (`docs/CUSTOS.md:24`); custo de servidor não escala por usuário/tenant,
+  escala por tráfego e por item explicitamente listado como "nunca
+  grátis" (`docs/CUSTOS.md:14-16`, onde "instância hospedada de
+  Fasten/wger" já aparece como exemplo desse padrão); cenário de 1.000
+  usuários gratuitos fica em ~US$23–30/mês dominado por Apple+MEI, não
+  por infraestrutura (`docs/CUSTOS.md:29-38`).
+
+  `docs/adr/008-multitenant-b2b-consentimento.md` revisado (revisão 1):
+  Opção 3 quebrada em 3a (instância dedicada por Organization — custo que
+  escala por tenant, categoria já listada como "nunca grátis"), 3b
+  (banco compartilhado, só coluna `organization_id`) e 3c (banco
+  compartilhado, schema separado por Organization). Decisão: **3c**. O
+  argumento não é custo — 3c e 3b custam o mesmo em dinheiro, porque o
+  custo de servidor é dominado por tráfego, não por schema — é risco:
+  esta é "a combinação mais sensível do projeto" (dado clínico, LGPD,
+  terceiro lendo), e um `WHERE organization_id = ?` esquecido é o tipo de
+  bug que vaza dado entre clínicas sem sinal visível. Schema separado
+  torna essa classe de bug estruturalmente mais difícil de escrever por
+  acidente, sem custar mais caro. 3a fica registrado como upgrade futuro
+  possível, não padrão — contradiria "web, multi-tenant" já especificado
+  em `docs/B2B.md:27`.
+
+  `docs/adr/000-pendentes.md` e `STATUS.md` atualizados para refletir a
+  revisão 1. **Status da ADR-8 continua proposto** — portão duplo
+  (LGPD + arquitetura), decisão de aceitar é sua, não foi tomada aqui.
+
+  **Não verificado:** requisito específico da LGPD para retenção/conteúdo
+  do log de acesso por terceiro (já registrado como pendência antes desta
+  revisão, não mudou); em que ponto de escala 3c deixaria de bastar e um
+  cliente exigiria 3a — sem gatilho numérico definido.
+
+  **Débito técnico:** nenhum novo.

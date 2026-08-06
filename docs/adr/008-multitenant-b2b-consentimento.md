@@ -2,6 +2,9 @@
 
 **Status:** proposto
 **Data:** 2026-08-05
+**Revisão:** 1 (2026-08-06) — lacuna de isolamento de banco (Opção 3)
+resolvida depois de ler `docs/CUSTOS.md` por completo, como pedido antes de
+tocar nesta ADR de novo.
 
 ## Contexto
 
@@ -40,13 +43,18 @@ paciente; AGPL no servidor implica rota `/source` — já citado e usado em
    **banco compartilhado com escopo por `organization_id` em cada linha**
    — `docs/B2B.md` não decide isso, é uma lacuna técnica real que esta ADR
    expõe.
+   - 3a. Banco/instância dedicada por `Organization`.
+   - 3b. Banco compartilhado, isolamento só por coluna `organization_id`
+     e filtro de aplicação em cada query.
+   - 3c. Banco compartilhado, isolamento por **schema separado por
+     `Organization`** dentro da mesma instância de servidor — meio-termo
+     entre 3a e 3b.
 
 ## Decisão
 
-**Opção 1**, com a lacuna da opção 3 registrada como pendência, não
-decidida aqui — decisão de isolamento de banco é implementação, não
-modelo de consentimento, e exige dado de custo/escala que não tenho
-(não li `docs/CUSTOS.md` neste ciclo, fora da área tocada por esta ADR).
+**Opção 1**, mais **Opção 3c** para o isolamento de banco — decidida
+agora que `docs/CUSTOS.md` foi lido por completo (era a pendência
+explícita para reabrir esta ADR).
 
 O modelo de consentimento fica exatamente como `docs/B2B.md` já
 especifica: `CareLink` é o objeto de consentimento — escopo granular por
@@ -55,6 +63,45 @@ Isso já é compatível com o que ADR-3 (proposta) definiu para o Health Data
 Core: `CareLink` não duplica dado, só concede escopo de leitura/escrita
 sobre o mesmo `HealthEvent` log que já existe no aparelho do paciente —
 quando sincronizado (Premium/B2B), não antes.
+
+**Isolamento de banco — 3c, schema separado por `Organization`, mesma
+instância de servidor.** Fundamentação a partir de `docs/CUSTOS.md`:
+
+- O custo de servidor não é dominado por quantidade de tenants, é
+  dominado por tráfego — a VPS mínima já inclui 20 TB de banda por
+  ~EUR 5,50–6,00/mês (`docs/CUSTOS.md:24`). Rodar N schemas Postgres na
+  mesma instância, em vez de uma tabela só com coluna `organization_id`,
+  não muda essa conta: o custo em dinheiro de 3c é igual ao de 3b até a
+  VPS mínima ficar pequena de verdade (não é o caso previsto nos
+  cenários de `docs/CUSTOS.md:29-38`, nem no de 1.000 usuários gratuitos
+  nem no de crescimento de assinantes pagos).
+- 3a (instância dedicada por `Organization`) é o padrão de custo que
+  `docs/CUSTOS.md:14-16` já lista como "escala com usuário, nunca
+  grátis" — mesma categoria de "instância hospedada de Fasten/wger".
+  Faria sentido para clínicas muito grandes pedindo isolamento físico
+  contratual, mas não é o ponto de partida: multiplicaria o custo fixo
+  por cliente B2B sem necessidade, e `docs/B2B.md:27` já especifica o
+  painel como "web, multi-tenant" — uma instância por cliente contradiz
+  isso.
+- 3b (só coluna `organization_id` + filtro na aplicação) é a opção mais
+  barata e mais simples de implementar, mas o próprio texto desta ADR
+  (linha 60 da versão original) já chama a combinação B2B de "a mais
+  sensível do projeto" — dado clínico de paciente, terceiro (profissional)
+  lendo, LGPD. Um filtro de `WHERE organization_id = ?` esquecido em uma
+  query é o tipo de bug que vaza dado de uma clínica para outra sem
+  nenhum sinal visível até virar incidente. `docs/CUSTOS.md` não tem
+  informação de custo que justifique correr esse risco: schema separado
+  não custa mais caro em dinheiro (primeiro ponto acima), então não há
+  trade-off financeiro real a proteger escolhendo 3b sobre 3c.
+- 3c dá isolamento estrutural (um schema não enxerga outro sem trocar a
+  conexão/`search_path` explicitamente — a classe inteira de bug do
+  parágrafo acima fica muito mais difícil de escrever por acidente),
+  mantendo o custo de 3b e a arquitetura "web, multi-tenant, uma
+  instância" de `docs/B2B.md:27`.
+
+Isolamento físico por cliente (3a) fica registrado como upgrade possível
+depois, se um cliente B2B grande exigir isolamento contratual/físico —
+não é o padrão.
 
 **Isto está proposto, não aceito.** Portão duplo: dado de saúde (LGPD) e
 arquitetura — a combinação mais sensível do projeto.
@@ -74,14 +121,26 @@ arquitetura — a combinação mais sensível do projeto.
   app do paciente (já exigido como "separado" em `docs/B2B.md:27` —
   reforça a separação de shell que ADR-1 propõe para o app principal), e
   qualquer anúncio em superfície B2B (já decidido, ADR-6 aceito).
+- **Fica mais difícil (nova, da revisão 1):** toda migration de schema
+  do servidor precisa rodar por `Organization` (N schemas em vez de 1),
+  e a conexão de cada request do painel B2B precisa resolver o
+  `Organization` primeiro e fixar o `search_path`/schema certo antes de
+  qualquer query — camada de roteamento que não existiria com 3b. É o
+  preço deliberado por trocar "fácil de implementar" por "difícil de
+  vazar dado entre clínicas por acidente".
+- **Passa a ser proibido (nova, da revisão 1):** qualquer query do painel
+  B2B que resolva o schema/`organization_id` a partir de dado vindo do
+  cliente sem revalidar contra a sessão autenticada no servidor — normal
+  para qualquer isolamento multi-tenant, mas vale registrar porque é
+  exatamente a classe de bug que 3c existe para tornar mais difícil, não
+  impossível.
 
 ## Não verificado
 
-- Isolamento de dados entre `Organization`s: banco separado vs. escopo
-  compartilhado por `organization_id` — lacuna técnica real, não decidida
-  aqui, precisa de dado de custo/escala (`docs/CUSTOS.md`, não lido neste
-  ciclo) e possivelmente de uma ADR própria se for decisão grande o
-  suficiente.
+- Em que ponto de crescimento 3c (schema compartilhado) para de ser
+  suficiente e algum cliente B2B precisa de 3a (instância dedicada) —
+  não há gatilho numérico definido, só o registro de que é upgrade
+  possível depois.
 - Requisito específico da LGPD para log de acesso a dado de saúde por
   terceiro (profissional) — `docs/B2B.md` já assume que precisa existir,
   mas não verifiquei o texto da lei linha a linha para confirmar o nível
