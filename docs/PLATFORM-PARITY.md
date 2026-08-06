@@ -30,10 +30,22 @@ como decisão.
 
 ## Gap 2 — Gadgetbridge / wearable: Health Connect não existe no iOS
 
-**Fonte:** `docs/adr/004a-gadgetbridge.md` — a rota proposta (FEDERATE)
-depende do Android Health Connect, que é um componente do AOSP
+**Fonte:** `docs/adr/004a-gadgetbridge.md` (aceita no Ciclo 30) — a rota
+FEDERATE depende do Android Health Connect, que é um componente do AOSP
 (`docs/recon/gadgetbridge.md` cita isso na integração) — não existe
 equivalente no iOS por definição, é infraestrutura específica do Android.
+
+**Sub-gap dentro do próprio Android, registrado no Ciclo 30:** Health
+Connect só é nativo (parte do sistema) a partir do **Android 14**. Em
+Android 13 ou anterior, o usuário precisa instalar o app proprietário
+Health Connect da Play Store para o mesmo caminho funcionar — dependência
+proprietária que não é do Frankstein (nenhum código proprietário entra no
+projeto), mas do **aparelho do usuário**, condicionada à versão do Android
+dele. Isso é um eixo diferente dos perfis A/B/C de `docs/adr/002-modelo-llm.md`
+(que são por RAM disponível para o LLM local) — não tentei encaixar aqui
+para não confundir os dois. Se fizer sentido ter um conceito de "perfil de
+dispositivo" que combine RAM *e* versão do Android, isso é uma ADR/decisão
+nova, não uma extensão da ADR-2 por conta própria.
 
 **Consequência:** no iOS, a fonte de dados de wearable não pode ser
 Health Connect. `docs/ARQUITETURA.md:74` já aponta o candidato óbvio:

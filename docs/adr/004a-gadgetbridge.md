@@ -1,10 +1,11 @@
 # ADR-4a — Gadgetbridge: FEDERATE via Health Connect ou fork sob AGPL?
 
-**Status:** proposto
+**Status:** aceito (confirmação explícita em 2026-08-06, depois da
+revisão 2 — condição de primeira mão finalmente cumprida)
 **Data:** 2026-08-05
-**Revisão:** 1 (2026-08-06) — tentativa de confirmação de primeira mão,
-ver "Achado (Ciclo 29)" abaixo. Continua proposta: a condição que a
-própria ADR exige não foi cumprida por completo.
+**Revisão:** 2 (2026-08-06) — confirmação de primeira mão obtida por você,
+fora deste ambiente (rede segue bloqueada aqui — ver "Achado (Ciclo 29)").
+Ver "Achado (Ciclo 30)" abaixo.
 
 ## Contexto
 
@@ -34,24 +35,24 @@ desta ADR.
 
 ## Decisão
 
-**Opção 1: FEDERATE via Android Health Connect.**
+**Opção 1: FEDERATE via Android Health Connect. Aceita.**
 
 O achado do Ciclo 7 (`docs/recon/gadgetbridge.md`, seção "Achado (Ciclo 7)")
-aponta que o Gadgetbridge **escreve** no Health Connect — duas fontes via
-`WebSearch` convergem: a página oficial de integração (permissões
-`WRITE_STEPS`, `WRITE_HEART_RATE`, `WRITE_SLEEP` citadas) e a listagem de
-permissões do F-Droid (derivada do manifesto do APK, fonte mais primária).
-Isso é o bastante para **propor** a opção 1, mas não para aceitá-la sem
-ressalva.
+apontou que o Gadgetbridge **escreve** no Health Connect — duas fontes via
+`WebSearch` convergiam, mas nenhuma era leitura de primeira mão. O Ciclo 29
+tentou de novo e não conseguiu (rede deste ambiente bloqueia `codeberg.org`,
+`gadgetbridge.org` e `f-droid.org` — ver "Achado (Ciclo 29)" abaixo). A
+condição ficou pendente até você trazer, no Ciclo 30, a confirmação que
+faltava — obtida por você, fora deste ambiente, do mesmo jeito que a ficha
+original foi produzida.
 
-**Isto está proposto, não aceito — com uma condição explícita para
-aceitar:** a fonte do achado é busca indexada, não leitura direta do
-manifesto/código (o proxy deste ambiente bloqueou tanto `codeberg.org`
-quanto `gadgetbridge.org` — ver `docs/recon/gadgetbridge.md`). Antes de F9
-(`docs/PRODUTO.md:51`, "Wearable BLE") depender disso de verdade,
-confirme lendo o `AndroidManifest.xml`/código de sync do Gadgetbridge
-diretamente, fora deste ambiente, do mesmo jeito que a ficha inteira foi
-produzida.
+**Condição cumprida — ver "Achado (Ciclo 30)" abaixo.** Permissão de
+escrita declarada no manifesto do APK publicado (via listagem do F-Droid,
+que extrai as permissões do binário distribuído — é o mesmo tipo de
+evidência que a revisão anterior já chamava de "fonte mais primária", só
+que agora com o texto literal das permissões, não um resumo de busca) é a
+confirmação de primeira mão que esta ADR exigia. Documentação oficial do
+projeto corrobora o alcance e a direção (provedor de dado, não consumidor).
 
 ## Consequências
 
@@ -68,6 +69,59 @@ produzida.
 - **Passa a ser proibido:** copiar qualquer trecho de código do
   Gadgetbridge "só para consultar como faz" — risco de contaminação de
   licença que a própria ficha já sinaliza como alto e permanente.
+- **Fica mais fácil (nova, Ciclo 30):** dado do Health Connect fica no
+  aparelho, sem envio a servidor externo nem ao Google — coerente com
+  offline-first sem desenho adicional, é a garantia que o próprio Health
+  Connect já dá por definição de plataforma.
+- **Fica mais difícil (nova, Ciclo 30):** Health Connect é nativo do AOSP
+  só a partir do Android 14. Em Android 13 ou anterior, o usuário precisa
+  instalar o app proprietário da Play Store para ter Health Connect — uma
+  dependência proprietária **condicional à versão do Android do
+  aparelho**, não ao Frankstein em si (o Frankstein não depende de nada
+  proprietário; o *usuário* pode precisar instalar algo proprietário da
+  Play Store dependendo do Android dele). Registrado em
+  `docs/PLATFORM-PARITY.md`, Gap 2 — **não** entra nos perfis A/B/C da
+  ADR-2, que são por RAM disponível para o LLM, um eixo diferente deste
+  (versão do Android). Ver nota nessa ADR se isso causar confusão.
+
+## Achado (Ciclo 30) — confirmação de primeira mão, trazida por você
+
+Você trouxe a confirmação que faltava desde a revisão original, obtida
+fora deste ambiente (mesma situação da ficha original de reconhecimento —
+rede daqui não alcança nenhuma das três fontes primárias, confirmado de
+novo no Ciclo 29).
+
+**1. Permissões extraídas do APK publicado, via F-Droid.** A página do
+pacote `nodomain.freeyourgadget.gadgetbridge` no F-Droid lista permissões
+extraídas do APK em produção, incluindo `android.permission.health.WRITE_STEPS`,
+`WRITE_SLEEP`, `WRITE_RESTING_HEART_RATE`, `WRITE_WEIGHT`, `WRITE_VO2_MAX`,
+`WRITE_TOTAL_CALORIES_BURNED`. Permissão de **escrita** declarada no
+manifesto do binário que usuários reais instalam — não é código-fonte que
+eu li linha a linha, mas é a mesma classe de evidência (manifesto, não
+busca), extraída de fora do projeto (F-Droid), de um artefato publicado.
+
+**2. Documentação oficial confirma o alcance.**
+`gadgetbridge.org/basics/integrations/health-connect/` lista os tipos
+sincronizados: passos, distância, frequência cardíaca, SpO₂, glicose, VFC,
+temperatura, frequência respiratória, FC de repouso, sessões de sono,
+peso, VO₂ máx e sessões de exercício. Recurso lançado na versão 0.89.0 —
+bate com o achado do Ciclo 29 (release note "Two big new features", PR
+`#4481`), explicando por que o mirror arquivado do GitHub (item 2 do
+Ciclo 29) não tinha nada disso: a feature é posterior ao arquivamento.
+
+**3. Direção confirmada.** A documentação descreve o Gadgetbridge como
+**provedor** de dado no Health Connect, outros apps como consumidores —
+exatamente a direção que a Opção 1 (FEDERATE) precisa para funcionar.
+
+**Ressalva de atribuição, por honestidade de processo:** eu não abri
+`f-droid.org` nem `gadgetbridge.org` neste ciclo — tentei repetidamente
+nos Ciclos 0 e 29 e os três domínios continuam bloqueados pela rede deste
+ambiente. Esta confirmação vem de você, da mesma forma que
+`docs/recon/gadgetbridge.md` já foi produzida (nota no topo do próprio
+arquivo). Registro isso não para enfraquecer a decisão — o padrão de
+evidência (permissão declarada no manifesto do binário publicado) é
+sólido — mas porque a regra 2 do `CLAUDE.md` proíbe citar como "lido por
+mim" o que não abri.
 
 ## Achado (Ciclo 29) — tentativa de leitura de primeira mão
 
@@ -128,12 +182,15 @@ com isso.
 
 ## Não verificado
 
-- A direção de escrita do Gadgetbridge no Health Connect no `master`
-  atual do codeberg — não lido de primeira mão (rede bloqueada), só
-  inferido por busca indexada (item 3 acima) e por um mirror desatualizado
-  que mostra ausência da feature antes de 2026-02-24 (item 2 acima).
-- Se a PR `#4481` foi de fato mergeada, e em que data — não confirmado,
-  só a existência da PR/issue via busca.
-- Esta ADR fica **proposta** e não deve virar **aceita** sem confirmação
-  de primeira mão do `master` atual — a mesma condição da revisão
-  original, ainda não satisfeita.
+- **Resolvido no Ciclo 30** (histórico, não mais pendência): direção de
+  escrita do Gadgetbridge no Health Connect — confirmada por permissão
+  declarada no APK publicado (F-Droid) + documentação oficial.
+- Equivalente ao Health Connect no iOS (HealthKit) — o Gadgetbridge é
+  Android-only (`docs/recon/gadgetbridge.md`, seção Plataformas), então
+  esta ADR não resolve o iOS. Já registrado como gap aberto em
+  `docs/PLATFORM-PARITY.md`, Gap 2 — não investigado ainda, fora do
+  escopo desta ADR.
+- Se a PR `#4481` do codeberg foi de fato o commit que introduziu a
+  feature, e a data exata — não é mais necessário para a decisão (a
+  documentação oficial e a permissão do APK já bastam), mas fica como
+  curiosidade não fechada.

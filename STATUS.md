@@ -5,23 +5,31 @@
 > partir de outra branch estão lendo estado desatualizado.
 
 **Fase:** 2 — esqueleto do monorepo. Iniciada por instrução direta, com
-ADR-4/4a/5 ainda propostas (você decidiu não esperar — não são
-bloqueadas por elas, ver Contexto do Ciclo 27 no histórico).
-**Ciclo atual:** 32 — relatório de eficiência (`docs/EFICIENCIA.md`).
-**CONCLUÍDO, nada implementado ainda** (por instrução — só medir e propor
-neste ciclo). Numeração do usuário; Ciclos 30–31 não existem no histórico
-desta sessão, não inventados aqui.
+ADR-4/5 ainda propostas (você decidiu não esperar — não são bloqueadas
+por elas, ver Contexto do Ciclo 27 no histórico).
+**Ciclo atual:** 30 (numeração sua) — ADR-4a fechada como **aceita**, com
+a confirmação de primeira mão que faltava, trazida por você.
+**Nota de numeração:** sua mensagem do Ciclo 30 também listava Ciclo 32
+(relatório de eficiência) e "Ciclos 33+" (esqueleto do monorepo Fase 2) —
+os dois **já aconteceram nesta sessão**, com outra numeração: o esqueleto
+do monorepo é o Ciclo 27 (concluído, CI verde) e o relatório de eficiência
+é o próprio Ciclo 32 que você pediu antes desta mensagem (concluído,
+`docs/EFICIENCIA.md`). Não refeito aqui — regra 3 do `CLAUDE.md` proíbe
+reapresentar trabalho existente como novo. Sinalizado no relatório deste
+ciclo para você confirmar se é isso mesmo ou se há um Ciclo 33+ diferente
+em mente.
 **Ciclo 29:** **CONCLUÍDO** — tentativa de confirmação de primeira mão da
-ADR-4a (Gadgetbridge/Health Connect), ADR continua proposta.
+ADR-4a, sem sucesso (rede bloqueada); resolvido agora no Ciclo 30.
 **Ciclo 28:** **CONCLUÍDO** — ADR-8 revisada e **aceita** por confirmação
 explícita em 2026-08-06.
 **Ciclo 27:** **CONCLUÍDO** — bloqueio de sandbox superado via CI real
 (ver "Fechamento do Ciclo 27" abaixo).
 **main sincronizado com a branch designada** em 2026-08-06 (fast-forward,
 `8a34c86`) — as duas ficaram idênticas até este ponto.
-**Pendência nova:** aplicar Grupo A de `docs/EFICIENCIA.md` no próximo
-ciclo e medir antes/depois. Grupo B (mover histórico para
+**Pendência:** aplicar Grupo A de `docs/EFICIENCIA.md` e medir antes/depois
+(autorizado, ainda não executado). Grupo B (mover histórico para
 `docs/HISTORICO.md`) aguarda sua aprovação — toca `CLAUDE.md`.
+**ADR-4** (wger/Fasten) segue proposta — próxima da fila (seu "Ciclo 31").
 
 ## Fechamento do Ciclo 27 — CI confirma o que o sandbox não deixa provar
 
@@ -64,11 +72,11 @@ código.
 | 1 | ADR-3 (fonte da verdade/sync) | **aceito** (`docs/adr/003-fonte-verdade-sync.md`) |
 | 1 | ADR-2 (modelo LLM) | **aceito** (`docs/adr/002-modelo-llm.md`) |
 | 1 | ADR-4 (wger/Fasten) | proposto (`docs/adr/004-wger-fasten.md`) |
-| 1 | ADR-4a (Gadgetbridge) | proposto, **revisão 1** (`docs/adr/004a-gadgetbridge.md`) — tentativa de leitura de primeira mão feita (mirror do GitHub lido de verdade, mas arquivado/desatualizado); condição de aceite ainda não cumprida |
+| 1 | ADR-4a (Gadgetbridge) | **aceito, revisão 2** (`docs/adr/004a-gadgetbridge.md`) — escrita no Health Connect confirmada por permissão declarada no APK publicado (F-Droid) + documentação oficial, trazida por você |
 | 1 | ADR-7 (canais/pagamento) | **aceito, revisão 3** (`docs/adr/007-canais-distribuicao-pagamento.md`) — mecanismo de vínculo do entitlement (e-mail + código de uso único) definido; regra "estado do plano sim, venda não" substitui a proibição-tudo |
 | 1 | ADR-8 (multi-tenant B2B/consentimento) | **aceito, revisão 1** (`docs/adr/008-multitenant-b2b-consentimento.md`) — isolamento de banco decidido (schema por Organization), fundamentado em `docs/CUSTOS.md`; confirmação explícita em 2026-08-06 |
 | 1 | ADR-5 (licenciamento) | proposto, **revisão 3** (`docs/adr/005-licenciamento-distribuicao.md`) — fundamentação principal agora é não herdar manutenção de repo de terceiro (não mais o precedente de 2010 não verificado); clean room obrigatório; `docs/recon/opennutritracker.md` removida das fontes válidas de implementação |
-| 1 | **11/11 ADRs registradas** | **8 aceitas** (ADR-1, 2, 3, 6, 7, 8, 9, 10), 3 propostas (ADR-4, 4a, 5) |
+| 1 | **11/11 ADRs registradas** | **9 aceitas** (ADR-1, 2, 3, 4a, 6, 7, 8, 9, 10), 2 propostas (ADR-4, 5) |
 | 2 | Esqueleto do monorepo (F2) | **CONCLUÍDO** — `make test`/`make lint`/`make build` passam de verdade em CI (`ubuntu-latest`, runs `31055829550`/`31056058975`, commit `386b711`); no sandbox de dev, `make build` Android e emulador continuam bloqueados por infra (sem SDK, sem KVM) |
 | — | Relatório de eficiência (`docs/EFICIENCIA.md`) | **pronto, nada aplicado ainda** — medido com dados literais do transcript da sessão; 5 propostas Grupo A (aplico sozinho) e 1 proposta Grupo B (mexe em `CLAUDE.md`, precisa aprovação) |
 
@@ -672,5 +680,52 @@ código.
   **Não verificado:** se as propostas do Grupo A, uma vez aplicadas,
   realmente produzem a economia estimada aqui — é medição prevista para o
   próximo ciclo (antes/depois), não confirmada ainda.
+
+  **Débito técnico:** nenhum novo.
+
+- **Ciclo 30 (numeração sua — cronologicamente depois do Ciclo 32 nesta
+  sessão) — fechar a ADR-4a como aceita.** Objetivo único: registrar a
+  confirmação de primeira mão que faltava desde a revisão original,
+  trazida por você.
+
+  `docs/adr/004a-gadgetbridge.md` (revisão 2): status **aceito**. Achado
+  novo registrado por completo — permissões extraídas do APK publicado do
+  Gadgetbridge, via página do F-Droid (`nodomain.freeyourgadget.gadgetbridge`):
+  `android.permission.health.WRITE_STEPS`, `WRITE_SLEEP`,
+  `WRITE_RESTING_HEART_RATE`, `WRITE_WEIGHT`, `WRITE_VO2_MAX`,
+  `WRITE_TOTAL_CALORIES_BURNED`. Documentação oficial
+  (`gadgetbridge.org/basics/integrations/health-connect/`) confirma o
+  alcance (passos, distância, FC, SpO₂, glicose, VFC, temperatura, FC de
+  repouso, sono, peso, VO₂ máx, exercício) e a direção (Gadgetbridge é
+  provedor de dado, não consumidor) — recurso da versão 0.89.0, bate com
+  o achado indireto do Ciclo 29 (PR `#4481`, release "two big new
+  features").
+
+  **Ressalva registrada na própria ADR:** eu não abri `f-droid.org` nem
+  `gadgetbridge.org` — tentei nos Ciclos 0 e 29, os três domínios
+  primários continuam bloqueados pela rede deste ambiente. A confirmação
+  vem de você, fora deste ambiente, do mesmo jeito que
+  `docs/recon/gadgetbridge.md` já tinha sido produzida. Registrado assim
+  por honestidade de processo (regra 2 do `CLAUDE.md`), não porque a
+  evidência seja fraca — permissão declarada no manifesto do APK
+  publicado é evidência de primeira mão de verdade, só que de outra
+  pessoa, não minha.
+
+  Dois detalhes novos registrados: (1) dado do Health Connect fica no
+  aparelho, sem envio a servidor externo nem ao Google — consequência
+  nova, coerente com offline-first; (2) Health Connect só é nativo a
+  partir do Android 14 — em Android 13 ou anterior o usuário precisa do
+  app proprietário da Play Store. Isso foi para `docs/PLATFORM-PARITY.md`
+  (Gap 2), **não** para os perfis A/B/C da ADR-2 — aqueles são por RAM
+  para o LLM, este é por versão do Android, eixo diferente. Não forcei o
+  encaixe; registrei como pendência se você quiser um conceito novo de
+  "perfil de dispositivo" que combine os dois eixos.
+
+  `docs/adr/000-pendentes.md` e `STATUS.md` atualizados — **9/11 ADRs
+  aceitas** agora (ADR-1, 2, 3, 4a, 6, 7, 8, 9, 10), 2 propostas
+  (ADR-4, 5).
+
+  **Não verificado:** equivalente iOS (HealthKit) — fora do escopo desta
+  ADR, já registrado como gap aberto em `docs/PLATFORM-PARITY.md`.
 
   **Débito técnico:** nenhum novo.
