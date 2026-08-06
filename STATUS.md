@@ -5,15 +5,17 @@
 > partir de outra branch estão lendo estado desatualizado.
 
 **Fase:** 2 — esqueleto do monorepo. Iniciada por instrução direta, com
-ADR-4/4a/5/8 ainda propostas (você decidiu não esperar — não são
+ADR-4/4a/5 ainda propostas (você decidiu não esperar — não são
 bloqueadas por elas, ver Contexto do Ciclo 27 no histórico).
-**Ciclo atual:** 28 — leitura de `docs/CUSTOS.md` e revisão da ADR-8.
-**CONCLUÍDO** — ver histórico.
+**Ciclo atual:** 29 — tentativa de confirmação de primeira mão da ADR-4a
+(Gadgetbridge/Health Connect). **CONCLUÍDO, ADR continua proposta** —
+ver histórico.
+**Ciclo 28:** **CONCLUÍDO** — ADR-8 revisada e **aceita** por confirmação
+explícita em 2026-08-06.
 **Ciclo 27:** **CONCLUÍDO** — bloqueio de sandbox superado via CI real
 (ver "Fechamento do Ciclo 27" abaixo).
-**Pendência anterior:** ADR-8 revisada (revisão 1) com a lacuna de
-isolamento de banco decidida — continua **proposta**, não aceita
-(portão duplo: LGPD + arquitetura, precisa da sua confirmação explícita).
+**main sincronizado com a branch designada** em 2026-08-06 (fast-forward,
+`8a34c86`) — as duas ficaram idênticas até este ponto.
 
 ## Fechamento do Ciclo 27 — CI confirma o que o sandbox não deixa provar
 
@@ -56,11 +58,11 @@ código.
 | 1 | ADR-3 (fonte da verdade/sync) | **aceito** (`docs/adr/003-fonte-verdade-sync.md`) |
 | 1 | ADR-2 (modelo LLM) | **aceito** (`docs/adr/002-modelo-llm.md`) |
 | 1 | ADR-4 (wger/Fasten) | proposto (`docs/adr/004-wger-fasten.md`) |
-| 1 | ADR-4a (Gadgetbridge) | proposto (`docs/adr/004a-gadgetbridge.md`) |
+| 1 | ADR-4a (Gadgetbridge) | proposto, **revisão 1** (`docs/adr/004a-gadgetbridge.md`) — tentativa de leitura de primeira mão feita (mirror do GitHub lido de verdade, mas arquivado/desatualizado); condição de aceite ainda não cumprida |
 | 1 | ADR-7 (canais/pagamento) | **aceito, revisão 3** (`docs/adr/007-canais-distribuicao-pagamento.md`) — mecanismo de vínculo do entitlement (e-mail + código de uso único) definido; regra "estado do plano sim, venda não" substitui a proibição-tudo |
-| 1 | ADR-8 (multi-tenant B2B/consentimento) | proposto, **revisão 1** (`docs/adr/008-multitenant-b2b-consentimento.md`) — isolamento de banco decidido (schema por Organization), fundamentado em `docs/CUSTOS.md` |
+| 1 | ADR-8 (multi-tenant B2B/consentimento) | **aceito, revisão 1** (`docs/adr/008-multitenant-b2b-consentimento.md`) — isolamento de banco decidido (schema por Organization), fundamentado em `docs/CUSTOS.md`; confirmação explícita em 2026-08-06 |
 | 1 | ADR-5 (licenciamento) | proposto, **revisão 3** (`docs/adr/005-licenciamento-distribuicao.md`) — fundamentação principal agora é não herdar manutenção de repo de terceiro (não mais o precedente de 2010 não verificado); clean room obrigatório; `docs/recon/opennutritracker.md` removida das fontes válidas de implementação |
-| 1 | **11/11 ADRs registradas** | **7 aceitas** (ADR-1, 2, 3, 6, 7, 9, 10), 4 propostas (ADR-4, 4a, 5, 8) |
+| 1 | **11/11 ADRs registradas** | **8 aceitas** (ADR-1, 2, 3, 6, 7, 8, 9, 10), 3 propostas (ADR-4, 4a, 5) |
 | 2 | Esqueleto do monorepo (F2) | **CONCLUÍDO** — `make test`/`make lint`/`make build` passam de verdade em CI (`ubuntu-latest`, runs `31055829550`/`31056058975`, commit `386b711`); no sandbox de dev, `make build` Android e emulador continuam bloqueados por infra (sem SDK, sem KVM) |
 
 ## Decisões já tomadas (não reabrir sem motivo novo)
@@ -547,8 +549,12 @@ código.
   em `docs/B2B.md:27`.
 
   `docs/adr/000-pendentes.md` e `STATUS.md` atualizados para refletir a
-  revisão 1. **Status da ADR-8 continua proposto** — portão duplo
-  (LGPD + arquitetura), decisão de aceitar é sua, não foi tomada aqui.
+  revisão 1. Ao final do ciclo, status ficou como **proposto** — portão
+  duplo (LGPD + arquitetura), decisão de aceitar não foi tomada neste
+  ciclo. **Atualização (Ciclo 29):** você confirmou explicitamente
+  ("Sim, aceita") depois de ver a ADR — status corrigido para **aceito**
+  neste arquivo e em `docs/adr/008-multitenant-b2b-consentimento.md` e
+  `docs/adr/000-pendentes.md`.
 
   **Não verificado:** requisito específico da LGPD para retenção/conteúdo
   do log de acesso por terceiro (já registrado como pendência antes desta
@@ -556,3 +562,63 @@ código.
   cliente exigiria 3a — sem gatilho numérico definido.
 
   **Débito técnico:** nenhum novo.
+
+- **Ciclo 29 — ADR-8 aceita; sincronizar `main`; tentar confirmação de
+  primeira mão da ADR-4a.** Três coisas nesta ordem, por instrução direta.
+
+  **1. `main` sincronizado com a branch designada.** `main` estava um
+  commit atrás (`386b711`) da `claude/frankstein-kit-setup-px5suj`
+  (`8a34c86`) desde o fechamento do Ciclo 27. `386b711` é ancestral
+  direto de `8a34c86` — fast-forward puro (`git merge --ff-only`), sem
+  divergência, sem reescrever nada. As duas branches ficaram idênticas em
+  `8a34c86`.
+
+  **2. ADR-8 aceita.** Você confirmou explicitamente depois de eu
+  perguntar se "Perfeito a ADR8" contava como aceite formal (o projeto
+  exige confirmação explícita, "perfeito" sozinho é elogio, não decisão
+  registrável). Resposta: "Sim, aceita". `docs/adr/008-multitenant-b2b-consentimento.md`,
+  `docs/adr/000-pendentes.md` e `STATUS.md` atualizados — **8/11 ADRs
+  aceitas** agora (ADR-1, 2, 3, 6, 7, 8, 9, 10), 3 propostas (ADR-4, 4a, 5).
+
+  **3. Tentativa de confirmação de primeira mão da ADR-4a (Gadgetbridge).**
+  Você delegou a escolha entre ADR-4 e ADR-4a — escolhi ADR-4a por
+  bloquear a fase mais cedo (F9, contra F13 da ADR-4). A própria ADR-4a
+  exige leitura direta do manifesto/código do Gadgetbridge antes de
+  aceitar — nunca cumprida (rede bloqueada desde o Ciclo 0). Tentei de
+  novo: `codeberg.org`, `gadgetbridge.org` e `f-droid.org` continuam
+  bloqueados (`HTTP 403`, `CONNECT tunnel failed`, três domínios
+  testados). Achei um mirror no GitHub que **não** está bloqueado
+  (`raw.githubusercontent.com`) e li de verdade — prova literal:
+  ```
+  $ curl raw.githubusercontent.com/.../AndroidManifest.xml | grep -in health
+  (nenhum resultado)
+  $ curl raw.githubusercontent.com/.../build.gradle | grep -in health
+  (nenhum resultado)
+  $ curl raw.githubusercontent.com/.../CHANGELOG.md | grep -in "health connect"
+  (nenhum resultado, 2480 linhas)
+  ```
+  Contradiz o achado do Ciclo 7 — até que descobri, pela própria página do
+  GitHub, que esse mirror está **arquivado desde 2026-02-24** ("Gadgetbridge
+  is now hosted on codeberg.org"). É leitura de primeira mão real, só que
+  de um snapshot congelado, não do `master` de hoje. `WebSearch` de novo
+  achou algo mais específico que o achado original: PR `#4481` ("Health
+  Connect Integration"), issue `#3121`, e um release note "0.89.0: Two big
+  new features" — consistente com a feature ter sido mergeada depois do
+  arquivamento do mirror, o que explicaria a ausência no snapshot.
+
+  **Status final: ADR-4a continua proposta.** A condição que ela mesma
+  exige (leitura direta do código atual) não foi cumprida — mais evidência
+  indireta convergente não é a mesma coisa que primeira mão. Registrado
+  por completo em `docs/adr/004a-gadgetbridge.md`, seção "Achado (Ciclo 29)".
+
+  **Não verificado:** direção real de escrita do Gadgetbridge no `master`
+  atual do codeberg; se/quando a PR `#4481` foi mergeada.
+
+  **Débito técnico:** nenhum novo.
+
+  **Bloqueio:** preciso de você para destravar a ADR-4a — a rede deste
+  ambiente não alcança nenhuma das três fontes primárias (codeberg,
+  gadgetbridge.org, F-Droid). Se puder colar o `AndroidManifest.xml`
+  atual do Gadgetbridge (ou confirmar se a PR `#4481` foi mergeada e
+  quando), a ADR sai do impasse. Ou, se preferir, posso seguir para a
+  ADR-4 (wger/Fasten) enquanto isso fica em aberto.

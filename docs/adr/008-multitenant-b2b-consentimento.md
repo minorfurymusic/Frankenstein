@@ -1,6 +1,6 @@
 # ADR-8 — Multi-tenant B2B e modelo de consentimento
 
-**Status:** proposto
+**Status:** aceito (confirmação explícita em 2026-08-06, depois da revisão 1)
 **Data:** 2026-08-05
 **Revisão:** 1 (2026-08-06) — lacuna de isolamento de banco (Opção 3)
 resolvida depois de ler `docs/CUSTOS.md` por completo, como pedido antes de
@@ -103,8 +103,9 @@ Isolamento físico por cliente (3a) fica registrado como upgrade possível
 depois, se um cliente B2B grande exigir isolamento contratual/físico —
 não é o padrão.
 
-**Isto está proposto, não aceito.** Portão duplo: dado de saúde (LGPD) e
-arquitetura — a combinação mais sensível do projeto.
+**Aceito em 2026-08-06**, depois da revisão 1. Portão duplo (dado de
+saúde/LGPD e arquitetura — a combinação mais sensível do projeto)
+cumprido por confirmação explícita, não presumida.
 
 ## Consequências
 
