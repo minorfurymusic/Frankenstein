@@ -10,7 +10,7 @@ explícita.
 | [ADR-1](001-shell-multiplataforma.md) | Shell do app e estratégia multiplataforma | F2 | **aceito** |
 | [ADR-2](002-modelo-llm.md) | Modelo LLM, quantização, RAM mínima, perfis A/B/C | F5 | **aceito** |
 | [ADR-3](003-fonte-verdade-sync.md) | Fonte da verdade dos dados e estratégia de sync | F3 | **aceito** |
-| [ADR-4](004-wger-fasten.md) | wger/Fasten: obrigatório, opcional ou substituído? | F13 | proposto |
+| [ADR-4](004-wger-fasten.md) | wger/Fasten: obrigatório, opcional ou substituído? (revisão 1: consequência de licença fundamentada em `docs/LICENSE-AUDIT.md` Cenário B + `docs/adr/005-...md`, cliente Apache-2.0) | F13 | proposto |
 | [ADR-4a](004a-gadgetbridge.md) | Gadgetbridge: FEDERATE via Health Connect (revisão 2: permissão de escrita confirmada no APK publicado via F-Droid + documentação oficial, trazida por você) | F9 | **aceito** |
 | [ADR-5](005-licenciamento-distribuicao.md) | Licenciamento e modelo de distribuição (revisão 3: fundamentação corrigida, clean room obrigatório, ficha fora das fontes de implementação) | tudo | proposto |
 | [ADR-6](006-sem-anuncios.md) | Sem anúncios em nenhuma superfície | — | **aceito** |

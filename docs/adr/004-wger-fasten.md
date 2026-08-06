@@ -2,6 +2,9 @@
 
 **Status:** proposto
 **Data:** 2026-08-05
+**Revisão:** 1 (2026-08-06) — consequência de licença fundamentada com a
+análise específica já existente em `docs/LICENSE-AUDIT.md` (Cenário B),
+em vez de citação genérica ao documento inteiro.
 
 ## Contexto
 
@@ -56,9 +59,31 @@ monetização (o que é Premium) ao mesmo tempo — portão duplo.
 ## Consequências
 
 - **Fica mais fácil:** o MVP não depende de nenhum dos dois — reduz risco
-  de licença (AGPL-3.0 do wger, GPL-3.0 do Fasten, `docs/LICENSE-AUDIT.md`)
-  no caminho crítico do lançamento. wger fica livre para evoluir
-  independente, sem acoplar o release do app ao dele.
+  de licença no caminho crítico do lançamento. wger fica livre para
+  evoluir independente, sem acoplar o release do app ao dele. Fundamento
+  específico (`docs/LICENSE-AUDIT.md`, "Cenário B — federados por
+  rede/app separado; sem linkar código", linhas 89–136): federar por
+  REST (wger)/FHIR (Fasten) — processo de servidor distinto, chamado por
+  API, nunca linkado ao binário do Frankstein — significa que nenhuma das
+  duas licenças "vaza" para o cliente. wger continua AGPL-3.0 e Fasten
+  continua GPL-3.0 **como programas separados**, cada um com sua própria
+  obrigação de fonte, não do Frankstein. Isso soma com a decisão já
+  tomada em `docs/adr/005-licenciamento-distribuicao.md:177` (revisão 3,
+  **Opção 3**): o cliente Frankstein é **Apache-2.0**, não GPL/AGPL por
+  nenhum motivo — OpenNutriTracker entra por PORT (reimplementação a
+  partir de `docs/specs/nutricao.md`, não cópia de código), MLC
+  LLM/OpenTracks são WRAP sobre Apache-2.0, e FoodYou não foi adotado
+  (`docs/VIABILITY.md:16`, "AVALIAR", nunca decidido) — não há nenhum
+  outro módulo empurrando o cliente para GPL/AGPL.
+- **Fica mais fácil (nova, revisão 1):** se "wger hospedado" (item 4 do
+  Premium, `docs/MONETIZACAO.md:15-19`) virar realidade, a obrigação de
+  fonte da AGPL §13 recai sobre o **wger como programa**, para quem
+  interage com ele pela rede — não sobre o restante do produto. Mitigação
+  já decidida em outro lugar, não nova aqui: `docs/B2B.md:31-33` já
+  assume a rota `/source` com o tarball da versão em execução, adotando a
+  leitura conservadora da AGPL por precaução, independente de qual das
+  duas leituras (`docs/LICENSE-AUDIT.md`, item 4 do Cenário B) for a
+  correta.
 - **Fica mais difícil:** manter dois sistemas de plano de treino
   conceitualmente parecidos (Academia própria + catálogo wger) exige
   decidir como eles convivem na UI sem confundir o usuário — quem vê o

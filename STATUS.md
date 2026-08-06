@@ -7,19 +7,19 @@
 **Fase:** 2 — esqueleto do monorepo. Iniciada por instrução direta, com
 ADR-4/5 ainda propostas (você decidiu não esperar — não são bloqueadas
 por elas, ver Contexto do Ciclo 27 no histórico).
-**Ciclo atual:** 30 (numeração sua) — ADR-4a fechada como **aceita**, com
-a confirmação de primeira mão que faltava, trazida por você.
-**Nota de numeração:** sua mensagem do Ciclo 30 também listava Ciclo 32
-(relatório de eficiência) e "Ciclos 33+" (esqueleto do monorepo Fase 2) —
-os dois **já aconteceram nesta sessão**, com outra numeração: o esqueleto
-do monorepo é o Ciclo 27 (concluído, CI verde) e o relatório de eficiência
-é o próprio Ciclo 32 que você pediu antes desta mensagem (concluído,
-`docs/EFICIENCIA.md`). Não refeito aqui — regra 3 do `CLAUDE.md` proíbe
-reapresentar trabalho existente como novo. Sinalizado no relatório deste
-ciclo para você confirmar se é isso mesmo ou se há um Ciclo 33+ diferente
-em mente.
+**Ciclo atual:** 31 (numeração sua) — ADR-4 (wger/Fasten) revisada,
+**continua proposta** — aguardando sua confirmação explícita.
+**Perguntas em aberto (você disse que confirma depois):** (1) se
+"perfil C" da sua instrução do Ciclo 30 deveria virar um eixo novo de
+"perfil de dispositivo" (RAM + versão do Android) em vez de ficar
+separado em `PLATFORM-PARITY.md`; (2) confirmação de que Ciclo 32
+(eficiência) e "Ciclos 33+" (esqueleto do monorepo) da sua mensagem do
+Ciclo 30 já aconteceram nesta sessão como Ciclo 32 e Ciclo 27,
+respectivamente — não refeitos.
+**Ciclo 30:** **CONCLUÍDO** — ADR-4a fechada como **aceita**, confirmação
+de primeira mão trazida por você.
 **Ciclo 29:** **CONCLUÍDO** — tentativa de confirmação de primeira mão da
-ADR-4a, sem sucesso (rede bloqueada); resolvido agora no Ciclo 30.
+ADR-4a, sem sucesso (rede bloqueada); resolvido no Ciclo 30.
 **Ciclo 28:** **CONCLUÍDO** — ADR-8 revisada e **aceita** por confirmação
 explícita em 2026-08-06.
 **Ciclo 27:** **CONCLUÍDO** — bloqueio de sandbox superado via CI real
@@ -71,7 +71,7 @@ código.
 | 1 | ADR-10 (substitutos livres) | **aceito** (`docs/adr/010-substitutos-livres.md`) |
 | 1 | ADR-3 (fonte da verdade/sync) | **aceito** (`docs/adr/003-fonte-verdade-sync.md`) |
 | 1 | ADR-2 (modelo LLM) | **aceito** (`docs/adr/002-modelo-llm.md`) |
-| 1 | ADR-4 (wger/Fasten) | proposto (`docs/adr/004-wger-fasten.md`) |
+| 1 | ADR-4 (wger/Fasten) | proposto, **revisão 1** (`docs/adr/004-wger-fasten.md`) — consequência de licença fundamentada em `docs/LICENSE-AUDIT.md` (Cenário B) + `docs/adr/005-...md` (cliente Apache-2.0); aguardando confirmação |
 | 1 | ADR-4a (Gadgetbridge) | **aceito, revisão 2** (`docs/adr/004a-gadgetbridge.md`) — escrita no Health Connect confirmada por permissão declarada no APK publicado (F-Droid) + documentação oficial, trazida por você |
 | 1 | ADR-7 (canais/pagamento) | **aceito, revisão 3** (`docs/adr/007-canais-distribuicao-pagamento.md`) — mecanismo de vínculo do entitlement (e-mail + código de uso único) definido; regra "estado do plano sim, venda não" substitui a proibição-tudo |
 | 1 | ADR-8 (multi-tenant B2B/consentimento) | **aceito, revisão 1** (`docs/adr/008-multitenant-b2b-consentimento.md`) — isolamento de banco decidido (schema por Organization), fundamentado em `docs/CUSTOS.md`; confirmação explícita em 2026-08-06 |
@@ -727,5 +727,39 @@ código.
 
   **Não verificado:** equivalente iOS (HealthKit) — fora do escopo desta
   ADR, já registrado como gap aberto em `docs/PLATFORM-PARITY.md`.
+
+  **Débito técnico:** nenhum novo.
+
+- **Ciclo 31 (numeração sua) — ADR-4 (wger/Fasten), revisando.** Objetivo
+  único: fechar ou revisar. Conferi as citações de linha já existentes na
+  ADR (`docs/PRODUTO.md`, `docs/MONETIZACAO.md`, `docs/ARQUITETURA.md`) —
+  todas batem com o conteúdo atual, sem deriva.
+
+  A decisão em si (wger opcional/catálogo estendido, não substitui
+  Academia própria; Fasten opcional, sem substituto) já estava bem
+  fundamentada. O que faltava: a consequência de licença citava
+  `docs/LICENSE-AUDIT.md` genericamente, sem apontar que o documento já
+  tem uma seção específica ("Cenário B — federados por rede/app separado")
+  cobrindo exatamente esse caso. Revisão 1 cita essa seção linha a linha
+  e soma com a decisão da ADR-5 (revisão 3): o cliente Frankstein é
+  Apache-2.0 — nenhum módulo o empurra para GPL/AGPL (OpenNutriTracker
+  entra por PORT, FoodYou nunca foi adotado). Acrescentada também a
+  consequência do `/source` route (`docs/B2B.md:31-33`) já cobrir a
+  obrigação AGPL do wger hospedado, caso vire produto Premium.
+
+  **Erro cometido e corrigido no mesmo ciclo, antes de qualquer commit:**
+  escrevi um rascunho intermediário dizendo que "o cliente seria GPL-3.0
+  por causa de FoodYou/OpenNutriTracker" — errado em dois pontos (ADR-5
+  decidiu Apache-2.0, e FoodYou nunca foi adotado). Verifiquei
+  `docs/VIABILITY.md` e `docs/adr/005-...md` antes de finalizar e
+  corrigi. Registrado aqui por transparência, não ficou na ADR.
+
+  **Status final: ADR-4 continua proposta.** Portão duplo (arquitetura +
+  monetização) — não me cabe aceitar sozinho, mesmo com a análise mais
+  forte agora. Pedido explicitamente ao usuário.
+
+  **Não verificado (sem mudança):** API de catálogo do wger reutilizável
+  isoladamente; UX de dois sistemas de treino coexistindo — ambos já
+  registrados como fora do escopo desta ADR.
 
   **Débito técnico:** nenhum novo.
