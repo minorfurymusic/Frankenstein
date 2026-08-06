@@ -7,15 +7,21 @@
 **Fase:** 2 — esqueleto do monorepo. Iniciada por instrução direta, com
 ADR-4/4a/5 ainda propostas (você decidiu não esperar — não são
 bloqueadas por elas, ver Contexto do Ciclo 27 no histórico).
-**Ciclo atual:** 29 — tentativa de confirmação de primeira mão da ADR-4a
-(Gadgetbridge/Health Connect). **CONCLUÍDO, ADR continua proposta** —
-ver histórico.
+**Ciclo atual:** 32 — relatório de eficiência (`docs/EFICIENCIA.md`).
+**CONCLUÍDO, nada implementado ainda** (por instrução — só medir e propor
+neste ciclo). Numeração do usuário; Ciclos 30–31 não existem no histórico
+desta sessão, não inventados aqui.
+**Ciclo 29:** **CONCLUÍDO** — tentativa de confirmação de primeira mão da
+ADR-4a (Gadgetbridge/Health Connect), ADR continua proposta.
 **Ciclo 28:** **CONCLUÍDO** — ADR-8 revisada e **aceita** por confirmação
 explícita em 2026-08-06.
 **Ciclo 27:** **CONCLUÍDO** — bloqueio de sandbox superado via CI real
 (ver "Fechamento do Ciclo 27" abaixo).
 **main sincronizado com a branch designada** em 2026-08-06 (fast-forward,
 `8a34c86`) — as duas ficaram idênticas até este ponto.
+**Pendência nova:** aplicar Grupo A de `docs/EFICIENCIA.md` no próximo
+ciclo e medir antes/depois. Grupo B (mover histórico para
+`docs/HISTORICO.md`) aguarda sua aprovação — toca `CLAUDE.md`.
 
 ## Fechamento do Ciclo 27 — CI confirma o que o sandbox não deixa provar
 
@@ -64,6 +70,7 @@ código.
 | 1 | ADR-5 (licenciamento) | proposto, **revisão 3** (`docs/adr/005-licenciamento-distribuicao.md`) — fundamentação principal agora é não herdar manutenção de repo de terceiro (não mais o precedente de 2010 não verificado); clean room obrigatório; `docs/recon/opennutritracker.md` removida das fontes válidas de implementação |
 | 1 | **11/11 ADRs registradas** | **8 aceitas** (ADR-1, 2, 3, 6, 7, 8, 9, 10), 3 propostas (ADR-4, 4a, 5) |
 | 2 | Esqueleto do monorepo (F2) | **CONCLUÍDO** — `make test`/`make lint`/`make build` passam de verdade em CI (`ubuntu-latest`, runs `31055829550`/`31056058975`, commit `386b711`); no sandbox de dev, `make build` Android e emulador continuam bloqueados por infra (sem SDK, sem KVM) |
+| — | Relatório de eficiência (`docs/EFICIENCIA.md`) | **pronto, nada aplicado ainda** — medido com dados literais do transcript da sessão; 5 propostas Grupo A (aplico sozinho) e 1 proposta Grupo B (mexe em `CLAUDE.md`, precisa aprovação) |
 
 ## Decisões já tomadas (não reabrir sem motivo novo)
 
@@ -622,3 +629,48 @@ código.
   atual do Gadgetbridge (ou confirmar se a PR `#4481` foi mergeada e
   quando), a ADR sai do impasse. Ou, se preferir, posso seguir para a
   ADR-4 (wger/Fasten) enquanto isso fica em aberto.
+- **Ciclo 32 — relatório de eficiência (`docs/EFICIENCIA.md`). Não
+  implementa nada.** Objetivo único por instrução direta: medir o custo
+  real de contexto do projeto, não estimar.
+
+  Metodologia: script Python lendo o transcript literal desta sessão
+  (`/root/.claude/projects/.../c8fc46bd-....jsonl`, 2.414 linhas, 29
+  ciclos) — contagem de chamadas de ferramenta, tamanho de resultado por
+  chamada, arquivo por arquivo. Nada estimado de memória.
+
+  **Achados principais** (números completos em `docs/EFICIENCIA.md`):
+  - `STATUS.md` (624 linhas hoje) é 7,3x maior que `CLAUDE.md` + regras
+    que carregam sempre somados (86 linhas). Cresceu de 38 para 624
+    linhas em 34 commits, sem teto desenhado. 89% do arquivo é histórico
+    de ciclos antigos, só 11% é estado atual.
+  - `STATUS.md` foi o arquivo mais lido (31x `Read` + 21x `tail` via
+    Bash) e mais editado (96x `Edit`) de toda a sessão, por larga margem.
+  - No Ciclo 27, acompanhar o CI via `get_workflow_run`/`list_workflow_runs`
+    custou ~154 mil caracteres; `list_workflow_jobs` (mesma informação,
+    mais detalhada) teria custado ~12 mil — ~90% de diferença.
+  - 21 chamadas Bash `tail` logo depois de `Edit` no mesmo arquivo, no
+    mesmo turno — 100% evitável, o `Edit` já garante que a escrita
+    funcionou.
+  - Investigado e **descartado como problema**: varredura de `refs/`
+    (todos os comandos encontrados eram escopados com `-maxdepth`/regex
+    específico) e releitura de ADRs (cada releitura correspondeu a uma
+    revisão real, em ciclo diferente, não a hábito).
+
+  **Propostas** — 4 no Grupo A (aplico sozinho: preferir
+  `list_workflow_jobs` no polling de CI; nunca reler arquivo pós-edit;
+  ler `STATUS.md` por partes até o Grupo B ser decidido; suprimir saída
+  verbosa de merges grandes) e 1 no Grupo B (mover `## Histórico de
+  ciclos` para `docs/HISTORICO.md`, deixando `STATUS.md` só com o estado
+  atual — maior economia estimada de todas, mas edita `CLAUDE.md:27`,
+  por isso precisa da sua aprovação antes).
+
+  **Nada foi aplicado neste ciclo**, por instrução explícita. Seção
+  "Manutenção" acrescentada ao fim de `docs/EFICIENCIA.md`: reler o
+  arquivo a cada 5 ciclos, no ORIENTAR, e acrescentar achados novos sem
+  apagar os antigos.
+
+  **Não verificado:** se as propostas do Grupo A, uma vez aplicadas,
+  realmente produzem a economia estimada aqui — é medição prevista para o
+  próximo ciclo (antes/depois), não confirmada ainda.
+
+  **Débito técnico:** nenhum novo.
