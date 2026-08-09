@@ -24,7 +24,9 @@ Código aberto (copyleft). **Sem anúncios. Sem telemetria. Sem rastreador.**
 
 ## ANTES DE COMEÇAR QUALQUER TAREFA
 
-Leia `STATUS.md`. Declare em UMA linha o objetivo único deste ciclo.
+Leia `STATUS.md` (estado atual — histórico completo de ciclos fica em
+`docs/HISTORICO.md`, consulte só sob demanda, não por hábito).
+Declare em UMA linha o objetivo único deste ciclo.
 Depois leia SOMENTE o documento da área que vai tocar:
 
 - produto, escopo, fases ....... docs/PRODUTO.md

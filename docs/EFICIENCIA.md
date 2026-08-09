@@ -228,6 +228,41 @@ pelos dados: `CLAUDE.md` (75 linhas) e o conjunto de regras que carrega
 sempre (11 linhas) já estão pequenos por desenho e não apareceram como
 fonte de custo nesta investigação — não vou propor mexer neles.
 
+## Resultado — Grupo A e Grupo B aplicados (2026-08-06)
+
+**Grupo B aplicado.** `## Histórico de ciclos` cortado de `STATUS.md` e
+colado em `docs/HISTORICO.md` novo. `CLAUDE.md:27` editado (mínimo
+necessário — uma frase) para apontar pro histórico separado, com
+aprovação explícita do usuário para essa mudança específica.
+
+Medição antes/depois, literal:
+
+| Arquivo | Antes | Depois |
+|---|---|---|
+| `STATUS.md` | 765 linhas | **73 linhas** |
+| `docs/HISTORICO.md` | (não existia) | 678 linhas |
+| `CLAUDE.md` | 75 linhas | 77 linhas (+2, a frase nova) |
+
+**Redução de ~90,5% em `STATUS.md`** — mais forte que a estimativa de
+~87% feita antes de aplicar (a estimativa foi feita em cima de uma versão
+de 624 linhas; a real, no momento de aplicar, já tinha crescido para 765).
+Confirma a tese: sem teto, o histórico cresce mais rápido do que dá pra
+prever de um ciclo pro outro. Também aproveitado para remover do
+`STATUS.md` uma seção ("Fechamento do Ciclo 27") que já estava duplicada
+dentro do próprio histórico — não fazia parte do Grupo B original, mas é
+o mesmo princípio (não repetir no "estado atual" o que já está no
+histórico).
+
+**Grupo A adotado como prática, não como mudança de arquivo** — as 4
+propostas são comportamento, não código: preferir `list_workflow_jobs` a
+`get_workflow_run`/`list_workflow_runs` no polling de CI; nunca reler
+arquivo logo após editar; ler `STATUS.md` (e outros grandes) por partes
+quando só uma seção interessa; suprimir saída verbosa de operações git
+que só precisam confirmar sucesso. Sem uma nova sessão inteira pra medir
+"antes/depois" de comportamento (diferente de tamanho de arquivo, que dá
+pra medir na hora), a confirmação real desses quatro fica para a próxima
+leitura de manutenção deste arquivo — ver seção abaixo.
+
 ## Manutenção
 
 **A cada 5 ciclos, no passo ORIENTAR, reler este arquivo por completo.**

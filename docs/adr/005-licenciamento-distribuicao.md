@@ -2,6 +2,12 @@
 
 **Status:** proposto
 **Data:** 2026-08-05 (revisão 3 — fundamentação corrigida, clean room decidido, vazamento da ficha fechado)
+**Revisão 4 (2026-08-06):** limpeza pequena — item de "Não verificado" sobre
+a direção do Gadgetbridge no Health Connect estava desatualizado (ADR-4a
+foi aceita no Ciclo 30). Nenhuma mudança de fundo: a decisão (Opção 3,
+PORT, cliente Apache-2.0, clean room obrigatório) já era sólida antes
+desta revisão — três rounds de revisão já tinham corrigido fundamentação,
+decidido clean room como obrigatório e fechado o vazamento da ficha.
 
 ## Nota de revisão 3 (o que mudou nesta volta)
 
@@ -187,8 +193,11 @@ Distribuição multi-canal conforme ADR-7 (aceita).
 ## Não verificado
 
 - ~~Licenças dos 6 submódulos do MLC LLM~~ — resolvido no Ciclo B.
-- Direção real do Gadgetbridge no Health Connect (ADR-4a).
-- Regras de link de pagamento externo para o Brasil — ver ADR-7 (aceita).
+- ~~Direção real do Gadgetbridge no Health Connect~~ — resolvido no
+  Ciclo 30, ADR-4a aceita (escrita confirmada via permissão do APK/F-Droid
+  + documentação oficial).
+- Regras de link de pagamento externo para o Brasil — resolvido pela
+  ADR-7 (aceita, revisão 3): regra "estado do plano sim, venda não".
 - Texto primário da FSF sobre compatibilidade de licença — só `WebSearch`.
 - Custo de engenharia de reimplementar (PORT) o módulo de nutrição.
 - **`docs/specs/nutricao.md` não é perfeitamente limpa.** Foi escrita a
