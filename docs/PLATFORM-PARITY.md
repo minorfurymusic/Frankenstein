@@ -41,11 +41,30 @@ Android 13 ou anterior, o usuário precisa instalar o app proprietário
 Health Connect da Play Store para o mesmo caminho funcionar — dependência
 proprietária que não é do Frankstein (nenhum código proprietário entra no
 projeto), mas do **aparelho do usuário**, condicionada à versão do Android
-dele. Isso é um eixo diferente dos perfis A/B/C de `docs/adr/002-modelo-llm.md`
-(que são por RAM disponível para o LLM local) — não tentei encaixar aqui
-para não confundir os dois. Se fizer sentido ter um conceito de "perfil de
-dispositivo" que combine RAM *e* versão do Android, isso é uma ADR/decisão
-nova, não uma extensão da ADR-2 por conta própria.
+dele.
+
+## Perfil de dispositivo — dois eixos, não um só (registrado no Ciclo 31)
+
+Confirmado com o usuário: isso vira um eixo novo, separado dos perfis
+A/B/C da `docs/adr/002-modelo-llm.md:41-43` (que são só por RAM, pro LLM
+local). Não altero a ADR-2 — ela continua definindo os três perfis de RAM
+como já aceito. Este documento só registra o **segundo eixo**,
+independente do primeiro, e junta os dois numa tabela de referência:
+
+| Eixo | Determina | Valores | Fonte |
+|---|---|---|---|
+| **RAM** (perfil LLM) | qual modelo local roda, se algum | A (≥8 GB) / B (6 GB) / C (≤4 GB, sem modelo) | `docs/adr/002-modelo-llm.md:41-43` |
+| **Versão do Android** (perfil Health Connect) | se o Health Connect é nativo ou exige app da Play Store | ≥14 (nativo) / ≤13 (app proprietário externo) | `docs/adr/004a-gadgetbridge.md`, este documento |
+
+Os dois eixos são **independentes** — um aparelho com pouca RAM pode estar
+em Android 14 (Health Connect nativo, sem LLM local), e um aparelho com
+bastante RAM pode estar preso num Android antigo (LLM local completo,
+Health Connect via app externo). Não force os dois numa letra só: um
+aparelho descrito como "perfil B, Android 13" já é suficiente — não
+precisa de um novo "perfil B13" ou similar. Combinar os dois numa única
+classificação nova só se justificaria se algum ciclo futuro encontrar um
+terceiro eixo que dependa da combinação dos dois ao mesmo tempo (nenhum
+encontrado até agora).
 
 **Consequência:** no iOS, a fonte de dados de wearable não pode ser
 Health Connect. `docs/ARQUITETURA.md:74` já aponta o candidato óbvio:

@@ -21,8 +21,9 @@ continua proposta, aguardando confirmação explícita.
   "tudo" por definição própria. Revisão 4 fez limpeza pequena (item
   desatualizado do "Não verificado"); decisão de fundo já estava sólida
   há 3 revisões. Falta confirmação explícita.
-- **Perfil de dispositivo novo** (RAM + versão do Android) — você
-  confirmou que vira um eixo novo; registrado em `docs/PLATFORM-PARITY.md`.
+- ~~Perfil de dispositivo novo~~ — **feito.** Registrado como eixo
+  independente do perfil de RAM da ADR-2, em `docs/PLATFORM-PARITY.md`
+  ("Perfil de dispositivo — dois eixos, não um só").
 - Confirmação de que Ciclo 32 (eficiência) e "Ciclos 33+" (esqueleto do
   monorepo) de uma mensagem anterior já tinham acontecido nesta sessão
   como Ciclo 32 e Ciclo 27 — sinalizado, sem objeção do usuário até aqui.
