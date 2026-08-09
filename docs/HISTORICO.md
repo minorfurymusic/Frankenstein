@@ -676,3 +676,87 @@
   registrados como fora do escopo desta ADR.
 
   **Débito técnico:** nenhum novo.
+- **ADR-4 e ADR-5 aceitas; `docs/LICENSE-AUDIT.md` fechado.** Confirmação
+  explícita do usuário para as duas últimas ADRs pendentes (2026-08-09).
+  `docs/adr/004-wger-fasten.md` e `docs/adr/005-licenciamento-distribuicao.md`:
+  `**Status:** aceito`. `docs/LICENSE-AUDIT.md` ganhou seção
+  "Fechamento" consolidando qual cenário (B) e quais decisões de cada
+  ADR viraram real — cliente Apache-2.0, wger/Fasten federados sem vazar
+  licença, servidor AGPL-3.0 por escolha, `/source` route já cobre a
+  obrigação AGPL do wger hospedado. Fecha o item 9 da Definição de
+  Pronto do MVP. `docs/adr/000-pendentes.md`: 11/11 ADRs aceitas, Fase 1
+  concluída. `make test` exit 0 antes do commit (`e4d10e0`).
+
+- **Fase 3 — Health Data Core: schema `HealthEvent` implementado e
+  testado.** Objetivo único, por instrução direta ("fase 3 por favor"),
+  investigado (`docs/ARQUITETURA.md`, ADR-3 aceita, `.claude/rules/datacore.md`)
+  e confirmado antes de codificar.
+
+  **Gap preenchido nos documentos, com justificativa:** `docs/ARQUITETURA.md`
+  e `.claude/rules/datacore.md` já citavam dedup por `(source,
+  external_id)` e correção como "novo evento apontando para o anterior",
+  mas o schema enumerado não tinha esses campos. Adicionados
+  `external_id` e `corrects_event_id` aos dois documentos — preenchimento
+  de lacuna, não mudança de decisão, confirmado com o usuário antes de
+  implementar.
+
+  **Terceiro campo adicionado sem pedir confirmação separada, por ser
+  regra inviolável:** `.claude/rules/00-inviolaveis.md` exige "Timestamps
+  em UTC, com timezone gravado à parte" — regra sempre carregada, vale
+  pra qualquer schema do projeto. Adicionado `occurred_at_tz_offset_minutes`
+  (offset em minutos, não fuso IANA — simplificação registrada
+  explicitamente no código). Diferente dos outros dois campos, este não
+  foi levado pra confirmação prévia porque não é uma decisão nova — é
+  cumprir uma regra que já existia e sempre esteve carregada.
+
+  **Implementação** (`packages/health_core`): `sqlite3` (bindings FFI em
+  Dart puro) em vez de `sqflite` (plugin Flutter) — mantém o Core
+  testável com `dart test` puro, sem virar pacote Flutter; a camada do
+  app adiciona `sqlite3_flutter_libs` depois, só para empacotar o binário
+  nativo no Android/iOS. `uuid` para gerar ids.
+
+  - `lib/src/schema.dart` — migração SQL (`health_events`,
+    `gps_track_points`, índice único de dedup parcial em
+    `(source, external_id) WHERE external_id IS NOT NULL`).
+  - `lib/src/health_event.dart` — `HealthEvent` (imutável, valida UTC e
+    `confidence` no construtor), `GpsTrackPoint`, enums `HealthEventType`/
+    `HealthEventSource` com conversão de/para o valor gravado no banco.
+  - `lib/src/health_data_core.dart` — `HealthDataCore`: `insertEvent`
+    (rejeita duplicata via `DuplicateEventException`), `correctEvent`
+    (nunca UPDATE — insere e liga via `corrects_event_id`), `getById`,
+    `queryByType` (filtro de intervalo), `correctionChain`,
+    `insertGpsTrackPoints`/`gpsTrackPoints`. Nenhum método de update ou
+    delete existe na classe, de propósito.
+
+  **Prova:**
+  ```
+  $ dart test (packages/health_core)
+  00:00 +15: All tests passed!
+  ```
+  15 testes: round trip de insert/leitura (incluindo payload aninhado e
+  campos nulos), dedup (rejeita duplicata, permite `external_id` nulo
+  repetido, não colide entre `source` diferentes), correção (original
+  intacto, cadeia com múltiplas correções concorrentes, erro ao corrigir
+  evento inexistente), consulta por tipo/intervalo, `gps_track_points`
+  em tabela própria, validação (UTC, `confidence`), e o teste de ida e
+  volta com arquivo real exigido por `.claude/rules/datacore.md` ("Toda
+  migração de schema precisa de teste de ida e volta com dados reais") —
+  fecha o banco, reabre do mesmo arquivo simulando processo novo, dado
+  sobrevive; reabrir schema já existente é idempotente.
+
+  `make lint` e `make test` completos (todos os pacotes + app) rodados
+  depois, os dois exit 0 — nada mais quebrou.
+
+  **Não verificado:** se `libsqlite3` está presente por padrão nos
+  runners `ubuntu-latest` do GitHub Actions — está presente neste
+  sandbox de dev (`ldconfig -p | grep sqlite3`), e é biblioteca de
+  sistema comum o bastante (usada pelo módulo `sqlite3` do Python) que a
+  expectativa é que sim, mas não confirmei rodando o CI de verdade neste
+  ciclo.
+
+  **Débito técnico:** nenhum novo — `packages/health_core` não tem
+  código temporário.
+
+  **Próximo ciclo proposto:** F4 (passos, foreground service) ou F5
+  (cérebro com 1 ferramenta) — o primeiro módulo real a escrever no
+  Health Data Core. Não decidido; pergunta em aberto pro usuário.

@@ -27,18 +27,33 @@ cópia de código.
 
 ```
 HealthEvent
-  id           uuid
-  type         steps | heart_rate | sleep | meal | weight |
-               workout_session | set_log | gps_track | clinical_doc
-  source       pedometer | wearable | manual | wger | fasten | llm
-  occurred_at  timestamp UTC
-  recorded_at  timestamp
-  payload      json (tipado por 'type')
-  confidence   float
-  device_id    string?
+  id                 uuid
+  type               steps | heart_rate | sleep | meal | weight |
+                      workout_session | set_log | gps_track | clinical_doc
+  source             pedometer | wearable | manual | wger | fasten | llm
+  occurred_at        timestamp UTC
+  recorded_at        timestamp
+  payload            json (tipado por 'type')
+  confidence         float
+  device_id          string?
+  external_id        string?   -- id do evento na fonte externa (wearable,
+                                   wger, fasten); par com 'source' formam a
+                                   chave de deduplicação. Nulo pra eventos
+                                   sem origem externa (manual, llm).
+  corrects_event_id  uuid?     -- id do HealthEvent que este evento corrige.
+                                   Nulo pra eventos originais.
 ```
 
-Append-only. Deduplicação por (source, external_id). Correção gera novo evento.
+Append-only. Deduplicação por (source, external_id) — só se aplica quando
+external_id não é nulo. Correção gera novo evento com corrects_event_id
+apontando para o evento corrigido; nunca um UPDATE destrutivo do original.
+
+**Nota (Fase 3, Ciclo de implementação):** `external_id` e
+`corrects_event_id` foram adicionados à enumeração explícita do schema
+neste ciclo — a regra de dedup e de correção já existiam em prosa desde a
+primeira versão deste documento e em `.claude/rules/datacore.md`, mas os
+campos que elas dependem não estavam na lista de colunas. Preenchimento
+de lacuna, não mudança de decisão.
 
 ## Contrato de ferramenta do cérebro
 

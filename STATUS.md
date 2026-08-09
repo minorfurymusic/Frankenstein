@@ -7,17 +7,17 @@
 > Histórico completo de ciclos: `docs/HISTORICO.md`. Este arquivo só guarda o
 > estado **atual** — consulte o histórico sob demanda, não por hábito.
 
-**Fase:** transição de 2 (esqueleto do monorepo, concluída) para **3
-(Health Data Core)** — todas as 11 ADRs aceitas, nada mais bloqueando.
+**Fase:** **3 — Health Data Core, em andamento.** Schema `HealthEvent`
+implementado e testado em `packages/health_core` (append-only, dedup por
+`(source, external_id)`, correção como evento novo, tabela própria de
+`gps_track_points`). Detalhe completo em `docs/HISTORICO.md`.
 
-**Ciclo atual:** ADR-4 e ADR-5 aceitas por confirmação explícita em
-2026-08-09. `docs/LICENSE-AUDIT.md` fechado no mesmo ciclo (item 9 da
-Definição de Pronto do MVP, `docs/PRODUTO.md:68`). Próximo: iniciar F3.
+**Ciclo atual:** health_core prova: `make lint`/`make test` verdes (15
+testes novos, incluindo o teste de ida-e-volta com arquivo real exigido
+por `.claude/rules/datacore.md`). Próximo: nenhum módulo consome o Core
+ainda — F4 (passos) é o primeiro candidato natural.
 
-**Pendências ativas:** nenhuma ADR pendente. Confirmação de que Ciclo 32
-(eficiência) e "Ciclos 33+" (esqueleto do monorepo) de uma mensagem
-antiga já tinham acontecido nesta sessão como Ciclo 32 e Ciclo 27 —
-sinalizado, sem objeção do usuário até aqui, tratado como resolvido.
+**Pendências ativas:** nenhuma.
 
 **main sincronizado com a branch designada** em 2026-08-06 (fast-forward,
 `8a34c86`) — verificar se ainda está em sincronia antes de assumir.
@@ -48,7 +48,7 @@ sinalizado, sem objeção do usuário até aqui, tratado como resolvido.
 | 1 | ADR-10 (substitutos livres) | **aceito** (`docs/adr/010-substitutos-livres.md`) |
 | 1 | **11/11 ADRs registradas** | **11/11 aceitas** — Fase 1 concluída |
 | 2 | Esqueleto do monorepo (F2) | **CONCLUÍDO** — CI verde (`ubuntu-latest`), sandbox de dev sem SDK Android/KVM (limite de ambiente) |
-| 3 | Health Data Core (F3) | **próximo** — nada iniciado ainda |
+| 3 | Health Data Core (F3) | **schema implementado e testado** (`packages/health_core`) — `HealthEvent` append-only, dedup, correção, `gps_track_points`; nenhum módulo consome o Core ainda |
 | — | Relatório de eficiência (`docs/EFICIENCIA.md`) | Grupo A adotado como prática; Grupo B aplicado (este arquivo) |
 
 ## Decisões já tomadas (não reabrir sem motivo novo)
