@@ -9,9 +9,9 @@
 - [x] **F0** — Reconhecimento dos 7 repositórios + auditoria de licença (`docs/recon/*.md`, `docs/LICENSE-AUDIT.md`)
 - [x] **F1** — ADRs (**11/11 aceitas** — ADR-4 e ADR-5 confirmadas em 2026-08-09, últimas duas)
 - [x] **F2** — Esqueleto do monorepo + CI + Makefile (CI verde, `ubuntu-latest`, commit `386b711`)
-- [x] **F3** — Health Data Core — schema `HealthEvent` implementado e testado (`packages/health_core`, 15 testes, `make lint`/`make test` verdes). Nenhum módulo consome o Core ainda.
-- [ ] **F4** — Passos (foreground service) — não iniciado
-- [ ] **F5** — Cérebro com 1 ferramenta só — não iniciado
+- [x] **F3** — Health Data Core — schema `HealthEvent` implementado e testado (`packages/health_core`, 15 testes, `make lint`/`make test` verdes).
+- [ ] **F4** — Passos (foreground service) — não iniciado, pulado por instrução direta (F5 priorizada)
+- [x] **F5** — Cérebro com 1 ferramenta só — pipeline configurado e provado ponta a ponta (`packages/brain` + `packages/tool_registry`, `log_meal`). MLC LLM real (on-device) não implementado — sem device pra testar neste ambiente; entra depois via interface `ToolCaller`.
 - [ ] **F6** — Nutrição + código de barras — não iniciado (caminho liberado: ADR-5 aceita, PORT do OpenNutriTracker)
 - [ ] **F7** — Academia: planos + sessão + séries — não iniciado
 - [ ] **F8** — Corrida/caminhada com GPS — não iniciado

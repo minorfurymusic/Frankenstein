@@ -1,12 +1,15 @@
 name: frankstein_tool_registry
 description: >-
   Contrato único de ferramentas entre o cérebro e os módulos (docs/ARQUITETURA.md).
-  Esqueleto vazio — Fase 2, Ciclo 1. Nenhuma lógica ainda.
+  ToolSpec, ToolRegistry e validação por JSON Schema (Fase 5).
 publish_to: 'none'
-version: 0.0.1
+version: 0.1.0
 
 environment:
   sdk: ^3.9.0
+
+dependencies:
+  json_schema: ^5.2.0
 
 dev_dependencies:
   lints: ^5.0.0

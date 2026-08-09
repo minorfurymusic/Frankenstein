@@ -7,17 +7,21 @@
 > Histórico completo de ciclos: `docs/HISTORICO.md`. Este arquivo só guarda o
 > estado **atual** — consulte o histórico sob demanda, não por hábito.
 
-**Fase:** **3 — Health Data Core, em andamento.** Schema `HealthEvent`
-implementado e testado em `packages/health_core` (append-only, dedup por
-`(source, external_id)`, correção como evento novo, tabela própria de
-`gps_track_points`). Detalhe completo em `docs/HISTORICO.md`.
+**Fase:** **F3 concluída, F5 (cérebro com 1 ferramenta) configurada.**
+F4 (passos) ainda não começou — pulado por instrução direta ("o F5 é a
+ferramenta mais importante"). Detalhe completo em `docs/HISTORICO.md`.
 
-**Ciclo atual:** health_core prova: `make lint`/`make test` verdes (15
-testes novos, incluindo o teste de ida-e-volta com arquivo real exigido
-por `.claude/rules/datacore.md`). Próximo: nenhum módulo consome o Core
-ainda — F4 (passos) é o primeiro candidato natural.
+**Ciclo atual:** pipeline do cérebro (`packages/brain` +
+`packages/tool_registry`) provado de ponta a ponta com `log_meal`:
+roteador determinístico → validação JSON Schema → confirmação humana →
+execução → `HealthEvent` gravado de verdade no Health Data Core. **MLC
+LLM real (inferência on-device) não implementado nesta fase** — exige
+Android físico/emulador que este ambiente não tem; entra depois via a
+interface `ToolCaller` já pronta pra receber, sem reescrever o pipeline.
 
-**Pendências ativas:** nenhuma.
+**Pendências ativas:** nenhuma. Próximo módulo a decidir: F4 (passos) ou
+seguir direto pra outra ferramenta do cérebro (`get_daily_summary`,
+`get_steps`, etc.) — não decidido.
 
 **main sincronizado com a branch designada** em 2026-08-06 (fast-forward,
 `8a34c86`) — verificar se ainda está em sincronia antes de assumir.
@@ -48,7 +52,9 @@ ainda — F4 (passos) é o primeiro candidato natural.
 | 1 | ADR-10 (substitutos livres) | **aceito** (`docs/adr/010-substitutos-livres.md`) |
 | 1 | **11/11 ADRs registradas** | **11/11 aceitas** — Fase 1 concluída |
 | 2 | Esqueleto do monorepo (F2) | **CONCLUÍDO** — CI verde (`ubuntu-latest`), sandbox de dev sem SDK Android/KVM (limite de ambiente) |
-| 3 | Health Data Core (F3) | **schema implementado e testado** (`packages/health_core`) — `HealthEvent` append-only, dedup, correção, `gps_track_points`; nenhum módulo consome o Core ainda |
+| 3 | Health Data Core (F3) | **CONCLUÍDO** (`packages/health_core`) — `HealthEvent` append-only, dedup, correção, `gps_track_points` |
+| 4 | Passos, foreground service (F4) | não iniciado — pulado por instrução direta, F5 priorizada |
+| 5 | Cérebro com 1 ferramenta só (F5) | **pipeline configurado e provado** (`packages/brain` + `packages/tool_registry`) — roteador determinístico, validação, confirmação, execução real (`log_meal`); LLM on-device real fica pra depois (sem device pra testar aqui) |
 | — | Relatório de eficiência (`docs/EFICIENCIA.md`) | Grupo A adotado como prática; Grupo B aplicado (este arquivo) |
 
 ## Decisões já tomadas (não reabrir sem motivo novo)

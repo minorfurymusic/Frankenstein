@@ -760,3 +760,79 @@
   **Próximo ciclo proposto:** F4 (passos, foreground service) ou F5
   (cérebro com 1 ferramenta) — o primeiro módulo real a escrever no
   Health Data Core. Não decidido; pergunta em aberto pro usuário.
+
+- **Fase 5 — cérebro com 1 ferramenta só: pipeline configurado e provado
+  de ponta a ponta.** Instrução direta: "o f5 é a ferramenta mais
+  importante. configure-o primeiro" — F4 (passos) pulado por enquanto.
+
+  Investigado antes de codificar: `docs/OFFLINE-IA.md`,
+  `.claude/rules/brain.md`, contrato de `log_meal` já especificado em
+  `docs/ARQUITETURA.md:43-67`. Recorte de escopo confirmado com o
+  usuário antes de implementar: **MLC LLM real (inferência on-device)
+  fica fora deste ciclo** — exige validação em Android físico/emulador,
+  que este ambiente não tem (mesmo limite do Ciclo 27). A chamada real
+  ao modelo entra depois via a interface `ToolCaller`, sem reescrever o
+  pipeline; o roteador determinístico é a única implementação concreta
+  por agora — que é o caminho **principal** pro Perfil C
+  (`docs/OFFLINE-IA.md`), não um substituto temporário.
+
+  **`packages/tool_registry`** (novo, dependência real:
+  `json_schema: ^5.2.0`, licença Boost Software License — permissiva,
+  compatível; transitivas `http`/`uri` BSD-3-Clause, `quiver`
+  Apache-2.0, `rfc_6901` MIT, todas conferidas antes de adicionar,
+  `.claude/rules/licenca.md`):
+  - `ToolSpec` — contrato de ferramenta (nome, descrição, `write`,
+    `confirm`, módulo dono, schema de parâmetros). Construtor recusa
+    `write: true` sem `confirm: true` — cumpre
+    `.claude/rules/brain.md` passo 4 na origem, não deixado pra quem
+    registra lembrar.
+  - `ToolRegistry` — registra `ToolSpec` + handler, executa com
+    validação na frente (`ToolValidationException`/`ToolNotFoundException`
+    em vez de falhar silencioso).
+  - `validateToolParameters` — valida contra JSON Schema de verdade
+    (biblioteca real, não checagem caseira).
+  - 11 testes.
+
+  **`packages/brain`** (novo, dependência real:
+  `frankstein_tool_registry` via `path:` local — primeira dependência
+  entre pacotes do monorepo):
+  - `ToolCaller` — interface pra "decidir qual ferramenta chamar";
+    `DeterministicRouter` a única implementação (regex + extrator de
+    parâmetros, genérico — não sabe nada de `log_meal` especificamente).
+  - `ConfirmationGate` — interface de confirmação humana (UI fica pro
+    app; aqui só o contrato).
+  - `BrainPipeline` — orquestra as 4 etapas de `.claude/rules/brain.md`
+    na ordem: decide → valida → confirma (se `write`) → executa. Ferramenta
+    decidida mas não registrada vira `unresolved` em vez de vazar
+    exceção.
+
+  **Prova, ponta a ponta, com dado real** (`packages/brain/test/brain_test.dart`,
+  usando `packages/health_core` como `dev_dependency` só pro teste — sem
+  tocar `packages/nutrition`, que continua travado por clean room):
+  ```
+  $ dart test (brain) → 00:00 +5: All tests passed!
+  ```
+  5 cenários: texto reconhecido + confirmado grava `HealthEvent` tipo
+  `meal` de verdade no Health Data Core (confere payload, tipo, id);
+  usuário recusa confirmação → nada gravado; texto fora do formato do
+  roteador → `unresolved`, confirmação nunca pedida; parâmetros
+  inválidos → `rejected` **antes** de pedir confirmação; ferramenta
+  decidida mas não registrada → `unresolved`, não vaza exceção.
+
+  `make lint` e `make test` completos (todos os pacotes + app) rodados
+  depois, os dois exit 0.
+
+  **Não verificado:** o mesmo item do Ciclo de F3 —
+  disponibilidade de `libsqlite3` em runners `ubuntu-latest` do CI, ainda
+  não confirmada rodando de verdade (a dependência de `health_core` só
+  entrou no `brain` como `dev_dependency` de teste, mesma exposição de
+  antes, não nova).
+
+  **Débito técnico:** nenhum novo. O roteador desta fase só reconhece um
+  formato de comando estruturado explícito (`registrar refeição TIPO:
+  ITEM GRAMASg, ...`), não linguagem natural livre — documentado no
+  próprio código como escopo, não como limitação escondida.
+
+  **Próximo ciclo proposto:** F4 (passos) ou registrar mais ferramentas
+  no cérebro (`get_daily_summary`, `get_steps`) usando o mesmo pipeline
+  — não decidido, pergunta em aberto pro usuário.
