@@ -1,6 +1,6 @@
 # ADR-4 — wger/Fasten: obrigatório, opcional ou substituído?
 
-**Status:** proposto
+**Status:** aceito (confirmação explícita em 2026-08-09)
 **Data:** 2026-08-05
 **Revisão:** 1 (2026-08-06) — consequência de licença fundamentada com a
 análise específica já existente em `docs/LICENSE-AUDIT.md` (Cenário B),
@@ -53,8 +53,9 @@ e entregue no MVP (F7). **Fasten: opcional**, federado (FHIR), sem
 substituto próprio — função exclusiva de prontuário/B2B, ausente do MVP
 grátis.
 
-**Isto está proposto, não aceito.** Toca arquitetura (ADR-1/ADR-3) e
-monetização (o que é Premium) ao mesmo tempo — portão duplo.
+**Aceito em 2026-08-09.** Tocava arquitetura (ADR-1/ADR-3) e monetização
+(o que é Premium) ao mesmo tempo — portão duplo cumprido por confirmação
+explícita.
 
 ## Consequências
 

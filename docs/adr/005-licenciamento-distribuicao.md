@@ -1,6 +1,6 @@
 # ADR-5 — Licenciamento e modelo de distribuição
 
-**Status:** proposto
+**Status:** aceito (confirmação explícita em 2026-08-09)
 **Data:** 2026-08-05 (revisão 3 — fundamentação corrigida, clean room decidido, vazamento da ficha fechado)
 **Revisão 4 (2026-08-06):** limpeza pequena — item de "Não verificado" sobre
 a direção do Gadgetbridge no Health Connect estava desatualizado (ADR-4a
@@ -188,7 +188,11 @@ autoral AGPL-3.0 por escolha (ADR-3/ADR-8), sem alteração. wger hospedado
 expõe fonte via `/source` (`docs/B2B.md:31-33`), sem alteração.
 Distribuição multi-canal conforme ADR-7 (aceita).
 
-**Isto está proposto, não aceito.**
+**Aceito em 2026-08-09.** Esta ADR bloqueava "tudo" (`docs/adr/000-pendentes.md`)
+— com o aceite, o item 9 da Definição de Pronto do MVP
+(`docs/PRODUTO.md:68`, "`docs/LICENSE-AUDIT.md` fechado e modelo de
+distribuição decidido") pode fechar, e F3 (Health Data Core) pode
+começar.
 
 ## Não verificado
 

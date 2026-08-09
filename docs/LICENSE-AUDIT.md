@@ -188,3 +188,46 @@ desta auditoria.
 - Este documento não resolve o ADR-4a (Gadgetbridge escreve ou só lê do
   Health Connect) nem o ADR-5 (licenciamento e modelo de distribuição) —
   ele dá o mapa para essas decisões, não a decisão em si.
+
+## Fechamento (2026-08-09) — item 9 da Definição de Pronto do MVP
+
+As decisões que este documento mapeava, sem tomar, estão todas tomadas
+agora — ADR-4, ADR-4a e ADR-5 aceitas (`docs/adr/000-pendentes.md`,
+11/11). Registro aqui, num lugar só, qual cenário e quais opções deste
+documento viraram decisão real:
+
+- **Cenário adotado: B** ("federados por rede/app separado; sem linkar
+  código") — wger e Fasten entram por FEDERATE (REST/FHIR), nunca linkados
+  ao binário do Frankstein. Gadgetbridge nem chega a ser uma chamada de
+  API: o Frankstein lê o Android Health Connect, que o Gadgetbridge
+  escreve (`docs/adr/004a-gadgetbridge.md`, aceita).
+- **OpenNutriTracker: PORT, não cópia/link.** Cliente reimplementa o
+  módulo de nutrição a partir de `docs/specs/nutricao.md`, clean room
+  obrigatório (`docs/adr/005-licenciamento-distribuicao.md`, aceita,
+  Opção 3). Não é o Cenário A nem o B puro — é a saída que evita o
+  copyleft do OpenNutriTracker entrar no cliente de qualquer jeito.
+- **Licença do cliente Frankstein: Apache-2.0.** MLC LLM e OpenTracks já
+  eram Apache-2.0 (WRAP, ADR-1); OpenNutriTracker deixa de ser GPL-3.0 no
+  cliente porque entra por PORT, não por link. Nenhum copyleft no cliente.
+- **Licença do servidor autoral: AGPL-3.0**, por escolha (ADR-3/ADR-8,
+  ambas aceitas) — não por obrigação de nenhum dos 7 repositórios.
+- **wger (AGPL-3.0) e Fasten (GPL-3.0) continuam com suas próprias
+  licenças**, como programas separados — não "vazam" para o Frankstein
+  (Cenário B, item 1). Se "wger hospedado" virar produto Premium
+  (`docs/MONETIZACAO.md`), a obrigação de fonte da AGPL §13 é do wger
+  como programa, mitigada pela rota `/source` já decidida
+  (`docs/B2B.md:31-33`), independente de qual leitura do §13 (permissiva
+  ou conservadora, Cenário B item 4) for a correta — não precisou esperar
+  essa pergunta jurídica em aberto se resolver.
+- **Distribuição:** multi-canal (`docs/adr/007-canais-distribuicao-pagamento.md`,
+  aceita) — cliente Apache-2.0 não colide com termos de loja do jeito que
+  GPL-3.0 colidiria (o precedente FSF×Apple de 2010 fica como bônus
+  histórico, não como base da decisão — `docs/adr/005-...md` já registra
+  isso invertido de propósito).
+
+**O que este fechamento não resolve** (não era o papel dele): custo de
+engenharia de reimplementar o módulo de nutrição (`docs/adr/004-wger-fasten.md`
+"Não verificado"); requisito específico de LGPD pra log de acesso B2B
+(`docs/adr/008-...md`); textos primários da FSF nunca lidos diretamente
+neste ambiente (ressalva de método acima, ainda vale). Esses seguem como
+débito de cada ADR específica, não deste documento.
