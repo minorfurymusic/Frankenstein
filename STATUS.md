@@ -16,28 +16,33 @@ sem contato com `docs/recon/opennutritracker.md`, só a partir de
 `docs/specs/nutricao.md` (`.claude/rules/port.md`). Detalhe completo em
 `docs/HISTORICO.md`.
 
-**Ciclo atual:** nenhum em andamento. F6 saiu de BLOQUEADA para
-CONCLUÍDA neste ciclo — ver `docs/HISTORICO.md`, entrada "F6
-(nutrição/código de barras) — implementada".
+**Ciclo atual:** varredura das pendências deixadas pela F6 — corrigido o
+que dava pra corrigir sem hardware/rede real, resto fica pra próxima
+etapa (ver `docs/HISTORICO.md` pra detalhe completo, entrada "F6 —
+varredura de pendências").
 
-**Pendências ativas:**
-- Decidir entre mais ferramentas do cérebro (`get_daily_summary`,
-  `search_food`, `sync_wearable`...) ou outro módulo (F7 Academia; F8
-  corrida/GPS) — não decidido.
-- Importação real do subconjunto brasileiro do Open Food Facts (hoje
-  `packages/nutrition` usa um dataset de fixture, 6 alimentos) —
-  trabalho futuro de infraestrutura de dados, `TODO(frankstein)` no
-  código.
-- Implementação concreta de `BarcodeDecoder` com `flutter_zxing` (MIT,
-  ZXing puro, sem ML Kit) em `app/` — precisa de dispositivo/emulador
-  real pra validar câmera, não existe neste ambiente.
-- `packages/activity/test/interlinked_tools_test.dart` ainda usa o
-  handler de demonstração de `log_meal`, não o real de
-  `packages/nutrition` — comentário lá ficou desatualizado, trocar num
-  ciclo futuro.
+**Pendências ativas (revisado):**
+- **Corrigido:** `packages/activity/test/interlinked_tools_test.dart`
+  agora usa `log_meal` real (`FoodRepository`/`MealLogger` de
+  `packages/nutrition`), não mais o handler de demonstração.
+- **Confirmado não resolvível aqui:** Open Food Facts
+  (`world/static/br.openfoodfacts.org`) bloqueado pelo proxy deste
+  ambiente (mesmo padrão de outros domínios já documentado) — testado
+  de novo antes de desistir, sem mirror pequeno viável encontrado.
+  `packages/nutrition` continua com dataset de fixture (6 alimentos).
+- **Adiado por decisão, não por bloqueio técnico:** `BarcodeDecoder`
+  concreto com `flutter_zxing` em `app/` — daria pra escrever o código,
+  mas sem câmera/emulador real pra validar, e o `app/` ainda não tem
+  nenhuma infraestrutura de UI (navegação, tema) pra essa tela se
+  encaixar — implementar isso isolado, sem poder testar e sem o resto
+  do app em volta, é mais risco que ganho agora. Fica pra quando o app
+  shell começar a ganhar UI de verdade.
 - Água (novo tipo de `HealthEvent`) e refeição/receita composta de
   ingredientes — pendências já registradas em `docs/specs/nutricao.md`,
   não implementadas.
+- Decidir entre mais ferramentas do cérebro (`get_daily_summary`,
+  `search_food`, `sync_wearable`...) ou outro módulo (F7 Academia; F8
+  corrida/GPS) — não decidido.
 
 **main sincronizado com a branch designada** em 2026-08-06 (fast-forward,
 `8a34c86`) — verificar se ainda está em sincronia antes de assumir.

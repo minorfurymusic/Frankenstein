@@ -1103,3 +1103,75 @@
   `packages/activity` (substituir o handler de demonstração), ou avançar
   outro módulo (F7 Academia; F8 corrida/GPS) — não decidido, pergunta em
   aberto pro usuário.
+
+- **F6 — varredura de pendências.** Instrução direta: "se conseguir
+  corrigir as pendências, corrija; se não, vá pra próxima etapa". As 5
+  pendências deixadas pelo ciclo anterior, uma a uma:
+
+  1. **`packages/activity/test/interlinked_tools_test.dart` usava o
+     handler de demonstração de `log_meal`, não o real — corrigido.**
+     `frankstein_nutrition` adicionada como `dev_dependency` de
+     `packages/activity` (path local). Teste reescrito: `FoodRepository.openInMemory(seedFixtureData:
+     true)` + `MealLogger` reais, registrados via `logMealSpec()`/
+     `logMealHandler()` de `packages/nutrition`. Trocado o item de
+     texto do comando de exemplo pro id real do dataset de fixture
+     (`fixture-arroz-branco-cozido`, já que o handler real busca no
+     catálogo de verdade e rejeita id desconhecido — acrescentado um
+     caso de teste novo pra isso: `alimento-inexistente` retorna
+     `PipelineOutcome.executed` com `toolResult.success == false`, não
+     trava o pipeline). Conferido o cálculo de macro de verdade: 150g de
+     arroz branco cozido (130 kcal/100g no fixture) = 195 kcal,
+     comparado no teste.
+  2. **Importação real do Open Food Facts — tentado de novo, confirmado
+     não resolvível neste ambiente.** `curl` direto a
+     `world.openfoodfacts.org`, `static.openfoodfacts.org` e
+     `br.openfoodfacts.org` — os três `HTTP 403` (`CONNECT tunnel
+     failed`), mesmo padrão de bloqueio de proxy já visto em outros
+     domínios nesta sessão (codeberg.org, gadgetbridge.org,
+     f-droid.org). `raw.githubusercontent.com` (que já funcionou como
+     mirror pra outros casos, ex. Gadgetbridge) está acessível, mas uma
+     busca não achou nenhum sample CSV/JSON pequeno com dado real
+     hospedado lá — os repositórios que trabalham com Open Food Facts
+     apontam pra baixar o dataset completo do site oficial (~0,9 GB
+     comprimido), não um recorte pronto. Sem caminho viável aqui.
+     `packages/nutrition` continua com o dataset de fixture, já bem
+     sinalizado como tal no código.
+  3. **`BarcodeDecoder` concreto com `flutter_zxing` — decisão de
+     adiar, não bloqueio técnico.** Diferente do item 2, dava pra
+     *escrever* o código (adicionar a dependência, implementar a
+     interface). Não foi feito porque (a) não tem como validar leitura
+     de câmera de verdade neste ambiente, e (b) `app/` ainda não tem
+     nenhuma estrutura de UI (navegação, tema, nenhuma tela além do
+     `Scaffold` em branco da Fase 2) — encaixar uma tela de scanner
+     isolada, sem o resto do app em volta e sem poder testar a parte que
+     mais importa (a câmera), tem mais risco de gerar código morto ou
+     errado do que valor de ter "alguma coisa escrita". Registrado como
+     próxima etapa natural quando o app shell ganhar UI de verdade, não
+     como pendência resolvida.
+  4. **Água / receita composta — não são bugs, são escopo novo.**
+     `docs/specs/nutricao.md` já registra as duas como "não decidida
+     aqui" — não tentei decidir isso agora, seria inventar escopo sem
+     pedido.
+  5. **Próximo módulo/ferramenta — segue em aberto**, não é algo pra
+     "corrigir", é decisão do usuário.
+
+  **Prova:**
+  ```
+  $ dart test (activity, isolado) → 00:00 +13: All tests passed!
+  $ make lint (raiz, todos os pacotes + app) → EXIT LINT: 0
+  $ make test (raiz, todos os pacotes + app) → EXIT TEST: 0
+  ```
+  64 testes no total: health_core 15, brain 5, tool_registry 11,
+  activity 13 (inclui o teste corrigido), nutrition 17, entitlements 1,
+  share 1, app 1.
+
+  **Não verificado:** mesmo item recorrente — `libsqlite3` em runners
+  `ubuntu-latest` do CI real, ainda não confirmado rodando de verdade.
+
+  **Débito técnico:** nenhum novo — dataset de fixture e `BarcodeDecoder`
+  abstrato já eram débito conhecido e continuam registrados como tal,
+  não pioraram nem foram escondidos.
+
+  **Próximo ciclo proposto:** decidir entre mais ferramentas do cérebro
+  ou outro módulo (F7 Academia; F8 corrida/GPS) — pergunta em aberto pro
+  usuário.

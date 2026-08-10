@@ -1,39 +1,17 @@
 import 'package:frankstein_activity/activity.dart';
 import 'package:frankstein_brain/brain.dart';
 import 'package:frankstein_health_core/health_core.dart';
+import 'package:frankstein_nutrition/nutrition.dart';
 import 'package:frankstein_tool_registry/tool_registry.dart';
 import 'package:test/test.dart';
 
 /// Prova que múltiplas ferramentas convivem no mesmo `BrainPipeline`,
 /// com dado real passando entre camadas: F4 (`StepsRepository`) grava
 /// eventos de passos; `get_steps` (F5, ligada a F4) lê esses eventos;
-/// `log_meal` (demonstração do pipeline, mesma usada em
-/// `packages/brain/test`) grava um evento não relacionado; nenhuma
-/// interfere na outra. `packages/nutrition` continua travado por clean
-/// room — `log_meal` aqui é o mesmo handler de demonstração que grava
-/// direto no Health Data Core, sem lógica de nutrição nenhuma.
-
-final _mealSchema = <String, dynamic>{
-  'type': 'object',
-  'properties': {
-    'items': {
-      'type': 'array',
-      'items': {
-        'type': 'object',
-        'properties': {
-          'food_id': {'type': 'string'},
-          'grams': {'type': 'number'},
-        },
-        'required': ['food_id', 'grams'],
-      },
-    },
-    'meal_type': {
-      'enum': ['breakfast', 'lunch', 'dinner', 'snack'],
-    },
-  },
-  'required': ['items', 'meal_type'],
-};
-
+/// `log_meal` (F6, `packages/nutrition` — não é mais demonstração, é o
+/// `MealLogger`/`FoodRepository` reais) grava um evento de refeição de
+/// verdade, calculando macros a partir do catálogo. Nenhuma interfere na
+/// outra.
 final _logMealPattern = RegExp(
   r'^registrar refeição (breakfast|lunch|dinner|snack): (.+)$',
   caseSensitive: false,
@@ -69,29 +47,15 @@ class _AlwaysConfirm implements ConfirmationGate {
   Future<bool> confirm(ToolSpec spec, Map<String, dynamic> params) async => true;
 }
 
-ToolHandler _logMealHandler(HealthDataCore core) {
-  return (params) async {
-    final event = HealthEvent(
-      id: HealthDataCore.newId(),
-      type: HealthEventType.meal,
-      source: HealthEventSource.manual,
-      occurredAt: DateTime.utc(2026, 8, 9, 12, 0),
-      occurredAtTzOffsetMinutes: -180,
-      recordedAt: DateTime.utc(2026, 8, 9, 12, 0),
-      payload: params,
-      confidence: 1.0,
-    );
-    core.insertEvent(event);
-    return ToolResult.ok({'event_id': event.id});
-  };
-}
-
 void main() {
   test(
-      'get_steps (dado real do F4) e log_meal convivem no mesmo BrainPipeline, sem interferência',
+      'get_steps (F4) e log_meal real (F6) convivem no mesmo BrainPipeline, sem interferência',
       () async {
     final core = HealthDataCore.openInMemory();
     addTearDown(core.close);
+    final foodRepository = FoodRepository.openInMemory(seedFixtureData: true);
+    addTearDown(foodRepository.close);
+    final mealLogger = MealLogger(foodRepository: foodRepository, core: core);
 
     // F4: passos de verdade, agregados pelo StepsRepository — não um
     // HealthEvent escrito à mão só para o teste.
@@ -113,15 +77,8 @@ void main() {
     final registry = ToolRegistry();
     registry.register(getStepsSpec(), getStepsHandler(core));
     registry.register(
-      ToolSpec(
-        name: 'log_meal',
-        description: 'Registra uma refeição no diário alimentar',
-        write: true,
-        confirm: true,
-        module: 'nutrition',
-        parametersSchema: _mealSchema,
-      ),
-      _logMealHandler(core),
+      logMealSpec(),
+      logMealHandler(mealLogger, tzOffsetMinutesProvider: () => -180),
     );
 
     final pipeline = BrainPipeline(
@@ -134,10 +91,25 @@ void main() {
     expect(stepsResult.outcome, PipelineOutcome.executed);
     expect(stepsResult.toolResult!.data!['total_steps'], 4500);
 
+    // "fixture-arroz-branco-cozido" é um id real do dataset de fixture
+    // (packages/nutrition/lib/src/food_fixture_dataset.dart) — o handler
+    // real de log_meal busca no FoodRepository de verdade, calcula macros
+    // a partir dos dados de 100g do alimento, não aceita qualquer string.
     final mealResult = await pipeline.handle(
-      'registrar refeição lunch: arroz-branco 150g',
+      'registrar refeição lunch: fixture-arroz-branco-cozido 150g',
     );
     expect(mealResult.outcome, PipelineOutcome.executed);
+    expect(mealResult.toolResult!.success, isTrue);
+    final totals = mealResult.toolResult!.data!['totals'] as Map;
+    // 150g de arroz branco cozido (130 kcal/100g no fixture) = 195 kcal.
+    expect(totals['energy_kcal'], closeTo(195.0, 0.01));
+
+    // Alimento fora do catálogo é rejeitado, não silenciosamente aceito.
+    final unknownFoodResult = await pipeline.handle(
+      'registrar refeição dinner: alimento-inexistente 100g',
+    );
+    expect(unknownFoodResult.outcome, PipelineOutcome.executed);
+    expect(unknownFoodResult.toolResult!.success, isFalse);
 
     // A refeição não mudou o total de passos, e vice-versa — os dois
     // tipos de HealthEvent convivem no mesmo Core sem se misturar.

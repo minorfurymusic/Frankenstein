@@ -119,6 +119,13 @@ packages:
       relative: true
     source: path
     version: "0.1.0"
+  frankstein_nutrition:
+    dependency: "direct dev"
+    description:
+      path: "../nutrition"
+      relative: true
+    source: path
+    version: "0.1.0"
   frankstein_tool_registry:
     dependency: "direct main"
     description:
