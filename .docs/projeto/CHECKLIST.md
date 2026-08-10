@@ -12,8 +12,8 @@
 - [x] **F3** — Health Data Core — schema `HealthEvent` implementado e testado (`packages/health_core`, 15 testes, `make lint`/`make test` verdes).
 - [x] **F4** — Passos — `StepsRepository` implementado e testado (`packages/activity`, agregação de contador cumulativo + reset). Foreground service Android real não implementado — sem device pra testar aqui.
 - [x] **F5** — Cérebro com ferramentas — pipeline provado com 2 ferramentas reais coexistindo (`get_steps`, `log_meal`). MLC LLM real (on-device) não implementado — sem device pra testar neste ambiente; entra depois via interface `ToolCaller`.
-- [ ] **F6** — Nutrição + código de barras — não iniciado (caminho liberado: ADR-5 aceita, PORT do OpenNutriTracker)
-- [ ] **F7** — Academia: planos + sessão + séries — não iniciado
+- [x] **F6** — Nutrição + código de barras — `packages/nutrition` implementado e testado (17 testes). Dataset real (Open Food Facts) e `flutter_zxing` concreto ficam pra depois.
+- [x] **F7** — Academia: planos + sessão + séries — `packages/activity` (`WorkoutPlan`/`WorkoutRepository`, `WorkoutLogger`, `get_workout_plan`/`log_workout_session`), 14 testes novos. Sem dependência de hardware, testado de ponta a ponta.
 - [ ] **F8** — Corrida/caminhada com GPS — não iniciado
 - [ ] **F9** — Wearable BLE — não iniciado (caminho liberado: ADR-4a aceita)
 - [ ] **F10** — Entitlements — não iniciado
@@ -42,4 +42,5 @@ Item 9 é o primeiro a fechar — decisão, não implementação.
 - [x] ~~Confirmação explícita da ADR-4 (wger/Fasten)~~ — aceita 2026-08-09
 - [x] ~~Confirmação explícita da ADR-5 (licenciamento)~~ — aceita 2026-08-09
 - [x] ~~Fechar `docs/LICENSE-AUDIT.md` com a decisão final~~ — feito
-- [ ] Iniciar F3 (Health Data Core) — próximo ciclo
+- [x] ~~Iniciar F3 (Health Data Core)~~ — concluído
+- [ ] Decidir entre F8 (corrida/GPS) ou mais ferramentas do cérebro sobre F3-F7 já implementadas — próximo ciclo, pergunta em aberto pro usuário

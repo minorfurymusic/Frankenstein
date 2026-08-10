@@ -1175,3 +1175,88 @@
   **Próximo ciclo proposto:** decidir entre mais ferramentas do cérebro
   ou outro módulo (F7 Academia; F8 corrida/GPS) — pergunta em aberto pro
   usuário.
+
+- **Ciclo — F7: Academia (planos, sessão, séries, recorde).** Usuário pediu
+  a próxima etapa; seguindo a regra de desempate já combinada ("pendências
+  primeiro, depois a ordem sugerida" — `docs/PRODUTO.md`), e com F6 sem
+  pendências restantes cabíveis neste ambiente, a próxima etapa é F7
+  (Academia — `docs/PRODUTO.md:28`: "planos, sessão ao vivo, séries/
+  repetições/carga, RPE, recordes, progressão"). Diferente de F4/F6, F7
+  não tem nenhuma dependência de hardware/câmera identificada — tudo
+  testável de ponta a ponta neste ambiente, sem ressalva. Também não tem
+  o bloqueio de clean room de F6 (`.claude/rules/port.md` só vale para
+  `packages/nutrition`), então implementado diretamente, sem subagente.
+
+  Domínio (`packages/activity/lib/src/`): `workout_plan.dart`
+  (`PlannedExercise`, `WorkoutPlan` — catálogo local, não é `HealthEvent`,
+  mesmo papel que `Food` tem pra nutrição) e `workout_session.dart`
+  (`SetEntry`, `WorkoutSessionInput` — o que foi executado de verdade,
+  granular por série pra permitir consulta de progressão por exercício).
+  `workout_repository.dart`: `WorkoutRepository` sobre `sqlite3`, mesmo
+  padrão exato de `FoodRepository` (`packages/nutrition/lib/src/food_repository.dart`)
+  — `.open(path)`/`.openInMemory()`, tabelas `workout_plans` +
+  `workout_plan_exercises`. `workout_logger.dart`: `WorkoutLogger.logSession`
+  grava 1 `HealthEvent` tipo `workout_session` (resumo) + N tipo `set_log`
+  (um por série, cada um com `session_event_id` apontando pro resumo) —
+  os dois tipos já estavam reservados no enum desde a F3
+  (`packages/health_core/lib/src/health_event.dart:8-9`), nunca usados até
+  agora. `personalRecord(exerciseId)` calcula o recorde (maior `load_kg`)
+  por consulta sobre `core.queryByType(HealthEventType.setLog)` — não
+  armazenado, decisão espelhando como o resto do Health Data Core trata
+  dado derivado. `workout_tools.dart`: `get_workout_plan` (leitura,
+  `write: false`) e `log_workout_session` (escrita, `write: true,
+  confirm: true`) registráveis no `ToolRegistry`, mesmo padrão de
+  `activity_tools.dart`/`nutrition_tools.dart`.
+
+  Decisão registrada inline: nenhuma tabela "Exercise" foi criada —
+  exercício é só `exerciseId`/`exerciseName` de texto livre escolhido por
+  quem chama a ferramenta. Catálogo de exercícios (nome canônico, grupo
+  muscular, instrução) não está em `docs/PRODUTO.md` como requisito desta
+  fase; criar um agora seria escopo antecipado sem necessidade concreta —
+  fica como debate futuro, não como TODO escondido.
+
+  Dependências: `sqlite3: ^2.4.6` (BSD-3-Clause) e `uuid: ^4.5.1`
+  (MIT) adicionadas a `packages/activity/pubspec.yaml` como dependências
+  diretas — ambas já usadas e com licença registrada anteriormente em
+  `packages/health_core`/`packages/nutrition` (mesmas versões); aqui é
+  reuso, não dependência nova ao projeto, só uma nova declaração direta
+  no pacote (`.claude/rules/licenca.md`).
+
+  **Prova:**
+  ```
+  $ dart test (activity, isolado) → 00:00 +27: All tests passed!
+  $ make lint (raiz, todos os pacotes + app) → "No issues found!" em
+    health_core, brain, tool_registry, activity, nutrition, entitlements,
+    share, app
+  $ make test (raiz, todos os pacotes + app) →
+    health_core: 00:00 +15: All tests passed!
+    brain: 00:00 +5: All tests passed!
+    tool_registry: 00:00 +11: All tests passed!
+    activity: 00:00 +27: All tests passed!
+    nutrition: 00:00 +17: All tests passed!
+    entitlements: 00:00 +1: All tests passed!
+    share: 00:00 +1: All tests passed!
+    app (flutter test): 00:10 +1: All tests passed!
+  ```
+  78 testes no total (health_core 15, brain 5, tool_registry 11,
+  activity 27 — 13 de passos/interligado + 14 novos de F7 — nutrition 17,
+  entitlements 1, share 1, app 1). 14 testes novos cobrem: validação de
+  `PlannedExercise`/`WorkoutPlan`/`SetEntry`/`WorkoutSessionInput`,
+  `WorkoutRepository` (insert + find, plano inexistente), `WorkoutLogger`
+  (grava sessão+séries com `session_event_id` correto, recorde pessoal
+  com múltiplas sessões, exercício nunca registrado devolve `null`), e as
+  duas ferramentas do cérebro (spec de leitura sem confirm, spec de
+  escrita com confirm, execução real ponta a ponta gravando no
+  `HealthDataCore`).
+
+  **Não verificado:** mesmo item recorrente — `libsqlite3` em runners
+  `ubuntu-latest` do CI real, ainda não confirmado rodando de verdade.
+
+  **Débito técnico:** nenhum novo. `TODO(frankstein)` não foi necessário
+  neste ciclo — nada ficou pela metade.
+
+  **Próximo ciclo proposto:** F8 (corrida/caminhada com GPS) — mas essa
+  herda o mesmo limite de hardware de F4 (sem device/emulador real pra
+  validar GPS, bateria, gravação em background neste ambiente); ou,
+  alternativamente, mais ferramentas do cérebro sobre o que já existe
+  (`get_daily_summary`, `search_food`). Pergunta em aberto pro usuário.

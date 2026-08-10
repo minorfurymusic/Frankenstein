@@ -7,19 +7,25 @@
 > Histórico completo de ciclos: `docs/HISTORICO.md`. Este arquivo só guarda o
 > estado **atual** — consulte o histórico sob demanda, não por hábito.
 
-**Fase:** **F3, F4, F5 e F6 concluídas.** Health Data Core, passos
-(`StepsRepository`), o pipeline do cérebro e agora o módulo de nutrição
-(`packages/nutrition`: `Food`/`FoodRepository` sobre `sqlite3` com
-dataset de fixture, `MealLogger`, interface `BarcodeDecoder`, `log_meal`
-real registrada no `ToolRegistry`) — implementado por uma sessão nova,
-sem contato com `docs/recon/opennutritracker.md`, só a partir de
-`docs/specs/nutricao.md` (`.claude/rules/port.md`). Detalhe completo em
+**Fase:** **F3, F4, F5, F6 e F7 concluídas.** Health Data Core, passos
+(`StepsRepository`), o pipeline do cérebro, o módulo de nutrição
+(`packages/nutrition`) e agora o módulo de academia
+(`packages/activity`: `WorkoutPlan`/`WorkoutRepository` sobre `sqlite3`,
+`WorkoutLogger` gravando `workout_session`+`set_log`, `get_workout_plan`/
+`log_workout_session` reais no `ToolRegistry`). Detalhe completo em
 `docs/HISTORICO.md`.
 
-**Ciclo atual:** varredura das pendências deixadas pela F6 — corrigido o
-que dava pra corrigir sem hardware/rede real, resto fica pra próxima
-etapa (ver `docs/HISTORICO.md` pra detalhe completo, entrada "F6 —
-varredura de pendências").
+**Ciclo atual:** F7 — Academia. Sem dependência de hardware desta vez
+(diferente de passos/GPS): tudo testável de verdade, sem ressalva de
+"precisa de device". `docs/PRODUTO.md:28` ("planos, sessão ao vivo,
+séries/repetições/carga, RPE, recordes, progressão") implementado como:
+catálogo de planos (`WorkoutPlan`/`PlannedExercise`, local, não é
+`HealthEvent` — mesmo padrão do catálogo `Food` da nutrição) + sessão
+executada (`WorkoutSessionInput`/`SetEntry`, grava 1 `workout_session` +
+N `set_log` por sessão) + recorde pessoal calculado por consulta sobre
+`set_log` (não armazenado). Nenhuma tabela de "Exercise" catalogada —
+exercício é `exerciseId`/`exerciseName` livre escolhido pelo chamador,
+evitando escopo prematuro.
 
 **Pendências ativas (revisado):**
 - **Corrigido:** `packages/activity/test/interlinked_tools_test.dart`
@@ -41,11 +47,13 @@ varredura de pendências").
   ingredientes — pendências já registradas em `docs/specs/nutricao.md`,
   não implementadas.
 - Decidir entre mais ferramentas do cérebro (`get_daily_summary`,
-  `search_food`, `sync_wearable`...) ou outro módulo (F7 Academia; F8
-  corrida/GPS) — não decidido.
+  `search_food`, `sync_wearable`...) ou outro módulo (F8 corrida/GPS,
+  que herda o mesmo limite de hardware que passos: sem device/emulador
+  pra validar GPS de verdade neste ambiente) — não decidido.
 
-**main sincronizado com a branch designada** em 2026-08-06 (fast-forward,
-`8a34c86`) — verificar se ainda está em sincronia antes de assumir.
+**main sincronizado com a branch designada** — verificar se ainda está em
+sincronia antes de assumir (checar `git log` das duas antes de reusar
+este status sem revalidar).
 
 ## Progresso
 
@@ -77,6 +85,7 @@ varredura de pendências").
 | 4 | Passos, foreground service (F4) | **CONCLUÍDO** (`packages/activity`, `StepsRepository`) — agregação de contador cumulativo, reset de aparelho tratado; foreground service Android real fica pra depois (sem device pra testar aqui) |
 | 5 | Cérebro com 1+ ferramentas (F5) | **pipeline provado com 2 ferramentas reais** (`get_steps`, `log_meal`) coexistindo no mesmo `BrainPipeline`/`ToolRegistry`; LLM on-device real fica pra depois (sem device pra testar aqui) |
 | 6 | Nutrição/código de barras (F6) | **CONCLUÍDO** (`packages/nutrition`) — `Food`/`FoodRepository` (sqlite3, dataset de fixture), `MealLogger`, `BarcodeDecoder` (interface, sem câmera real), `log_meal` real ligada ao `ToolRegistry`; dataset real (Open Food Facts) e `flutter_zxing` concreto ficam pra depois |
+| 7 | Academia (F7) | **CONCLUÍDO** (`packages/activity`) — `WorkoutPlan`/`WorkoutRepository` (sqlite3), `WorkoutLogger` (`workout_session`+`set_log`, recorde por consulta), `get_workout_plan`/`log_workout_session` reais no `ToolRegistry`; sem dependência de hardware, testado de ponta a ponta |
 | — | Relatório de eficiência (`docs/EFICIENCIA.md`) | Grupo A adotado como prática; Grupo B aplicado (este arquivo) |
 
 ## Decisões já tomadas (não reabrir sem motivo novo)

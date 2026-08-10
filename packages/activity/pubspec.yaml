@@ -13,6 +13,8 @@ dependencies:
     path: ../health_core
   frankstein_tool_registry:
     path: ../tool_registry
+  sqlite3: ^2.4.6
+  uuid: ^4.5.1
 
 dev_dependencies:
   frankstein_brain:
