@@ -1,13 +1,21 @@
 name: frankstein_activity
 description: >-
   Sensores e atividade — pedômetro, BLE wearable, treino, GPS de corrida (.claude/rules/activity.md, ADR-9).
-  Esqueleto vazio — Fase 2, Ciclo 1. Nenhuma lógica ainda.
+  Passos: StepsRepository + get_steps (Fase 4/5).
 publish_to: 'none'
-version: 0.0.1
+version: 0.1.0
 
 environment:
   sdk: ^3.9.0
 
+dependencies:
+  frankstein_health_core:
+    path: ../health_core
+  frankstein_tool_registry:
+    path: ../tool_registry
+
 dev_dependencies:
+  frankstein_brain:
+    path: ../brain
   lints: ^5.0.0
   test: ^1.25.0

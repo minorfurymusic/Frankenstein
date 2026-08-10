@@ -7,21 +7,26 @@
 > Histórico completo de ciclos: `docs/HISTORICO.md`. Este arquivo só guarda o
 > estado **atual** — consulte o histórico sob demanda, não por hábito.
 
-**Fase:** **F3 concluída, F5 (cérebro com 1 ferramenta) configurada.**
-F4 (passos) ainda não começou — pulado por instrução direta ("o F5 é a
-ferramenta mais importante"). Detalhe completo em `docs/HISTORICO.md`.
+**Fase:** **F3, F4 e F5 concluídas.** Health Data Core, passos
+(`StepsRepository`) e o pipeline do cérebro com duas ferramentas reais
+(`get_steps`, `log_meal`) provados juntos, com dado real passando entre
+as três camadas. Detalhe completo em `docs/HISTORICO.md`.
 
-**Ciclo atual:** pipeline do cérebro (`packages/brain` +
-`packages/tool_registry`) provado de ponta a ponta com `log_meal`:
-roteador determinístico → validação JSON Schema → confirmação humana →
-execução → `HealthEvent` gravado de verdade no Health Data Core. **MLC
-LLM real (inferência on-device) não implementado nesta fase** — exige
-Android físico/emulador que este ambiente não tem; entra depois via a
-interface `ToolCaller` já pronta pra receber, sem reescrever o pipeline.
+**Ciclo atual:** F4 implementada (`packages/activity`) — agregação de
+contador cumulativo do sensor de passos em `HealthEvent`s, incluindo o
+caso de reinício do aparelho (contador zera). **Foreground service
+Android real não implementado** — mesmo limite de F5 (MLC LLM):
+precisa de aparelho/emulador de verdade, que este ambiente não tem;
+entra depois como implementação de `StepSensor`, sem mudar
+`StepsRepository`. `get_steps` (F5) já lê os eventos do F4 de verdade —
+provado num teste que registra `get_steps` e `log_meal` no mesmo
+`BrainPipeline` e confirma que não interferem entre si.
 
-**Pendências ativas:** nenhuma. Próximo módulo a decidir: F4 (passos) ou
-seguir direto pra outra ferramenta do cérebro (`get_daily_summary`,
-`get_steps`, etc.) — não decidido.
+**Pendências ativas:** nenhuma. Próximo: decidir entre mais ferramentas
+do cérebro (`get_daily_summary`, `search_food`, `sync_wearable`...) ou
+outro módulo (F6 nutrição — travado por clean room até
+`docs/specs/nutricao.md` bastar; F7 Academia; F8 corrida/GPS) — não
+decidido.
 
 **main sincronizado com a branch designada** em 2026-08-06 (fast-forward,
 `8a34c86`) — verificar se ainda está em sincronia antes de assumir.
@@ -53,8 +58,8 @@ seguir direto pra outra ferramenta do cérebro (`get_daily_summary`,
 | 1 | **11/11 ADRs registradas** | **11/11 aceitas** — Fase 1 concluída |
 | 2 | Esqueleto do monorepo (F2) | **CONCLUÍDO** — CI verde (`ubuntu-latest`), sandbox de dev sem SDK Android/KVM (limite de ambiente) |
 | 3 | Health Data Core (F3) | **CONCLUÍDO** (`packages/health_core`) — `HealthEvent` append-only, dedup, correção, `gps_track_points` |
-| 4 | Passos, foreground service (F4) | não iniciado — pulado por instrução direta, F5 priorizada |
-| 5 | Cérebro com 1 ferramenta só (F5) | **pipeline configurado e provado** (`packages/brain` + `packages/tool_registry`) — roteador determinístico, validação, confirmação, execução real (`log_meal`); LLM on-device real fica pra depois (sem device pra testar aqui) |
+| 4 | Passos, foreground service (F4) | **CONCLUÍDO** (`packages/activity`, `StepsRepository`) — agregação de contador cumulativo, reset de aparelho tratado; foreground service Android real fica pra depois (sem device pra testar aqui) |
+| 5 | Cérebro com 1+ ferramentas (F5) | **pipeline provado com 2 ferramentas reais** (`get_steps`, `log_meal`) coexistindo no mesmo `BrainPipeline`/`ToolRegistry`; LLM on-device real fica pra depois (sem device pra testar aqui) |
 | — | Relatório de eficiência (`docs/EFICIENCIA.md`) | Grupo A adotado como prática; Grupo B aplicado (este arquivo) |
 
 ## Decisões já tomadas (não reabrir sem motivo novo)

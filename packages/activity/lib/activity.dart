@@ -1,6 +1,16 @@
-/// Sensores e atividade — pedômetro, BLE wearable, treino, GPS de corrida (.claude/rules/activity.md, ADR-9).
+/// Sensores e atividade — pedômetro, BLE wearable, treino, GPS de
+/// corrida (`.claude/rules/activity.md`, ADR-9 aceita).
 ///
-/// Esqueleto vazio — Fase 2, Ciclo 1 (docs/PRODUTO.md, fase F2). Nenhum
-/// módulo, nenhum LLM, nenhum banco entra aqui neste ciclo; só a
-/// estrutura do monorepo, para ciclos futuros preencherem.
+/// Fase 4: passos. `StepsRepository` agrega leituras cumulativas do
+/// sensor em `HealthEvent`s tipo `steps`. **O foreground service Android
+/// real (contagem que não para com a tela bloqueada) não está
+/// implementado aqui** — exige aparelho/emulador de verdade para validar,
+/// que este ambiente não tem; entra depois como implementação concreta
+/// de [StepSensor], sem mudar `StepsRepository`. `get_steps` (Fase 5,
+/// ferramenta do cérebro) já lê os eventos gravados.
 library;
+
+export 'src/activity_tools.dart';
+export 'src/step_sensor.dart';
+export 'src/steps_repository.dart';
+export 'src/steps_sample.dart';

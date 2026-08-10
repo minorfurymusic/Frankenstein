@@ -836,3 +836,81 @@
   **Próximo ciclo proposto:** F4 (passos) ou registrar mais ferramentas
   no cérebro (`get_daily_summary`, `get_steps`) usando o mesmo pipeline
   — não decidido, pergunta em aberto pro usuário.
+
+- **Fase 4 — passos, e ferramenta do cérebro interligada.** Instrução
+  direta: "f4 e ferramentas interligadas do cerebro".
+
+  Investigado antes de codificar: `.claude/rules/activity.md` — aviso
+  forte, citado literalmente: "Foreground service no Android. A
+  contagem NÃO pode parar com a tela bloqueada. Esse é o bug que matou o
+  projeto anterior; trate como requisito, não como detalhe." Mesmo
+  recorte de escopo do F5 (confirmado por precedente já estabelecido,
+  não repetido pro usuário desta vez): **o foreground service Android
+  real não entra neste ciclo** — exige aparelho/emulador de verdade pra
+  validar que a contagem não para com a tela bloqueada, e este ambiente
+  não tem nenhum dos dois (mesmo limite do Ciclo 27).
+
+  **`packages/activity`** (dependência real em `frankstein_health_core`
+  e `frankstein_tool_registry`; `frankstein_brain` como dev_dependency
+  só pro teste de ferramentas interligadas):
+  - `StepsSample` — leitura crua do sensor, espelha a semântica real do
+    `TYPE_STEP_COUNTER` do Android (contador cumulativo desde o boot,
+    zera no reinício).
+  - `StepSensor` — interface da fonte de leituras; a implementação
+    Android real (foreground service + platform channel) não está
+    implementada, mesma razão do `ToolCaller` na Fase 5.
+  - `StepsRepository` — agrega leituras em `HealthEvent`s tipo `steps`:
+    primeira leitura vira linha de base (sem evento); leituras
+    crescentes acumulam delta; leitura menor que a anterior = reset do
+    aparelho, faz flush automático do delta pendente antes de recomeçar
+    a linha de base. `flush()` grava o evento e reinicia a janela;
+    `attachSensor()` liga a uma fonte de leituras via `Stream`.
+  - **Bug pego antes de rodar teste:** primeira versão de `flush()` lia
+    `DateTime.timeZoneOffset` do timestamp UTC pra gravar
+    `occurred_at_tz_offset_minutes` — mas um `DateTime` UTC sempre
+    reporta offset zero, isso zeraria o fuso de todo evento. Corrigido
+    exigindo `tzOffsetMinutes` explícito em `flush()` (e em
+    `StepsSample`), mesma disciplina de `occurredAt`/`recordedAt` em
+    UTC "com timezone gravado à parte" — nenhum campo tenta derivar
+    fuso de um timestamp UTC.
+  - `get_steps` (`.claude/rules` novo em `docs/ARQUITETURA.md:66-67`) —
+    soma `count` dos eventos `steps` do dia pedido. Simplificação
+    registrada no código: usa limites de dia em UTC, não o fuso local de
+    cada evento — funciona certo pra a maioria dos fusos, fica como
+    débito conhecido, não erro escondido.
+
+  **Ferramentas interligadas — prova de que `get_steps` e `log_meal`
+  convivem no mesmo pipeline, sem interferência**
+  (`packages/activity/test/interlinked_tools_test.dart`): passos
+  gravados de verdade via `StepsRepository` (não um `HealthEvent`
+  escrito à mão), `get_steps` lê esse dado através do `BrainPipeline`
+  (roteador reconhece "quantos passos eu dei em DATA?"), `log_meal`
+  registrado no mesmo `ToolRegistry` (mesmo handler de demonstração já
+  usado na Fase 5 — `packages/nutrition` continua travado por clean
+  room, não tocado). Confirma que os dois tipos de evento coexistem no
+  Health Data Core sem se misturar (consulta de passos antes e depois de
+  gravar uma refeição dá o mesmo total).
+
+  **Prova:**
+  ```
+  $ make lint (todos os pacotes + app) → EXIT LINT: 0
+  $ make test (todos os pacotes + app) → EXIT TEST: 0
+  ```
+  46 testes no total: health_core 15, brain 5, tool_registry 11,
+  activity 13 (inclui o teste de ferramentas interligadas), nutrition/
+  entitlements/share 1 cada, app 1.
+
+  **Não verificado:** mesmo item de F3/F5 — disponibilidade de
+  `libsqlite3` em runners `ubuntu-latest` do CI real, ainda não
+  confirmada rodando de verdade.
+
+  **Débito técnico:** `get_steps` usa limites de dia em UTC, não fuso
+  local por evento (registrado no código, não escondido). Foreground
+  service Android real — mesmo débito já registrado pro `ToolCaller`
+  de LLM na Fase 5.
+
+  **Próximo ciclo proposto:** mais ferramentas do cérebro
+  (`get_daily_summary`, `search_food`, `sync_wearable`) ou outro módulo
+  (F6 nutrição — travado até `docs/specs/nutricao.md` bastar sozinha;
+  F7 Academia; F8 corrida/GPS) — não decidido, pergunta em aberto pro
+  usuário.
