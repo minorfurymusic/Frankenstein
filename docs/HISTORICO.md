@@ -974,3 +974,132 @@
 
   **Débito técnico:** nenhum novo em código — o "débito" aqui é a F6
   inteira, ainda não iniciada.
+
+- **F6 (nutrição/código de barras) — implementada, sessão nova sem
+  contato com `docs/recon/opennutritracker.md`.** Delegada por outra
+  sessão exatamente pelo bloqueio de clean room registrado na entrada
+  anterior. Confirmado ao abrir: esta sessão nunca leu
+  `docs/recon/opennutritracker.md` nem `refs/opennutritracker/` — não
+  abertos em nenhum momento deste ciclo, do primeiro ao último comando.
+  Implementação parte só de `docs/specs/nutricao.md` (`.claude/rules/port.md`).
+
+  **`packages/nutrition`** (dependência real em `frankstein_health_core`
+  e `frankstein_tool_registry`; `frankstein_brain` como dev_dependency só
+  pro teste de ponta a ponta, mesmo padrão de `packages/activity`):
+  - `Food`/`FoodSource` — modelo de alimento (nome, código de barras
+    opcional, macros por 100 g; saturada/açúcar/fibra/sódio opcionais
+    porque nem toda fonte tem o dado).
+  - `FoodRepository` — catálogo local sobre `sqlite3` (mesmo padrão FFI
+    de `packages/health_core`, não `sqflite`): `findById`,
+    `findByBarcode`, `searchByName` (substring, case-insensitive),
+    `insertCustomFood` (exige `FoodSource.custom`, pra separar catálogo
+    embarcado de item do usuário). **Populado por um dataset de
+    fixture** (`food_fixture_dataset.dart`, 6 alimentos brasileiros
+    comuns, macros plausíveis, códigos de barras fabricados só pra
+    exercitar busca) — **não é o subconjunto real do Open Food Facts**
+    (`docs/OFFLINE-IA.md:31-35`); a importação real (rede, tamanho,
+    delta mensal) é trabalho futuro de infraestrutura de dados, marcada
+    com `TODO(frankstein)` no código, fora do escopo deste ciclo por
+    instrução explícita.
+  - `BarcodeDecoder` — interface abstrata (`decodeImage(Uint8List)`),
+    mesmo padrão de isolamento de hardware que `StepSensor`
+    (`packages/activity/lib/src/step_sensor.dart`): este ambiente não
+    tem câmera nem emulador pra validar uma implementação real.
+    `FixtureBarcodeDecoder` (mapa bytes→código, registrado em teste)
+    prova o fluxo "decodifica → acha no catálogo → registra" sem
+    hardware nenhum. **Pacote pesquisado e escolhido para a
+    implementação concreta futura: `flutter_zxing` (pub.dev, versão
+    2.3.0 na pesquisa, licença MIT, ZXing-cpp via Dart FFI, sem ML Kit
+    nem Google Play Services) — não adicionado como dependência neste
+    ciclo** porque ele exige o SDK Flutter e o pacote `camera`;
+    `packages/nutrition` precisava continuar Dart puro (`dart test`,
+    mesmo padrão de `health_core`/`activity`), então a classe concreta
+    fica para `app/` num ciclo futuro com dispositivo/emulador de
+    verdade.
+  - `MealLogger` — recebe alimento(s) (`food_id`+gramas) + tipo de
+    refeição, calcula macros totais (soma ponderada por
+    `gramas/100`), grava `HealthEvent` tipo `meal` via
+    `HealthDataCore.insertEvent`. `source` do evento é
+    `HealthEventSource.manual` — decisão registrada no código
+    (`meal_logger.dart`): o enum real
+    (`packages/health_core/lib/src/health_event.dart:41-57`) não tem
+    valor pra "veio de scanner"; em vez de inflar o enum, a proveniência
+    de cada item (busca/scan/adição rápida) vai no `payload`, por item
+    (`input_method`), porque é aí que o dado pertence — `source` do
+    evento é sobre a origem do evento (interação do usuário no app,
+    sempre manual aqui), não do item.
+  - `log_meal` real (`nutrition_tools.dart`, `logMealSpec`/
+    `logMealHandler`) — mesmo padrão de `getStepsSpec`/`getStepsHandler`
+    em `packages/activity/lib/src/activity_tools.dart`. Schema idêntico
+    ao contrato documentado em `docs/ARQUITETURA.md:60-79`. Recebe
+    `tzOffsetMinutesProvider` (função, não valor fixo) porque o contrato
+    JSON de `log_meal` não carrega fuso — só quem conhece o fuso do
+    aparelho no momento do registro pode fornecer isso, e o fuso pode
+    mudar entre chamadas (viagem).
+
+  **Prova de ponta a ponta** (`packages/nutrition/test/nutrition_test.dart`,
+  grupo "log_meal — ferramenta real do cérebro"): um roteador
+  determinístico próprio deste ciclo (regex em português, não copiado de
+  nenhum roteador existente) reconhece "comi Ng de FOOD_ID no
+  REFEIÇÃO", o `BrainPipeline` decide, valida contra o schema, executa
+  `log_meal` de verdade, e o `HealthEvent` cai no Health Data Core com
+  os macros certos (146 kcal pro exemplo de 100 g de ovo cozido,
+  conferido contra o dataset de fixture). Mesmo padrão de prova já usado
+  em `packages/activity/test/interlinked_tools_test.dart` pra
+  `get_steps`.
+
+  **Prova:**
+  ```
+  $ cd packages/nutrition && dart analyze --fatal-infos
+  Analyzing nutrition...
+  No issues found!
+
+  $ cd packages/nutrition && dart test
+  ...
+  00:00 +17: All tests passed!
+
+  $ make lint   (raiz, todos os pacotes + app)
+  ... (todo pacote: "No issues found!"; app: "No issues found! (ran in 6.1s)")
+
+  $ make test   (raiz, todos os pacotes + app)
+  ... health_core 15, brain 5, tool_registry 11, activity 13,
+      nutrition 17, entitlements 1, share 1, app 1 — todos
+      "All tests passed!"
+  ```
+
+  **Não verificado:** mesmo item de F3/F4/F5 — disponibilidade de
+  `libsqlite3` em runners `ubuntu-latest` do CI real, ainda não
+  confirmada rodando de verdade (agora com mais um pacote,
+  `frankstein_nutrition`, na mesma exposição). Se a fórmula de meta
+  calórica/macros/IMC citada em `docs/specs/nutricao.md` (IOM 2005, WHO,
+  WHO TRS 916, Compendium 2024) deve ser implementada exatamente assim —
+  fora de escopo desta especificação, não decidido aqui. Tipo de
+  `HealthEvent` para água — ainda pendente, não adicionado
+  (`docs/specs/nutricao.md`, seção "Não verificado"; não implementado
+  neste ciclo por não estar no escopo mínimo delegado).
+
+  **Débito técnico:**
+  - `TODO(frankstein)` em `food_fixture_dataset.dart`: trocar dataset de
+    fixture pela importação real do subconjunto brasileiro do Open Food
+    Facts quando existir infraestrutura de download.
+  - `TODO(frankstein)` em `barcode_decoder.dart`: implementar
+    `ZxingBarcodeDecoder` concreto em `app/` com `flutter_zxing` ^2.3.0
+    quando houver dispositivo/emulador real pra testar câmera.
+  - Água (novo tipo de `HealthEvent`) e peso (fluxo completo de
+    tendência) não entraram — fora do escopo mínimo deste ciclo,
+    seguem como pendência de `docs/specs/nutricao.md`.
+  - Refeição/receita personalizada composta de outros ingredientes
+    (bill-of-materials completo) não entrou — só `insertCustomFood`
+    (item único, nome+macros); composição a partir de ingredientes já
+    cadastrados fica para um ciclo futuro.
+  - `packages/activity/test/interlinked_tools_test.dart` ainda usa o
+    handler de demonstração de `log_meal` (não o real) e o comentário lá
+    ainda diz "`packages/nutrition` continua travado por clean room" —
+    ficou desatualizado por este ciclo; não tocado agora pra não sair do
+    escopo restrito a `packages/nutrition/**` (regra de clean room),
+    fica pra um ciclo futuro trocar pelo handler real.
+
+  **Próximo ciclo proposto:** ligar `log_meal` real ao pipeline de
+  `packages/activity` (substituir o handler de demonstração), ou avançar
+  outro módulo (F7 Academia; F8 corrida/GPS) — não decidido, pergunta em
+  aberto pro usuário.

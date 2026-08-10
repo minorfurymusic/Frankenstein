@@ -7,28 +7,37 @@
 > Histórico completo de ciclos: `docs/HISTORICO.md`. Este arquivo só guarda o
 > estado **atual** — consulte o histórico sob demanda, não por hábito.
 
-**Fase:** **F3, F4 e F5 concluídas.** Health Data Core, passos
-(`StepsRepository`) e o pipeline do cérebro com duas ferramentas reais
-(`get_steps`, `log_meal`) provados juntos, com dado real passando entre
-as três camadas. Detalhe completo em `docs/HISTORICO.md`.
+**Fase:** **F3, F4, F5 e F6 concluídas.** Health Data Core, passos
+(`StepsRepository`), o pipeline do cérebro e agora o módulo de nutrição
+(`packages/nutrition`: `Food`/`FoodRepository` sobre `sqlite3` com
+dataset de fixture, `MealLogger`, interface `BarcodeDecoder`, `log_meal`
+real registrada no `ToolRegistry`) — implementado por uma sessão nova,
+sem contato com `docs/recon/opennutritracker.md`, só a partir de
+`docs/specs/nutricao.md` (`.claude/rules/port.md`). Detalhe completo em
+`docs/HISTORICO.md`.
 
-**Ciclo atual:** F6 (nutrição/código de barras) **BLOQUEADA** — ficha de
-planejamento trazida pelo usuário não pôde ser executada por esta
-sessão: `.claude/rules/port.md` desqualifica quem já leu
-`docs/recon/opennutritracker.md` (esta sessão leu, em ciclos
-anteriores) de escrever `packages/nutrition/**`. Violar reverteria o
-cliente pra GPL-3.0 automaticamente. Ficha também tinha erros factuais
-reais (fonte de dados errada — propunha banco do OpenNutriTracker em
-vez do Open Food Facts já decidido; referências a ADR/API inexistentes)
-— corrigidos em `docs/HISTORICO.md`, não aplicados a código nenhum.
-Proposto ao usuário: `Agent` novo, sem contato com o material
-contaminado, pra fazer a F6 de verdade. **Aguardando confirmação.**
+**Ciclo atual:** nenhum em andamento. F6 saiu de BLOQUEADA para
+CONCLUÍDA neste ciclo — ver `docs/HISTORICO.md`, entrada "F6
+(nutrição/código de barras) — implementada".
 
-**Pendências ativas:** confirmação do usuário sobre o `Agent` limpo pra
-F6. Além disso: decidir entre mais ferramentas do cérebro
-(`get_daily_summary`, `search_food`, `sync_wearable`...) ou outro
-módulo (F7 Academia; F8 corrida/GPS) enquanto F6 fica em espera — não
-decidido.
+**Pendências ativas:**
+- Decidir entre mais ferramentas do cérebro (`get_daily_summary`,
+  `search_food`, `sync_wearable`...) ou outro módulo (F7 Academia; F8
+  corrida/GPS) — não decidido.
+- Importação real do subconjunto brasileiro do Open Food Facts (hoje
+  `packages/nutrition` usa um dataset de fixture, 6 alimentos) —
+  trabalho futuro de infraestrutura de dados, `TODO(frankstein)` no
+  código.
+- Implementação concreta de `BarcodeDecoder` com `flutter_zxing` (MIT,
+  ZXing puro, sem ML Kit) em `app/` — precisa de dispositivo/emulador
+  real pra validar câmera, não existe neste ambiente.
+- `packages/activity/test/interlinked_tools_test.dart` ainda usa o
+  handler de demonstração de `log_meal`, não o real de
+  `packages/nutrition` — comentário lá ficou desatualizado, trocar num
+  ciclo futuro.
+- Água (novo tipo de `HealthEvent`) e refeição/receita composta de
+  ingredientes — pendências já registradas em `docs/specs/nutricao.md`,
+  não implementadas.
 
 **main sincronizado com a branch designada** em 2026-08-06 (fast-forward,
 `8a34c86`) — verificar se ainda está em sincronia antes de assumir.
@@ -62,6 +71,7 @@ decidido.
 | 3 | Health Data Core (F3) | **CONCLUÍDO** (`packages/health_core`) — `HealthEvent` append-only, dedup, correção, `gps_track_points` |
 | 4 | Passos, foreground service (F4) | **CONCLUÍDO** (`packages/activity`, `StepsRepository`) — agregação de contador cumulativo, reset de aparelho tratado; foreground service Android real fica pra depois (sem device pra testar aqui) |
 | 5 | Cérebro com 1+ ferramentas (F5) | **pipeline provado com 2 ferramentas reais** (`get_steps`, `log_meal`) coexistindo no mesmo `BrainPipeline`/`ToolRegistry`; LLM on-device real fica pra depois (sem device pra testar aqui) |
+| 6 | Nutrição/código de barras (F6) | **CONCLUÍDO** (`packages/nutrition`) — `Food`/`FoodRepository` (sqlite3, dataset de fixture), `MealLogger`, `BarcodeDecoder` (interface, sem câmera real), `log_meal` real ligada ao `ToolRegistry`; dataset real (Open Food Facts) e `flutter_zxing` concreto ficam pra depois |
 | — | Relatório de eficiência (`docs/EFICIENCIA.md`) | Grupo A adotado como prática; Grupo B aplicado (este arquivo) |
 
 ## Decisões já tomadas (não reabrir sem motivo novo)

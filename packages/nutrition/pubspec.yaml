@@ -1,13 +1,25 @@
 name: frankstein_nutrition
 description: >-
   Diário alimentar por PORT do OpenNutriTracker — ver docs/specs/nutricao.md, .claude/rules/port.md e ADR-5. NUNCA implementar a partir do código-fonte ou da ficha de reconhecimento.
-  Esqueleto vazio — Fase 2, Ciclo 1. Nenhuma lógica ainda.
+  Fase 6: Food/FoodRepository (catálogo local sobre sqlite3, dataset de fixture),
+  MealLogger (HealthEvent tipo meal), interface de decodificação de código de
+  barras, ferramenta log_meal real.
 publish_to: 'none'
-version: 0.0.1
+version: 0.1.0
 
 environment:
   sdk: ^3.9.0
 
+dependencies:
+  frankstein_health_core:
+    path: ../health_core
+  frankstein_tool_registry:
+    path: ../tool_registry
+  sqlite3: ^2.4.6
+  uuid: ^4.5.1
+
 dev_dependencies:
+  frankstein_brain:
+    path: ../brain
   lints: ^5.0.0
   test: ^1.25.0
