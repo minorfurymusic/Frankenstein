@@ -12,20 +12,22 @@
 (`get_steps`, `log_meal`) provados juntos, com dado real passando entre
 as três camadas. Detalhe completo em `docs/HISTORICO.md`.
 
-**Ciclo atual:** F4 implementada (`packages/activity`) — agregação de
-contador cumulativo do sensor de passos em `HealthEvent`s, incluindo o
-caso de reinício do aparelho (contador zera). **Foreground service
-Android real não implementado** — mesmo limite de F5 (MLC LLM):
-precisa de aparelho/emulador de verdade, que este ambiente não tem;
-entra depois como implementação de `StepSensor`, sem mudar
-`StepsRepository`. `get_steps` (F5) já lê os eventos do F4 de verdade —
-provado num teste que registra `get_steps` e `log_meal` no mesmo
-`BrainPipeline` e confirma que não interferem entre si.
+**Ciclo atual:** F6 (nutrição/código de barras) **BLOQUEADA** — ficha de
+planejamento trazida pelo usuário não pôde ser executada por esta
+sessão: `.claude/rules/port.md` desqualifica quem já leu
+`docs/recon/opennutritracker.md` (esta sessão leu, em ciclos
+anteriores) de escrever `packages/nutrition/**`. Violar reverteria o
+cliente pra GPL-3.0 automaticamente. Ficha também tinha erros factuais
+reais (fonte de dados errada — propunha banco do OpenNutriTracker em
+vez do Open Food Facts já decidido; referências a ADR/API inexistentes)
+— corrigidos em `docs/HISTORICO.md`, não aplicados a código nenhum.
+Proposto ao usuário: `Agent` novo, sem contato com o material
+contaminado, pra fazer a F6 de verdade. **Aguardando confirmação.**
 
-**Pendências ativas:** nenhuma. Próximo: decidir entre mais ferramentas
-do cérebro (`get_daily_summary`, `search_food`, `sync_wearable`...) ou
-outro módulo (F6 nutrição — travado por clean room até
-`docs/specs/nutricao.md` bastar; F7 Academia; F8 corrida/GPS) — não
+**Pendências ativas:** confirmação do usuário sobre o `Agent` limpo pra
+F6. Além disso: decidir entre mais ferramentas do cérebro
+(`get_daily_summary`, `search_food`, `sync_wearable`...) ou outro
+módulo (F7 Academia; F8 corrida/GPS) enquanto F6 fica em espera — não
 decidido.
 
 **main sincronizado com a branch designada** em 2026-08-06 (fast-forward,

@@ -914,3 +914,63 @@
   (F6 nutrição — travado até `docs/specs/nutricao.md` bastar sozinha;
   F7 Academia; F8 corrida/GPS) — não decidido, pergunta em aberto pro
   usuário.
+
+- **F6 (nutrição/código de barras) — BLOQUEADO.** Usuário trouxe uma
+  "Ficha de Planejamento" completa pra F6. Investigada antes de agir —
+  não escrevi nenhum código.
+
+  **Bloqueio real, não cautela:** esta sessão está desqualificada de
+  escrever `packages/nutrition/**` — o resumo do início da conversa já
+  registrava que cycles anteriores desta mesma sessão leram
+  `docs/recon/opennutritracker.md` extensivamente.
+  `.claude/rules/port.md` proíbe exatamente isso, "nesta sessão ou em
+  qualquer momento anterior que informe o que está escrevendo". Violar
+  reverteria o cliente de Apache-2.0 pra GPL-3.0 automaticamente
+  (`docs/adr/005-licenciamento-distribuicao.md`, seção "Consequência de
+  violar").
+
+  **Erros encontrados na ficha, verificados contra o repositório antes
+  de aceitar qualquer afirmação dela (regra 2 do `CLAUDE.md`):**
+  - "Liberado por ADR-8 (banco SQLite)" — ADR-8 é multi-tenant B2B, não
+    trata de banco de dados.
+  - `docs/adr/008-banco-de-dados.md` — não existe, referência inventada.
+  - **Mais sério:** a ficha propunha gerar o banco de alimentos a partir
+    do "arquivo CSV/JSON do OpenNutriTracker" — contradiz
+    `docs/specs/nutricao.md:100-101` e `docs/OFFLINE-IA.md:31-35`, que já
+    decidem a fonte real: subconjunto brasileiro do **Open Food Facts**
+    (dado público). Importar o banco deles copiaria um asset de
+    terceiro pra dentro do módulo PORT — quebraria clean room por outro
+    caminho, não só código.
+  - Schema do evento `meal` na ficha (`value`, `tz_offset_minutes`,
+    `source: "nutrition_scanner"`) não bate com `packages/health_core`
+    real (`payload`, `occurredAtTzOffsetMinutes`,
+    `HealthEventSource` sem esse valor ainda).
+  - `HealthDataCore.getEvents(...)` não existe — o método real é
+    `queryByType(...)`.
+  - Ficha assume que `log_meal` "já existe" e só precisa ser "ajustada"
+    — na verdade nunca foi conectada em produção, só existe como
+    demonstração de teste (`packages/brain/test`,
+    `packages/activity/test`), justamente por causa deste mesmo
+    bloqueio.
+  - `mobile_scanner` (leitor de código de barras sugerido) tipicamente
+    usa Google ML Kit no Android — proibido pela regra 6 do `CLAUDE.md`
+    e pelo próprio `docs/OFFLINE-IA.md`, que já indica ZXing como
+    alternativa livre. Não verificado a fundo (não fui atrás de árvore
+    de dependência de um pacote que não vou adicionar), mas risco sério
+    demais pra deixar passar sem nota.
+
+  **Proposto ao usuário, não decidido:** montar um `Agent` novo,
+  genuinamente sem contato com `docs/recon/opennutritracker.md` nem o
+  código-fonte deles, com prompt que só aponta pra
+  `docs/specs/nutricao.md` e `.claude/rules/port.md`, pra fazer a F6 de
+  verdade — com a fonte de dados corrigida (Open Food Facts) e sem
+  `mobile_scanner`. Aguardando confirmação.
+
+  **Não verificado:** árvore de dependência real do `mobile_scanner`
+  (não baixado, por não pretender usá-lo); se a tabela `foods` da ficha
+  tem alguma coincidência estrutural com o schema real do
+  OpenNutriTracker — não posso verificar isso, é exatamente o tipo de
+  comparação que o clean room me impede de fazer.
+
+  **Débito técnico:** nenhum novo em código — o "débito" aqui é a F6
+  inteira, ainda não iniciada.
