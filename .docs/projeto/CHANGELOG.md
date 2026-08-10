@@ -8,11 +8,16 @@
 > no formato que a skill espera.
 
 **Repositório:** `github.com/minorfurymusic/Frankenstein`
-**Última atualização:** 2026-08-09 (commit `59d837b`)
-**Total de commits:** 46
+**Última atualização:** 2026-08-09 (commit `17aaa8a`)
+**Total de commits:** 49
 
-## 2026-08-09
+## 2026-08-09 (Fases 3, 4 e 5 — primeiro código de verdade do projeto)
 
+- `17aaa8a` — feat(activity): passos (Fase 4) + ferramenta get_steps interligada ao F5
+- `64cf3e7` — feat(brain,tool_registry): pipeline do cérebro configurado (Fase 5)
+- `829e096` — feat(health_core): schema HealthEvent append-only (Fase 3)
+- `e4d10e0` — docs: ADR-4 e ADR-5 aceitas; LICENSE-AUDIT.md fechado - 11/11 ADRs
+- `79ddfc4` — docs: primeiro registro via skill project-recorder (adaptado)
 - `59d837b` — docs: registrar eixo "perfil de dispositivo" (RAM x versão Android)
 - `dd6c93c` — docs: aplicar Grupo A/B de EFICIENCIA.md + limpeza da ADR-5
 - `091aaf5` — docs(adr): ADR-4 revisão 1 - consequência de licença fundamentada

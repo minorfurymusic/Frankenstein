@@ -62,6 +62,12 @@
 **Causa:** errado em dois pontos — a ADR-5 já decidiu cliente Apache-2.0 (via PORT), e o FoodYou nunca foi adotado (`docs/VIABILITY.md`, só "avaliar").
 **Solução:** verificado contra `docs/VIABILITY.md` e `docs/adr/005-...md` antes de fechar o ciclo; corrigido antes do commit, nunca chegou a ficar na ADR.
 
+### Erro — `StepsRepository.flush()` zeraria o fuso horário de todo evento (autocorrigido)
+**Contexto:** Fase 4 (passos), `packages/activity`.
+**Sintoma:** primeira versão de `flush()` lia `DateTime.timeZoneOffset` do timestamp UTC pra preencher `occurred_at_tz_offset_minutes`.
+**Causa:** um `DateTime` em UTC no Dart sempre reporta offset zero — isso gravaria fuso errado (sempre UTC+0) em todo `HealthEvent` de passos, mesmo pra quem está em outro fuso.
+**Solução:** corrigido antes de rodar teste — `flush()` (e `StepsSample`) passaram a exigir `tzOffsetMinutes` explícito, mesma disciplina já usada em `occurredAt`/`recordedAt` (UTC com fuso gravado à parte, `.claude/rules/00-inviolaveis.md`). Nunca chegou a commit com o bug.
+
 ## Padrão observado
 
 A maioria dos erros documentados aqui foi pega **antes** de virar commit — pelo usuário (regra 3, precedente não verificado, vazamento de clean room) ou pela própria disciplina de verificação (ADR-4). Os erros que *chegaram* a commit são todos de infraestrutura (hooks, CI, Makefile), corrigidos no ciclo seguinte com prova literal.
