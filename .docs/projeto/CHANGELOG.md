@@ -8,11 +8,19 @@
 > no formato que a skill espera.
 
 **Repositório:** `github.com/minorfurymusic/Frankenstein`
-**Última atualização:** 2026-08-09 (commit `17aaa8a`)
-**Total de commits:** 49
+**Última atualização:** 2026-08-10 (commit `4a46d43`)
+**Total de commits:** 56
 
-## 2026-08-09 (Fases 3, 4 e 5 — primeiro código de verdade do projeto)
+## 2026-08-10 (Fase 7 — Academia)
 
+- `4a46d43` — feat(activity): Academia (Fase 7) - WorkoutPlan/WorkoutRepository, WorkoutLogger, get_workout_plan/log_workout_session
+
+## 2026-08-09 (Fases 3, 4, 5 e 6 — primeiro código de verdade do projeto)
+
+- `7f39559` — fix(activity): interlinked_tools_test usa log_meal real (F6 pendencia)
+- `3f03b9a` — feat(nutrition): diario alimentar por PORT (Fase 6) - Food/FoodRepository, MealLogger, log_meal real
+- `a3dd877` — docs: F6 (nutricao) BLOQUEADA - clean room, sem codigo escrito
+- `fd4c276` — docs: atualizar registro do project-recorder (Fases 3, 4, 5)
 - `17aaa8a` — feat(activity): passos (Fase 4) + ferramenta get_steps interligada ao F5
 - `64cf3e7` — feat(brain,tool_registry): pipeline do cérebro configurado (Fase 5)
 - `829e096` — feat(health_core): schema HealthEvent append-only (Fase 3)
