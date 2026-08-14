@@ -1,12 +1,16 @@
 name: frankstein_entitlements
 description: >-
   Entitlement assinado (Ed25519) e vínculo de assinatura no aparelho (.claude/rules/monetizacao.md, ADR-7).
-  Esqueleto vazio — Fase 2, Ciclo 1. Nenhuma lógica ainda.
+  Fase 10/11 (parcial): Entitlement, EntitlementVerifier, Subscription, PendingPayment,
+  WebhookIdempotencyGuard. Sem provedor de pagamento configurado.
 publish_to: 'none'
 version: 0.0.1
 
 environment:
   sdk: ^3.9.0
+
+dependencies:
+  cryptography: ^2.7.0
 
 dev_dependencies:
   lints: ^5.0.0
