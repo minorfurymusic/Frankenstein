@@ -4,20 +4,24 @@
 import 'food.dart';
 
 /// Dataset de EXEMPLO/FIXTURE para teste — alguns alimentos brasileiros
-/// comuns com macros plausíveis por 100 g. **Não é o subconjunto real do
-/// Open Food Facts** (`docs/OFFLINE-IA.md:31-35`); a importação do dataset
-/// completo é trabalho futuro de infraestrutura de dados (rede, tamanho,
-/// pipeline de atualização delta), fora do escopo deste ciclo.
+/// comuns com macros plausíveis por 100 g. **Não é dado real de nenhuma
+/// fonte** — o catálogo real de produção agora existe em
+/// `food_taco_dataset.dart` (TACO/NEPA-UNICAMP, ~578 alimentos brasileiros
+/// reais, ver esse arquivo para atribuição completa e por que TACO foi
+/// escolhido no lugar do Open Food Facts originalmente cogitado em
+/// `docs/OFFLINE-IA.md:31-35`).
+///
+/// Este arquivo continua existindo, sem alteração de valores, porque
+/// outros pacotes testam contra os valores exatos daqui (ex.:
+/// `packages/activity/test/interlinked_tools_test.dart` depende de
+/// `fixture-arroz-branco-cozido` valer exatamente 130 kcal/100g) — é
+/// dataset de teste estável, não um TODO pendente.
 ///
 /// Os códigos de barras aqui são fabricados (não correspondem a produtos
 /// reais) só para exercitar a busca por `barcode` em teste — formato
 /// (13 dígitos numéricos) escolhido por ser o publicamente conhecido do
-/// EAN-13/GTIN usado pelo Open Food Facts, conhecimento geral de formato,
-/// não dado copiado de fonte nenhuma.
-///
-/// TODO(frankstein): trocar por importação real do subconjunto brasileiro
-/// do Open Food Facts (CSV/JSON, campos `code`/`product_name`/`brands`/
-/// `nutriments.*`) quando a infraestrutura de download existir.
+/// EAN-13/GTIN, conhecimento geral de formato, não dado copiado de fonte
+/// nenhuma.
 final List<Food> fixtureFoods = [
   Food(
     id: 'fixture-arroz-branco-cozido',

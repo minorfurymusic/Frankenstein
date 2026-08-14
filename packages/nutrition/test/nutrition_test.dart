@@ -1,6 +1,7 @@
 // Implementação original do Frankstein. Não deriva do código-fonte do
 // OpenNutriTracker (GPL-3.0) — ver docs/specs/nutricao.md e ADR-5.
 
+import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:frankstein_brain/brain.dart';
@@ -84,6 +85,125 @@ void main() {
         proteinPer100g: 1,
       );
       expect(() => repo.insertCustomFood(naoCustom), throwsA(isA<InvalidFoodSourceException>()));
+    });
+  });
+
+  group('tacoFoods — catálogo real TACO/NEPA-UNICAMP (docs/specs/nutricao.md)', () {
+    test('tem perto de 597 alimentos reais (limite frouxo: >500, algumas linhas do CSV são puladas por campo obrigatório ausente/inválido)', () {
+      expect(tacoFoods.length, greaterThan(500));
+    });
+
+    test('FoodRepository.openInMemory() sem argumentos continua exatamente como antes — só o fixture, sem TACO', () {
+      final repo = FoodRepository.openInMemory();
+      addTearDown(repo.close);
+
+      // Mesmos 6 itens de sempre, nenhum a mais.
+      final all = repo.searchByName('', limit: 1000);
+      expect(all, hasLength(fixtureFoods.length));
+      expect(all.any((f) => f.id.startsWith('taco-')), isFalse);
+
+      // Busca que bateria com item real do TACO não deve achar nada com id taco-*.
+      final arroz = repo.searchByName('arroz');
+      expect(arroz, hasLength(1));
+      expect(arroz.first.id, 'fixture-arroz-branco-cozido');
+    });
+
+    test('seedTacoData: true traz alimentos reais do TACO, coexistindo com o fixture', () {
+      final repo = FoodRepository.openInMemory(seedFixtureData: true, seedTacoData: true);
+      addTearDown(repo.close);
+
+      final arroz = repo.searchByName('arroz', limit: 100);
+      final tacoArroz = arroz.where((f) => f.id.startsWith('taco-'));
+      expect(tacoArroz, isNotEmpty, reason: 'busca por "arroz" deveria achar vários itens reais do TACO');
+      expect(arroz.any((f) => f.id == 'fixture-arroz-branco-cozido'), isTrue,
+          reason: 'o item de fixture continua presente junto do TACO');
+    });
+
+    test('round-trip: taco-1 (Arroz, integral, cozido) bate com os valores brutos do CSV de origem', () {
+      final repo = FoodRepository.openInMemory(seedFixtureData: false, seedTacoData: true);
+      addTearDown(repo.close);
+
+      final food = repo.findById('taco-1');
+      expect(food, isNotNull);
+      expect(food!.name, 'Arroz, integral, cozido');
+      expect(food.source, FoodSource.offlineCatalog);
+      // Valores crus da linha 2 do CSV (numero_alimento=1):
+      // energia_kcal=123.53489250000001, carboidrato_g=25.80975,
+      // lipideos_g=1.0003333333333333, proteina_g=2.58825.
+      expect(food.energyKcalPer100g, closeTo(123.53489250000001, 0.0001));
+      expect(food.carbohydratesPer100g, closeTo(25.80975, 0.0001));
+      expect(food.fatPer100g, closeTo(1.0003333333333333, 0.0001));
+      expect(food.proteinPer100g, closeTo(2.58825, 0.0001));
+    });
+
+    test('sodiumPer100g é sodio_mg do CSV dividido por 1000 (taco-100, Brócolis cozido: sodio_mg=2.122)', () {
+      final repo = FoodRepository.openInMemory(seedFixtureData: false, seedTacoData: true);
+      addTearDown(repo.close);
+
+      final food = repo.findById('taco-100');
+      expect(food, isNotNull);
+      expect(food!.name, 'Brócolis, cozido');
+      expect(food.sodiumPer100g, closeTo(2.122 / 1000, 0.000001));
+    });
+  });
+
+  group('FoodRepository.open — reabrir arquivo real já semeado (idempotência do reseed)', () {
+    test('reabrir o mesmo arquivo com seedTacoData: true não lança (UNIQUE/PRIMARY KEY) e não duplica', () {
+      final dir = Directory.systemTemp.createTempSync('nutrition_food_repo_test_');
+      final dbPath = '${dir.path}/foods.sqlite3';
+      addTearDown(() => dir.deleteSync(recursive: true));
+
+      // Primeira abertura: cria o arquivo e semeia o catálogo TACO real —
+      // simula a instalação/primeiro lançamento do app.
+      final first = FoodRepository.open(dbPath, seedTacoData: true);
+      first.close();
+
+      // Segunda abertura do MESMO arquivo: simula o app reaberto numa
+      // segunda sessão. Antes da correção, `_seedTacoData` rodava nas
+      // mesmas ~578 ids `taco-*` de novo com `INSERT` puro e estourava
+      // UNIQUE/PRIMARY KEY constraint aqui.
+      expect(() => FoodRepository.open(dbPath, seedTacoData: true), returnsNormally);
+
+      final reopened = FoodRepository.open(dbPath, seedTacoData: true);
+      addTearDown(reopened.close);
+
+      // Catálogo continua com o total real do TACO — nem duplicado (~1156),
+      // nem vazio.
+      final all = reopened.searchByName('', limit: 2000);
+      final tacoOnly = all.where((f) => f.id.startsWith('taco-'));
+      expect(tacoOnly.length, tacoFoods.length);
+
+      // Item específico continua único e com os valores esperados.
+      final arroz = reopened.findById('taco-1');
+      expect(arroz, isNotNull);
+      expect(arroz!.name, 'Arroz, integral, cozido');
+    });
+
+    test('reabrir o mesmo arquivo com seedFixtureData: true não lança e não duplica', () {
+      final dir = Directory.systemTemp.createTempSync('nutrition_food_repo_fixture_test_');
+      final dbPath = '${dir.path}/foods.sqlite3';
+      addTearDown(() => dir.deleteSync(recursive: true));
+
+      final first = FoodRepository.open(dbPath, seedFixtureData: true, seedTacoData: false);
+      first.close();
+
+      // Mesmo cenário do TACO acima, mas para o dataset de fixture — o
+      // bug original também existia aqui, só era menos provável de bater
+      // porque `seedFixtureData` é `false` por padrão em `.open()`.
+      expect(
+        () => FoodRepository.open(dbPath, seedFixtureData: true, seedTacoData: false),
+        returnsNormally,
+      );
+
+      final reopened = FoodRepository.open(dbPath, seedFixtureData: true, seedTacoData: false);
+      addTearDown(reopened.close);
+
+      final all = reopened.searchByName('', limit: 1000);
+      expect(all, hasLength(fixtureFoods.length));
+
+      final arroz = reopened.searchByName('arroz');
+      expect(arroz, hasLength(1));
+      expect(arroz.first.id, 'fixture-arroz-branco-cozido');
     });
   });
 

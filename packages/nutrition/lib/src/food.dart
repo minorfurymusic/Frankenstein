@@ -6,10 +6,16 @@
 /// veio o dado nutricional (catálogo offline embarcado ... ou item
 /// personalizado do usuário)").
 enum FoodSource {
-  /// Veio do catálogo local embarcado — hoje um dataset de fixture para
-  /// teste; o subconjunto brasileiro real do Open Food Facts
-  /// (`docs/OFFLINE-IA.md:31-35`) é trabalho futuro de infraestrutura de
-  /// dados, fora deste ciclo.
+  /// Veio do catálogo local embarcado. Dois datasets usam este valor:
+  /// um pequeno dataset de fixture para teste (`food_fixture_dataset.dart`)
+  /// e o catálogo real de produção (`food_taco_dataset.dart`) — a Tabela
+  /// Brasileira de Composição de Alimentos (TACO, NEPA/UNICAMP), ~578
+  /// alimentos brasileiros reais. O plano original citado em
+  /// `docs/OFFLINE-IA.md:31-35` era o subconjunto brasileiro do Open Food
+  /// Facts, mas os domínios do Open Food Facts não são alcançáveis pela
+  /// rede deste ambiente de desenvolvimento (403 no proxy) — TACO foi
+  /// escolhido no lugar por ser um dado igualmente real, aberto e
+  /// alcançável. Ver `food_taco_dataset.dart` para atribuição completa.
   offlineCatalog,
 
   /// Item cadastrado pelo próprio usuário — "adição rápida" (nome + kcal)
