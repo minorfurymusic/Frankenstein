@@ -4,7 +4,7 @@
 # para criar este esqueleto (Fase 2, Ciclo 1). `flutter build apk` requer
 # Android SDK além disso; ambiente de dev/CI precisa ter os dois.
 
-PACKAGES := health_core brain tool_registry activity nutrition entitlements share
+PACKAGES := health_core brain tool_registry activity nutrition entitlements share summary
 
 # `pub get` primeiro, sempre — checkout limpo (CI, clone novo) não tem
 # .dart_tool/ resolvido. Achado real do Ciclo 27: sem isso, lint/test
