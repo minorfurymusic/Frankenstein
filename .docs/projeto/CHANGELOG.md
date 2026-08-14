@@ -8,8 +8,16 @@
 > no formato que a skill espera.
 
 **Repositório:** `github.com/minorfurymusic/Frankenstein`
-**Última atualização:** 2026-08-10 (commit `4a46d43`)
-**Total de commits:** 56
+**Última atualização:** 2026-08-14 (commit `217e402`)
+**Total de commits:** 62 (mais este commit de docs)
+
+## 2026-08-14 (F8 parcial, F10/F11 esqueleto, ferramentas extras, catálogo real TACO)
+
+- `217e402` — feat(nutrition): catalogo real de alimentos - Tabela TACO (NEPA/UNICAMP), substitui gap do Open Food Facts
+- `ed12cd4` — feat(nutrition): search_food - ferramenta de leitura do cerebro
+- `3e94197` — feat(summary): get_daily_summary - resumo do dia entre modulos
+- `3d1c5cd` — feat(entitlements): esqueleto F10/F11 - Entitlement/EntitlementVerifier, Subscription, PendingPayment, WebhookIdempotencyGuard
+- `1cd7849` — feat(activity,health_core): F8 (corrida/GPS) - parte sem dependencia de Android
 
 ## 2026-08-10 (Fase 7 — Academia)
 

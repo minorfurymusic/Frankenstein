@@ -1370,3 +1370,142 @@
   ferramentas extras do cérebro (`get_daily_summary`, `search_food`), e
   pesquisa de dataset real de alimentos aberto e alcançável (substituto
   do Open Food Facts, bloqueado pelo proxy).
+
+- **Ciclo — F10/F11 (esqueleto), ferramentas extras, catálogo real de
+  alimentos.** Continuação da mesma manhã de trabalho. Usuário
+  esclareceu: (1) licenciamento já estava decidido (confirmado citando
+  ADR-5/LICENSE-AUDIT.md de volta), (2) fazer hoje tudo que não depende
+  de Android, (3) Entitlements/Pagamento só estrutura, sem provedor
+  configurado, (4) buscar dataset real de alimentos aberto pra copiar.
+
+  **F10/F11 — `packages/entitlements`.** `Entitlement` (payload que o
+  cliente recebe, `docs/MONETIZACAO.md:38-41`: sub/plan/features/exp) +
+  `EntitlementVerifier` (verifica assinatura Ed25519 contra a chave
+  pública — o cliente só verifica, nunca assina; `EntitlementSigner`
+  simula o servidor só pra teste) + graça offline (`isValidAt(...,
+  offlineGrace: true)`, vale até exp+7 dias) + `Subscription`/
+  `SubscriptionChannel`/`SubscriptionStatus` (registro do lado do
+  servidor, `docs/MONETIZACAO.md:33-34`) + `PendingPayment` (Pix
+  assíncrono, nunca libera no clique — `confirm()`/`expire()` só podem
+  rodar uma vez) + `WebhookIdempotencyGuard` (chave `external_id +
+  event_id`). Dependência nova: `cryptography: ^2.7.0` (resolvido
+  `2.9.0`, Apache-2.0) + `ffi` transitivo (BSD-3-Clause) — verificadas
+  lendo o `LICENSE` de cada uma no cache local antes de registrar.
+  Assinatura/verificação Ed25519 testada de ponta a ponta de verdade:
+  gera par de chaves, assina, verifica com sucesso; assinatura de outra
+  chave é rejeitada; payload adulterado depois de assinado é rejeitado.
+  14 testes.
+
+  **Ferramentas extras do cérebro.** `get_daily_summary`: novo pacote
+  `packages/summary` (só leitura sobre o Health Data Core compartilhado,
+  sem tabela própria) — nenhum módulo de domínio existente é dono
+  natural, já que cruza `steps`/`meal`/`workout_session`/`gps_track`;
+  criar um pacote novo em vez de forçar isso dentro de `activity` ou
+  `nutrition` respeita a regra de "nenhum módulo lê o banco de outro"
+  (lê o Core compartilhado, não o banco privado de outro módulo).
+  Adicionado ao `Makefile` (`PACKAGES`). 3 testes. `search_food`:
+  wrapper fino sobre `FoodRepository.searchByName` (já existente),
+  ferramenta de leitura, mesmo padrão de `get_workout_plan`/`log_meal`.
+  Implementado por um subagente limpo — `packages/nutrition/**` exige
+  clean room (`.claude/rules/port.md`) e esta sessão está desqualificada
+  de escrever ali desde antes (abriu `docs/recon/opennutritracker.md`
+  em ciclo anterior). Verificado independentemente antes do commit:
+  `dart analyze` limpo, 20/20 testes do pacote, diff sem referência real
+  ao código-fonte do OpenNutriTracker. 3 testes novos.
+
+  **Catálogo real de alimentos — Tabela TACO (NEPA/UNICAMP).**
+  Open Food Facts (fonte originalmente planejada) segue bloqueado pelo
+  proxy deste ambiente (confirmado de novo, mesmo padrão de sempre).
+  Pesquisa (`WebSearch` + `curl` direto em `raw.githubusercontent.com`,
+  alcançável mesmo quando `openfoodfacts.org`/`api.github.com` não são)
+  encontrou uma fonte real, aberta e **sem nenhuma relação com o
+  OpenNutriTracker**: a Tabela Brasileira de Composição de Alimentos
+  (TACO), publicada pelo NEPA/UNICAMP (núcleo de pesquisa de uma
+  universidade pública). Termos confirmados via páginas do CFN/FAPESP
+  que citam a tabela: "reprodução total ou parcial, desde que citada a
+  fonte" — dado público, reprodução permitida com atribuição. Repositório
+  técnico usado como fonte de extração: `github.com/brolesi/taco`
+  (código MIT, dados reorganizados do NEPA/UNICAMP; README confirma que
+  outros mirrors mais antigos do mesmo dataset estão desatualizados e
+  apontam pra este). CSV de origem: 597 alimentos reais, valores por
+  100g, colunas documentadas num dicionário de dados no próprio
+  repositório.
+
+  Dois subagentes limpos em sequência (mesmo motivo de clean room do
+  `search_food` acima):
+  1. **Import:** `packages/nutrition/lib/src/food_taco_dataset.dart`
+     (novo) — 578 de 597 linhas do CSV importadas como `List<Food>`
+     `tacoFoods` (19 puladas por campo obrigatório ausente/inválido:
+     15 por `energia_kcal` vazio — majoritariamente óleos/gorduras puros
+     onde carboidrato não é medido — e 4 por um resíduo de arredondamento
+     negativo em `carboidrato_g`, herdado da própria média de múltiplas
+     análises da TACO; nenhum valor foi inventado pra preencher isso).
+     `sodio_mg` do CSV convertido para gramas (÷1000) pra bater com
+     `Food.sodiumPer100g` (confirmado em gramas pelos valores já
+     existentes em `food_fixture_dataset.dart`, ex. `0.001`). `source:
+     FoodSource.offlineCatalog` — sem novo valor de enum, porque o
+     comentário do enum já previa exatamente essa troca (fixture →
+     catálogo real) desde a Fase 6. Atribuição completa (NEPA/UNICAMP,
+     4ª edição 2011, termos de reprodução, path técnico via
+     `brolesi/taco`) no cabeçalho do arquivo gerado. `food_fixture_dataset.dart`
+     (6 itens) mantido intacto — outros pacotes (`packages/activity`)
+     dependem dos valores exatos dele. `FoodRepository.open()` passou a
+     semear com `tacoFoods` por padrão (`seedTacoData: true`);
+     `openInMemory()` manteve comportamento de teste inalterado
+     (`seedTacoData: false` por padrão, só o fixture como antes).
+  2. **Correção de bug pego antes de aceitar como pronto:** o subagente
+     de import relatou honestamente, na seção "Débito técnico" do
+     próprio relatório, que reabrir um arquivo `.open()` já semeado
+     quebraria (`_seedTacoData`/`_seedFixtureData` chamavam `_insert`
+     puro, batendo na `PRIMARY KEY` de `foods.id` na segunda inserção).
+     Como o novo padrão (`seedTacoData: true` em `.open()`) tornava esse
+     um caminho de falha no fluxo de produção normal (app reaberto numa
+     segunda sessão), decidido corrigir antes de fechar o ciclo, não só
+     documentar como débito — segundo subagente limpo trocou `_insert`
+     por um novo `_insertIgnoreDuplicate` (`INSERT OR IGNORE`) só nos
+     dois caminhos de reseed de catálogo estático; `insertCustomFood`
+     continua com `_insert` estrito, porque duplicata ali é bug real do
+     usuário, não deve ser engolida em silêncio. Dois testes novos
+     provam a correção reabrindo o mesmo arquivo real duas vezes (com
+     `seedTacoData`/`seedFixtureData`) e checando que não lança e não
+     duplica.
+
+  Cada um dos três subagentes desta seção foi verificado
+  independentemente antes do commit correspondente — nunca aceito só
+  pelo autorrelato: `dart analyze --fatal-infos` rodado de novo por
+  mim, `dart test` rodado de novo por mim, diff lido inteiro, grep por
+  "OpenNutriTracker" no diff (só apareceu no cabeçalho obrigatório de
+  disclaimer, texto exigido pela própria regra, não referência real ao
+  código deles).
+
+  **Prova (consolidada, `make lint`/`make test` na raiz depois do
+  último commit da manhã):**
+  ```
+  $ make lint → "No issues found!" em todos os 9 pacotes + app
+  $ make test →
+    health_core: +17, brain: +5, tool_registry: +11, activity: +47,
+    nutrition: +27, entitlements: +14, share: +1, summary: +3,
+    app (flutter test): +1 — todos "All tests passed!"
+  ```
+  125 testes no total no monorepo (100 antes deste ciclo + 25 novos: 14
+  em entitlements, 3 em summary, 3+5+2 em nutrition — search_food, TACO,
+  idempotência de reseed — sendo que a contagem de nutrition subiu de 17
+  para 27, ou seja 10 testes novos ali).
+
+  **Não verificado:** `libsqlite3` em runners `ubuntu-latest` do CI real
+  (item recorrente); se a 4ª edição da TACO em PDF/README tem exigência
+  de atribuição além de "reprodução... desde que citada a fonte" (usado
+  o texto já verificado, não pesquisado de novo por cada subagente).
+
+  **Débito técnico:** nenhum novo em aberto — o único identificado
+  (idempotência do reseed) foi corrigido no mesmo ciclo, não deixado
+  como pendência.
+
+  **Bloqueios / decisões que precisam do usuário:** nenhum bloqueio
+  ativo. Seguimos disponíveis pra próxima etapa (F9 wearable BLE, F12
+  compartilhamento, UI do app, ou aprofundar F8/F10-F11 quando houver
+  device/servidor).
+
+  **Próximo ciclo proposto:** UI do app (destranca vários itens da
+  Definição de Pronto do MVP de uma vez) ou F9 (wearable BLE, caminho já
+  liberado pela ADR-4a) — pergunta em aberto pro usuário.
