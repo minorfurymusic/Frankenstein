@@ -119,6 +119,13 @@ class GpsTrackPoint {
   final double? elevationMeters;
   final DateTime recordedAt;
 
+  /// Precisão reportada pelo GPS no momento da leitura, em metros.
+  /// `null` quando a fonte não relatou precisão. Fase 8 (`schemaSqlV2AddGpsAccuracy`
+  /// em `schema.dart`) — usada pelo filtro de ruído de
+  /// `.claude/rules/activity.md:16`, aplicado por quem grava o ponto
+  /// (`packages/activity`), não por esta classe.
+  final double? accuracyMeters;
+
   GpsTrackPoint({
     required this.eventId,
     required this.seq,
@@ -126,6 +133,7 @@ class GpsTrackPoint {
     required this.longitude,
     required this.recordedAt,
     this.elevationMeters,
+    this.accuracyMeters,
   }) {
     if (!recordedAt.isUtc) {
       throw ArgumentError('recordedAt precisa estar em UTC');

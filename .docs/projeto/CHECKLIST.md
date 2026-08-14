@@ -14,7 +14,7 @@
 - [x] **F5** — Cérebro com ferramentas — pipeline provado com 2 ferramentas reais coexistindo (`get_steps`, `log_meal`). MLC LLM real (on-device) não implementado — sem device pra testar neste ambiente; entra depois via interface `ToolCaller`.
 - [x] **F6** — Nutrição + código de barras — `packages/nutrition` implementado e testado (17 testes). Dataset real (Open Food Facts) e `flutter_zxing` concreto ficam pra depois.
 - [x] **F7** — Academia: planos + sessão + séries — `packages/activity` (`WorkoutPlan`/`WorkoutRepository`, `WorkoutLogger`, `get_workout_plan`/`log_workout_session`), 14 testes novos. Sem dependência de hardware, testado de ponta a ponta.
-- [ ] **F8** — Corrida/caminhada com GPS — não iniciado
+- [~] **F8** — Corrida/caminhada com GPS — PARCIAL: `RunCalculator`/`RunLogger`/GPX/ofuscação de rota/`get_run_summary` prontos e testados (`packages/activity`); captura de GPS real (WRAP Android/PORT iOS) e `start_run` bloqueados — sem SDK/device Android/iOS neste ambiente (`docs/adr/009-gps.md`)
 - [ ] **F9** — Wearable BLE — não iniciado (caminho liberado: ADR-4a aceita)
 - [ ] **F10** — Entitlements — não iniciado
 - [ ] **F11** — Pagamentos (um canal só) — não iniciado (mecanismo já desenhado na ADR-7 aceita)

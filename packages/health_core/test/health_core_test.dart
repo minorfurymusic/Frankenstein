@@ -1,6 +1,8 @@
 import 'dart:io';
 
 import 'package:frankstein_health_core/health_core.dart';
+import 'package:frankstein_health_core/src/schema.dart' show schemaSqlV1;
+import 'package:sqlite3/sqlite3.dart';
 import 'package:test/test.dart';
 
 HealthEvent _stepsEvent({
@@ -295,8 +297,40 @@ void main() {
       expect(points, hasLength(2));
       expect(points[0].seq, 0);
       expect(points[0].elevationMeters, isNull);
+      expect(points[0].accuracyMeters, isNull);
       expect(points[1].seq, 1);
       expect(points[1].elevationMeters, 760.0);
+    });
+
+    test('grava e lê accuracy_meters (Fase 8, filtro de ruído do GPS)', () {
+      final core = HealthDataCore.openInMemory();
+      addTearDown(core.close);
+
+      final track = HealthEvent(
+        id: HealthDataCore.newId(),
+        type: HealthEventType.gpsTrack,
+        source: HealthEventSource.manual,
+        occurredAt: DateTime.utc(2026, 8, 9, 7, 0),
+        occurredAtTzOffsetMinutes: -180,
+        recordedAt: DateTime.utc(2026, 8, 9, 7, 30),
+        payload: const {},
+        confidence: 1.0,
+      );
+      core.insertEvent(track);
+
+      core.insertGpsTrackPoints([
+        GpsTrackPoint(
+          eventId: track.id,
+          seq: 0,
+          latitude: -23.5505,
+          longitude: -46.6333,
+          recordedAt: DateTime.utc(2026, 8, 9, 7, 0),
+          accuracyMeters: 8.5,
+        ),
+      ]);
+
+      final points = core.gpsTrackPoints(track.id);
+      expect(points.single.accuracyMeters, 8.5);
     });
   });
 
@@ -362,6 +396,68 @@ void main() {
       // O schema pode ser aplicado de novo (CREATE TABLE IF NOT EXISTS)
       // sem perder dado nem duplicar índice — é o outro lado do "ida e
       // volta": reabrir um banco existente é idempotente.
+      expect(() => HealthDataCore.open(dbPath).close(), returnsNormally);
+    });
+
+    test(
+        'migração V2 (accuracy_meters) aplica em banco V1 existente sem perder dado real',
+        () {
+      final dir = Directory.systemTemp.createTempSync('health_core_migration_test_');
+      final dbPath = '${dir.path}/health_core.sqlite3';
+      addTearDown(() => dir.deleteSync(recursive: true));
+
+      // Simula um banco criado antes da Fase 8 — só schemaSqlV1, sem
+      // accuracy_meters. `HealthDataCore.open` não existia nesse estado;
+      // usa sqlite3 direto pra reproduzir o cenário real de alguém abrindo
+      // um app já instalado antes desta migração.
+      final legacyDb = sqlite3.open(dbPath);
+      legacyDb.execute(schemaSqlV1);
+      final trackId = HealthDataCore.newId();
+      legacyDb.execute(
+        '''
+        INSERT INTO health_events (
+          id, type, source, occurred_at, occurred_at_tz_offset_minutes,
+          recorded_at, payload, confidence
+        ) VALUES (?, 'gps_track', 'manual', ?, -180, ?, '{}', 1.0)
+        ''',
+        [trackId, DateTime.utc(2026, 8, 10, 7, 0).toIso8601String(), DateTime.utc(2026, 8, 10, 7, 30).toIso8601String()],
+      );
+      legacyDb.execute(
+        '''
+        INSERT INTO gps_track_points (id, event_id, seq, latitude, longitude, recorded_at)
+        VALUES (?, ?, 0, -23.5505, -46.6333, ?)
+        ''',
+        [HealthDataCore.newId(), trackId, DateTime.utc(2026, 8, 10, 7, 0).toIso8601String()],
+      );
+      legacyDb.dispose();
+
+      // Reabre pelo HealthDataCore real — deve migrar sem apagar o ponto
+      // já gravado (precisão nula, porque não existia no schema V1) e
+      // deixar a coluna pronta pra gravar precisão em pontos novos.
+      final core = HealthDataCore.open(dbPath);
+      addTearDown(core.close);
+
+      final oldPoints = core.gpsTrackPoints(trackId);
+      expect(oldPoints, hasLength(1));
+      expect(oldPoints.single.accuracyMeters, isNull);
+
+      core.insertGpsTrackPoints([
+        GpsTrackPoint(
+          eventId: trackId,
+          seq: 1,
+          latitude: -23.5510,
+          longitude: -46.6340,
+          recordedAt: DateTime.utc(2026, 8, 10, 7, 0, 10),
+          accuracyMeters: 12.0,
+        ),
+      ]);
+      final allPoints = core.gpsTrackPoints(trackId);
+      expect(allPoints, hasLength(2));
+      expect(allPoints[1].accuracyMeters, 12.0);
+
+      // Reabrir de novo (banco já migrado) precisa continuar idempotente
+      // — o ponto do `_applySchema` checar `PRAGMA table_info` antes do
+      // `ALTER TABLE`.
       expect(() => HealthDataCore.open(dbPath).close(), returnsNormally);
     });
   });

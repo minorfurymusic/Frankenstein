@@ -7,49 +7,44 @@
 > Histórico completo de ciclos: `docs/HISTORICO.md`. Este arquivo só guarda o
 > estado **atual** — consulte o histórico sob demanda, não por hábito.
 
-**Fase:** **F3, F4, F5, F6 e F7 concluídas.** Health Data Core, passos
-(`StepsRepository`), o pipeline do cérebro, o módulo de nutrição
-(`packages/nutrition`) e agora o módulo de academia
-(`packages/activity`: `WorkoutPlan`/`WorkoutRepository` sobre `sqlite3`,
-`WorkoutLogger` gravando `workout_session`+`set_log`, `get_workout_plan`/
-`log_workout_session` reais no `ToolRegistry`). Detalhe completo em
+**Fase:** **F3, F4, F5, F6, F7 e (parcial) F8 concluídas.** Health Data
+Core, passos (`StepsRepository`), o pipeline do cérebro, nutrição
+(`packages/nutrition`), academia (`packages/activity`: `WorkoutPlan`/
+`WorkoutRepository`, `WorkoutLogger`, `get_workout_plan`/
+`log_workout_session`) e agora corrida/caminhada — só a parte sem
+dependência de Android real (`RunCalculator`, `RunLogger`, GPX,
+ofuscação de rota, `get_run_summary`). Detalhe completo em
 `docs/HISTORICO.md`.
 
-**Ciclo atual:** F7 — Academia. Sem dependência de hardware desta vez
-(diferente de passos/GPS): tudo testável de verdade, sem ressalva de
-"precisa de device". `docs/PRODUTO.md:28` ("planos, sessão ao vivo,
-séries/repetições/carga, RPE, recordes, progressão") implementado como:
-catálogo de planos (`WorkoutPlan`/`PlannedExercise`, local, não é
-`HealthEvent` — mesmo padrão do catálogo `Food` da nutrição) + sessão
-executada (`WorkoutSessionInput`/`SetEntry`, grava 1 `workout_session` +
-N `set_log` por sessão) + recorde pessoal calculado por consulta sobre
-`set_log` (não armazenado). Nenhuma tabela de "Exercise" catalogada —
-exercício é `exerciseId`/`exerciseName` livre escolhido pelo chamador,
-evitando escopo prematuro.
+**Ciclo atual:** manhã de trabalho — tudo que não depende de
+device/emulador Android. F8 (corrida/GPS): a decisão já tomada
+(`docs/adr/009-gps.md`) é WRAP do OpenTracks no Android via platform
+channel, não reimplementação Dart — então a captura de GPS em si fica de
+fora (precisa SDK/build nativo Android). O que foi implementado: migração
+de schema (`accuracy_meters` em `gps_track_points`, Fase 8), `RunCalculator`
+(distância Haversine, splits/km, elevação, filtro de ruído por precisão),
+GPX export/import (`package:xml`, MIT), `obfuscateRouteEnds` (privacidade
+de rota, 300m iniciais/finais), `RunLogger` (grava `gps_track` +
+`gps_track_points`), `get_run_summary` (ferramenta de leitura). **`start_run`
+(ferramenta de escrita, inicia a gravação) não foi implementada** — só
+faz sentido com captura de GPS real; registrar um handler vazio seria
+fingir "feito" sem prova.
 
 **Pendências ativas (revisado):**
-- **Corrigido:** `packages/activity/test/interlinked_tools_test.dart`
-  agora usa `log_meal` real (`FoodRepository`/`MealLogger` de
-  `packages/nutrition`), não mais o handler de demonstração.
 - **Confirmado não resolvível aqui:** Open Food Facts
   (`world/static/br.openfoodfacts.org`) bloqueado pelo proxy deste
-  ambiente (mesmo padrão de outros domínios já documentado) — testado
-  de novo antes de desistir, sem mirror pequeno viável encontrado.
-  `packages/nutrition` continua com dataset de fixture (6 alimentos).
+  ambiente — `packages/nutrition` continua com dataset de fixture (6
+  alimentos); buscando alternativa aberta e alcançável neste ciclo.
 - **Adiado por decisão, não por bloqueio técnico:** `BarcodeDecoder`
-  concreto com `flutter_zxing` em `app/` — daria pra escrever o código,
-  mas sem câmera/emulador real pra validar, e o `app/` ainda não tem
-  nenhuma infraestrutura de UI (navegação, tema) pra essa tela se
-  encaixar — implementar isso isolado, sem poder testar e sem o resto
-  do app em volta, é mais risco que ganho agora. Fica pra quando o app
-  shell começar a ganhar UI de verdade.
+  concreto com `flutter_zxing` em `app/` — sem câmera/emulador real pra
+  validar, e o `app/` ainda não tem infraestrutura de UI. Fica pra quando
+  o app shell ganhar UI de verdade.
+- `start_run` (ferramenta de escrita de F8) e a captura de GPS real
+  (WRAP OpenTracks Android, PORT iOS) — bloqueadas por falta de
+  SDK/device Android/iOS neste ambiente, mesmo limite de F4.
 - Água (novo tipo de `HealthEvent`) e refeição/receita composta de
   ingredientes — pendências já registradas em `docs/specs/nutricao.md`,
   não implementadas.
-- Decidir entre mais ferramentas do cérebro (`get_daily_summary`,
-  `search_food`, `sync_wearable`...) ou outro módulo (F8 corrida/GPS,
-  que herda o mesmo limite de hardware que passos: sem device/emulador
-  pra validar GPS de verdade neste ambiente) — não decidido.
 
 **main sincronizado com a branch designada** — verificar se ainda está em
 sincronia antes de assumir (checar `git log` das duas antes de reusar
@@ -86,6 +81,7 @@ este status sem revalidar).
 | 5 | Cérebro com 1+ ferramentas (F5) | **pipeline provado com 2 ferramentas reais** (`get_steps`, `log_meal`) coexistindo no mesmo `BrainPipeline`/`ToolRegistry`; LLM on-device real fica pra depois (sem device pra testar aqui) |
 | 6 | Nutrição/código de barras (F6) | **CONCLUÍDO** (`packages/nutrition`) — `Food`/`FoodRepository` (sqlite3, dataset de fixture), `MealLogger`, `BarcodeDecoder` (interface, sem câmera real), `log_meal` real ligada ao `ToolRegistry`; dataset real (Open Food Facts) e `flutter_zxing` concreto ficam pra depois |
 | 7 | Academia (F7) | **CONCLUÍDO** (`packages/activity`) — `WorkoutPlan`/`WorkoutRepository` (sqlite3), `WorkoutLogger` (`workout_session`+`set_log`, recorde por consulta), `get_workout_plan`/`log_workout_session` reais no `ToolRegistry`; sem dependência de hardware, testado de ponta a ponta |
+| 8 | Corrida/caminhada com GPS (F8) | **PARCIAL** (`packages/activity`) — `RunCalculator`, `RunLogger`, GPX, ofuscação de rota, `get_run_summary` concluídos e testados; captura de GPS real (WRAP Android/PORT iOS) e `start_run` bloqueados — sem SDK/device Android/iOS neste ambiente |
 | — | Relatório de eficiência (`docs/EFICIENCIA.md`) | Grupo A adotado como prática; Grupo B aplicado (este arquivo) |
 
 ## Decisões já tomadas (não reabrir sem motivo novo)

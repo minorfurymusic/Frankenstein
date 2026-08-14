@@ -40,7 +40,7 @@ class HealthDataCore {
   /// aplicado.
   factory HealthDataCore.open(String path) {
     final db = sqlite3.open(path);
-    db.execute(schemaSql);
+    _applySchema(db);
     return HealthDataCore._(db);
   }
 
@@ -48,8 +48,21 @@ class HealthDataCore {
   /// tem que sobreviver o processo).
   factory HealthDataCore.openInMemory() {
     final db = sqlite3.openInMemory();
-    db.execute(schemaSql);
+    _applySchema(db);
     return HealthDataCore._(db);
+  }
+
+  /// Aplica o schema base (idempotente via `CREATE TABLE IF NOT EXISTS`)
+  /// e, por cima, cada migração aditiva ainda não aplicada — checada via
+  /// `PRAGMA table_info`, porque `ALTER TABLE ADD COLUMN` falha se rodado
+  /// duas vezes no mesmo banco (diferente do `CREATE TABLE IF NOT EXISTS`).
+  static void _applySchema(Database db) {
+    db.execute(schemaSql);
+    final columns = db.select('PRAGMA table_info(gps_track_points)');
+    final hasAccuracyColumn = columns.any((r) => r['name'] == 'accuracy_meters');
+    if (!hasAccuracyColumn) {
+      db.execute(schemaSqlV2AddGpsAccuracy);
+    }
   }
 
   void close() => _db.dispose();
@@ -170,8 +183,9 @@ class HealthDataCore {
       _db.execute(
         '''
         INSERT INTO gps_track_points (
-          id, event_id, seq, latitude, longitude, elevation_meters, recorded_at
-        ) VALUES (?, ?, ?, ?, ?, ?, ?)
+          id, event_id, seq, latitude, longitude, elevation_meters,
+          recorded_at, accuracy_meters
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
         ''',
         [
           _uuid.v4(),
@@ -181,6 +195,7 @@ class HealthDataCore {
           p.longitude,
           p.elevationMeters,
           p.recordedAt.toIso8601String(),
+          p.accuracyMeters,
         ],
       );
     }
@@ -199,6 +214,7 @@ class HealthDataCore {
               longitude: (r['longitude'] as num).toDouble(),
               elevationMeters: (r['elevation_meters'] as num?)?.toDouble(),
               recordedAt: DateTime.parse(r['recorded_at'] as String),
+              accuracyMeters: (r['accuracy_meters'] as num?)?.toDouble(),
             ))
         .toList();
   }

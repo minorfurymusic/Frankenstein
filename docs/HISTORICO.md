@@ -1260,3 +1260,113 @@
   validar GPS, bateria, gravação em background neste ambiente); ou,
   alternativamente, mais ferramentas do cérebro sobre o que já existe
   (`get_daily_summary`, `search_food`). Pergunta em aberto pro usuário.
+
+- **Ciclo — organização do dia: licença esclarecida + F8 (parte sem
+  Android) + preparação de F10/F11/ferramentas extras/dataset real.**
+  Usuário pediu um resumo do que ficou pendente de aprovação e do que
+  falta pro MVP. Resposta: nenhuma ADR pendente (11/11 aceitas,
+  `docs/adr/005-...md`, `docs/LICENSE-AUDIT.md` fechado) — citado de
+  volta pra confirmar. Aprovação recebida pra tocar hoje tudo que não
+  depende de teste em device Android, com duas ressalvas explícitas:
+  estrutura de Entitlements/Pagamento sem configurar provedor, e buscar
+  dataset real de alimentos (Open Food Facts segue bloqueado pelo proxy
+  deste ambiente).
+
+  **F8 — só a fatia sem Android.** Diferente de F4/F6/F7: a decisão já
+  tomada pra corrida/caminhada (`docs/adr/009-gps.md`, aceita) é **WRAP
+  do OpenTracks no Android via platform channel** + **PORT nativo no
+  iOS** — não é reimplementação Dart pura como nutrição/academia. Isso
+  significa que a captura de GPS em si (sensor, foreground service,
+  código nativo) fica fora do que dá pra fazer neste ambiente — mesma
+  categoria de bloqueio que F4 (passos) já tinha pro foreground service
+  Android real. O que ficou testável de ponta a ponta:
+
+  - **Migração de schema (`packages/health_core`):** `accuracy_meters`
+    (nullable) em `gps_track_points` — `.claude/rules/activity.md:16`
+    ("descarte pontos com precisão pior que 20 m") depende desse campo,
+    que não existia desde a F3. `schema.dart`: `schemaSqlV2AddGpsAccuracy`
+    (`ALTER TABLE ... ADD COLUMN`), aplicado por
+    `HealthDataCore._applySchema` checando `PRAGMA table_info` antes de
+    rodar o `ALTER` — `ALTER TABLE ADD COLUMN` não é idempotente como
+    `CREATE TABLE IF NOT EXISTS`, reabrir um banco já migrado sem esse
+    guard quebraria. `GpsTrackPoint` ganhou o campo `accuracyMeters`.
+    Teste de ida e volta real (`.claude/rules/datacore.md`: "toda
+    migração de schema precisa de teste de ida e volta com dados
+    reais"): banco criado só com `schemaSqlV1` (simulando instalação
+    anterior à Fase 8), ponto GPS inserido sem a coluna nova, reaberto
+    via `HealthDataCore.open` — migra sem perder o ponto existente
+    (`accuracyMeters` nulo, como esperado), aceita gravar ponto novo com
+    precisão, e reabrir de novo continua idempotente.
+  - **`RunCalculator` (`packages/activity/lib/src/run_calculator.dart`):**
+    distância por Haversine, `filterByAccuracy` (descarta pontos com
+    precisão pior que o limiar, mantém pontos sem precisão relatada —
+    decisão registrada: não dá pra invalidar um dado que nunca existiu),
+    `elevationGainMeters` (só soma ganhos positivos), `kmSplits` (corta a
+    cada km percorrido, tempo decorrido por split), `averagePaceSecondsPerKm`,
+    `summarize`. `docs/PRODUTO.md:29`: "GPS, rota, pace, splits por km,
+    elevação, pausa automática, GPX".
+  - **GPX (`packages/activity/lib/src/gpx.dart`):** `exportGpx`/`importGpx`,
+    GPX 1.1 (`trk`/`trkseg`/`trkpt`), usando `package:xml` (MIT) só pra
+    montar/ler XML — obrigatório por `.claude/rules/activity.md:19` e
+    LGPD art. 18 (exportação nunca paga nem limitada).
+  - **`obfuscateRouteEnds` (`packages/activity/lib/src/route_privacy.dart`):**
+    remove os pontos dentro de 300 m do início e do fim da rota
+    (`.claude/rules/activity.md:20-21`). Rota menor que 600 m devolve
+    lista vazia — decisão registrada: não existe "meio seguro" pra
+    revelar sem também revelar onde a rota começou ou terminou.
+  - **`RunLogger` (`packages/activity/lib/src/run_logger.dart`):** filtra
+    por precisão, calcula o resumo, grava 1 `HealthEvent` tipo
+    `gps_track` (payload com distância/duração/elevação/splits/pace) + os
+    pontos filtrados em `gps_track_points`. Recusa gravar (
+    `InsufficientRunDataException`) se sobrarem menos de 2 pontos após o
+    filtro — nunca grava uma rota vazia/inútil silenciosamente.
+  - **`get_run_summary` (`packages/activity/lib/src/run_tools.dart`):**
+    ferramenta de leitura pro `ToolRegistry`, devolve só o resumo já
+    calculado — nunca os pontos brutos de lat/lon (privacidade de rota,
+    mesmo raciocínio da ofuscação).
+  - **`start_run` (ferramenta de escrita, listada em `docs/ARQUITETURA.md:66-67`)
+    não foi implementada.** Só faz sentido depois que existir captura de
+    GPS real pra iniciar — registrar um handler que não faz nada de
+    verdade seria "feito" sem prova (`CLAUDE.md`, regra 1). Fica
+    documentado como pendência, não escondido atrás de um método vazio.
+
+  Dependência nova: `xml: ^6.5.0` (resolvido `6.6.1`), MIT, mais
+  `petitparser` transitivo (`7.0.2`), também MIT — ambos verificados
+  lendo o `LICENSE` de cada um no cache local antes de registrar aqui
+  (`.claude/rules/licenca.md`).
+
+  Um bug de ponto flutuante foi pego e corrigido durante os testes:
+  `kmSplits` comparava `distanceSinceLastSplit >= 1000` sem tolerância —
+  distância Haversine real para segmentos sintéticos de "exatamente
+  1000 m" caía por uma fração de milímetro abaixo do limiar por
+  arredondamento trigonométrico, atrasando o corte do split em um ponto.
+  Corrigido com uma tolerância de `1e-6` no limiar — decisão de
+  robustez genuína (GPS real nunca bate exatamente em 1000.000000 m),
+  não um ajuste só pra passar teste.
+
+  **Prova:**
+  ```
+  $ dart test (health_core, isolado) → 00:00 +17: All tests passed!
+  $ dart test (activity, isolado) → 00:00 +47: All tests passed!
+  $ make lint (raiz, todos os pacotes + app) → "No issues found!" em todos
+  $ make test (raiz, todos os pacotes + app) →
+    health_core: +17, brain: +5, tool_registry: +11, activity: +47,
+    nutrition: +17, entitlements: +1, share: +1, app: +1 — todos "All
+    tests passed!"
+  ```
+  100 testes no total no monorepo (78 antes deste ciclo + 22 novos: 2 em
+  health_core — accuracy_meters + migração — e 20 em activity —
+  RunCalculator, GPX, ofuscação, RunLogger, get_run_summary).
+
+  **Não verificado:** mesmo item recorrente — `libsqlite3` em runners
+  `ubuntu-latest` do CI real.
+
+  **Débito técnico:** `start_run` (ferramenta de escrita de F8) e a
+  captura de GPS real (WRAP Android/PORT iOS) — bloqueadas por hardware,
+  já documentadas acima e em `STATUS.md`, não escondidas.
+
+  **Próximo ciclo proposto (mesma manhã, continuando):** F10/F11
+  (esqueleto de Entitlements/Pagamento, sem provedor configurado),
+  ferramentas extras do cérebro (`get_daily_summary`, `search_food`), e
+  pesquisa de dataset real de alimentos aberto e alcançável (substituto
+  do Open Food Facts, bloqueado pelo proxy).

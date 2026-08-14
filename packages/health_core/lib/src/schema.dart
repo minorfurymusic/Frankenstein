@@ -44,3 +44,14 @@ CREATE INDEX IF NOT EXISTS idx_gps_track_points_event
 /// Schema atual — apontar sempre para a versão mais recente. Migrações
 /// futuras entram como `schemaSqlV2`, etc., nunca reescrevendo esta.
 const String schemaSql = schemaSqlV1;
+
+/// Migração V2 (Fase 8, corrida/caminhada): `accuracy_meters` em
+/// `gps_track_points` — precisão reportada pelo GPS no momento da leitura,
+/// necessária pro filtro de ruído de `.claude/rules/activity.md:16`
+/// ("descarte pontos com precisão pior que 20 m"). `ALTER TABLE ADD
+/// COLUMN` não é idempotente como `CREATE TABLE IF NOT EXISTS` — quem
+/// aplica isso (`HealthDataCore._applySchema`) precisa checar
+/// `PRAGMA table_info` antes de rodar, pra não falhar num banco já
+/// migrado.
+const String schemaSqlV2AddGpsAccuracy =
+    'ALTER TABLE gps_track_points ADD COLUMN accuracy_meters REAL;';
