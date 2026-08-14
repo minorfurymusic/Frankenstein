@@ -358,6 +358,47 @@ void main() {
       expect(core.queryByType(HealthEventType.meal), hasLength(1));
     });
   });
+
+  group('search_food — ferramenta de leitura do cérebro', () {
+    test('searchFoodSpec() é uma ferramenta de leitura (write:false, confirm:false)', () {
+      final spec = searchFoodSpec();
+      expect(spec.name, 'search_food');
+      expect(spec.write, isFalse);
+      expect(spec.confirm, isFalse);
+      expect(spec.module, 'nutrition');
+    });
+
+    test('encontra alimentos do fixture por substring case-insensitive via ToolRegistry', () async {
+      final foodRepo = FoodRepository.openInMemory();
+      addTearDown(foodRepo.close);
+
+      final registry = ToolRegistry();
+      registry.register(searchFoodSpec(), searchFoodHandler(foodRepo));
+
+      final result = await registry.execute('search_food', {'query': 'FRANGO'});
+
+      expect(result.success, isTrue);
+      final results = result.data!['results'] as List;
+      expect(results, hasLength(1));
+      final food = results.first as Map<String, dynamic>;
+      expect(food['name'], 'Peito de frango grelhado');
+      expect(food['id'], isNotNull);
+      expect(food.containsKey('energy_kcal_100g'), isTrue);
+    });
+
+    test('busca sem correspondência devolve results vazio, não falha', () async {
+      final foodRepo = FoodRepository.openInMemory();
+      addTearDown(foodRepo.close);
+
+      final registry = ToolRegistry();
+      registry.register(searchFoodSpec(), searchFoodHandler(foodRepo));
+
+      final result = await registry.execute('search_food', {'query': 'inexistente-xyz'});
+
+      expect(result.success, isTrue);
+      expect(result.data!['results'], isEmpty);
+    });
+  });
 }
 
 class _AlwaysConfirm implements ConfirmationGate {

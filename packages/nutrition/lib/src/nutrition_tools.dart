@@ -3,6 +3,7 @@
 
 import 'package:frankstein_tool_registry/tool_registry.dart';
 
+import 'food_repository.dart';
 import 'meal.dart';
 import 'meal_logger.dart';
 
@@ -86,5 +87,54 @@ ToolHandler logMealHandler(
     } on FoodNotFoundException catch (e) {
       return ToolResult.failure(e.toString());
     }
+  };
+}
+
+/// Schema de `search_food` — busca por nome no catálogo local
+/// (`docs/specs/nutricao.md`, tela "Adicionar alimento": "busca por
+/// nome").
+final Map<String, dynamic> searchFoodSchema = {
+  'type': 'object',
+  'properties': {
+    'query': {'type': 'string'},
+    'limit': {'type': 'integer'},
+  },
+  'required': ['query'],
+};
+
+/// `search_food` — ferramenta de leitura, mesmo padrão de `get_workout_plan`
+/// (`packages/activity/lib/src/activity_tools.dart`) e de `logMealSpec`
+/// acima: só que sem escrita nem confirmação, porque busca não altera
+/// nada no Health Data Core.
+ToolSpec searchFoodSpec() => ToolSpec(
+      name: 'search_food',
+      description: 'Busca alimentos no catálogo local pelo nome',
+      write: false,
+      confirm: false,
+      module: 'nutrition',
+      parametersSchema: searchFoodSchema,
+    );
+
+/// Fechado sobre [FoodRepository.searchByName] — wrapper fino, mesma
+/// lógica de `logMealHandler` acima: uma função que devolve o
+/// `ToolHandler`.
+ToolHandler searchFoodHandler(FoodRepository repository) {
+  return (params) async {
+    final query = params['query'] as String;
+    final limit = params['limit'] as int?;
+
+    final results = repository.searchByName(query, limit: limit ?? 20);
+
+    return ToolResult.ok({
+      'results': results
+          .map((food) => {
+                'id': food.id,
+                'name': food.name,
+                'brand': food.brand,
+                'barcode': food.barcode,
+                'energy_kcal_100g': food.energyKcalPer100g,
+              })
+          .toList(),
+    });
   };
 }
