@@ -8,10 +8,14 @@
 > no formato que a skill espera.
 
 **Repositório:** `github.com/minorfurymusic/Frankenstein`
-**Última atualização:** 2026-08-14 (commit `217e402`)
-**Total de commits:** 62 (mais este commit de docs)
+**Última atualização:** 2026-08-14 (commit `1f3ae5f`)
+**Total de commits:** 64
 
-## 2026-08-14 (F8 parcial, F10/F11 esqueleto, ferramentas extras, catálogo real TACO)
+## 2026-08-14, tarde (primeira UI real do app)
+
+- `1f3ae5f` — feat(app): primeira UI real - telas Resumo e Chat, ligadas aos pacotes reais
+
+## 2026-08-14, manhã (F8 parcial, F10/F11 esqueleto, ferramentas extras, catálogo real TACO)
 
 - `217e402` — feat(nutrition): catalogo real de alimentos - Tabela TACO (NEPA/UNICAMP), substitui gap do Open Food Facts
 - `ed12cd4` — feat(nutrition): search_food - ferramenta de leitura do cerebro
