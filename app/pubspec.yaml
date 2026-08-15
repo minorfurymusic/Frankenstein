@@ -43,11 +43,14 @@ dependencies:
     path: ../packages/health_core
   frankstein_nutrition:
     path: ../packages/nutrition
+  frankstein_share:
+    path: ../packages/share
   frankstein_summary:
     path: ../packages/summary
   frankstein_tool_registry:
     path: ../packages/tool_registry
   path_provider: ^2.1.4
+  share_plus: ^10.1.4
 
 dev_dependencies:
   flutter_test:

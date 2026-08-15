@@ -28,7 +28,7 @@ class _HomeShellState extends State<HomeShell> {
       body: IndexedStack(
         index: _index,
         children: [
-          DashboardScreen(registry: widget.dependencies.registry),
+          DashboardScreen(dependencies: widget.dependencies),
           ChatScreen(pipeline: widget.dependencies.pipeline),
         ],
       ),

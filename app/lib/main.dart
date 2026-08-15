@@ -2,8 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 
 import 'app_dependencies.dart';
+import 'card_image_capturer.dart';
 import 'confirmation_gate.dart';
 import 'home_shell.dart';
+import 'share_sheet.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -12,6 +14,8 @@ Future<void> main() async {
   final dependencies = AppDependencies.open(
     dbDirectoryPath: directory.path,
     confirmationGate: AppConfirmationGate(navigatorKey),
+    shareSheet: NativeShareSheet(),
+    imageCapturer: RealCardImageCapturer(),
   );
   runApp(FrankstitApp(dependencies: dependencies, navigatorKey: navigatorKey));
 }

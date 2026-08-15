@@ -2,7 +2,7 @@
 
 > Gerado pela skill `project-recorder`. Fonte: `docs/PRODUTO.md` (fases e
 > Definição de Pronto do MVP) cruzado com `STATUS.md` (estado real).
-> Última atualização: 2026-08-14.
+> Última atualização: 2026-08-15.
 
 ## Fases (`docs/PRODUTO.md:39-57`)
 
@@ -18,7 +18,7 @@
 - [~] **F9** — Wearable BLE — PARCIAL: `packages/wearable` (`WearableSyncLogger`/`sync_wearable`, FC+sono, dedup por `external_id`), 10 testes. FEDERATE via Health Connect (ADR-4a), não BLE/Kotlin direto. `WearableDataSource` real bloqueada — sem Android SDK/device com Gadgetbridge; não registrada no app (sem fonte real)
 - [~] **F10** — Entitlements — PARCIAL, esqueleto: `Entitlement`/`EntitlementVerifier` (Ed25519 real, testado), graça offline, `Subscription`, `PendingPayment`, `WebhookIdempotencyGuard` (`packages/entitlements`). Nenhum provedor configurado, por decisão.
 - [~] **F11** — Pagamentos (um canal só) — PARCIAL: modelos de `Subscription`/`PendingPayment` (Pix assíncrono) prontos; nenhum provedor (Play Billing/StoreKit/Stripe/Pix real) configurado, por decisão (mecanismo desenhado na ADR-7 aceita)
-- [ ] **F12** — Compartilhamento social — não iniciado
+- [~] **F12** — Compartilhamento social — PARCIAL: `packages/share` (`WorkoutShareCardData`/`RunShareCardData`, checagem estrutural anti-clínico, rota ofuscada), `SharePreviewScreen`/`ShareSheet`/`CardImageCapturer` em `app/`, 8 testes novos. Rasterização real (`RepaintBoundary.toImage`) não verificável sem device
 - [ ] **F13** — wger + Fasten — não iniciado (caminho liberado: ADR-4 aceita)
 - [ ] **F14** — Painel B2B (produto separado, depois do MVP) — não iniciado
 
@@ -30,13 +30,13 @@
 - [~] 4. "Quantas calorias comi hoje e quanto andei?" respondido pelo LLM local, offline — `get_daily_summary` funciona na UI (tela Resumo + comando de chat "resumo de hoje"); falta o LLM real (roteador determinístico cobre só comando estruturado, não pergunta livre)
 - [ ] 5. Plano de treino prescrito, executado com séries e carga, progressão visível — lógica pronta (`get_workout_plan`/`log_workout_session` registradas no app), sem tela dedicada nem comando de chat ainda
 - [ ] 6. Corrida de 5 km gravada com tela bloqueada, rota e splits corretos, bateria medida — precisa de captura de GPS real (WRAP Android)
-- [ ] 7. Card de corrida compartilhado no Instagram com rota ofuscada e nada clínico — F12 não iniciada
+- [~] 7. Card de corrida compartilhado no Instagram com rota ofuscada e nada clínico — card + share sheet nativo funcionam de ponta a ponta (testado com captura fake); falta verificar a rasterização real (`RepaintBoundary.toImage`) num device de verdade
 - [ ] 8. Assinatura ativada por Pix; entitlement chega ao app e sobrevive 7 dias offline — modelos prontos (F10/F11), nenhum provedor real configurado
 - [x] 9. `docs/LICENSE-AUDIT.md` fechado e modelo de distribuição decidido — **feito** em 2026-08-09, seção "Fechamento"
 
-**1 de 9 itens parcial (item 4), 1 fechado (item 9), 7 ainda não
-começaram de verdade** — a maioria depende de device Android/iOS real
-(itens 1, 3, 6) ou de trabalho de UI/escopo ainda não feito (2, 5, 7, 8).
+**3 de 9 itens parcial (3, 4, 7), 1 fechado (9), 5 ainda não começaram de
+verdade** — a maioria depende de device Android/iOS real (itens 1, 3, 6,
+7) ou de trabalho de UI/escopo ainda não feito (2, 5, 8).
 
 ## Primeira UI do app (`app/`) — 2026-08-14
 
@@ -57,4 +57,5 @@ começaram de verdade** — a maioria depende de device Android/iOS real
 - [x] ~~F8 (parte sem Android), F10/F11 (esqueleto), ferramentas extras do cérebro, catálogo real de alimentos~~ — concluído 2026-08-14
 - [x] ~~Primeira UI do app (Resumo + Chat)~~ — concluído 2026-08-14
 - [x] ~~F9 (wearable, FC+sono via Health Connect)~~ — concluído 2026-08-15 (parte sem device)
-- [ ] Próxima etapa em aberto: F12 (compartilhamento social), mais telas de UI (treino/corrida, comandos de chat pras ferramentas restantes), ou aprofundar F10/F11
+- [x] ~~F12 (compartilhamento social, cards de treino/corrida)~~ — concluído 2026-08-15 (parte sem device)
+- [ ] Próxima etapa em aberto: mais comandos de chat (ferramentas já registradas sem regra de roteador), campos sensíveis opt-in nos cards, ou F13 (wger/Fasten)

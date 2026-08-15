@@ -5,7 +5,9 @@ import 'package:frankstein_nutrition/nutrition.dart';
 import 'package:frankstein_summary/summary.dart';
 import 'package:frankstein_tool_registry/tool_registry.dart';
 
+import 'card_image_capturer.dart';
 import 'chat_router.dart';
+import 'share_sheet.dart';
 
 /// Junta tudo que o app precisa: os repositórios reais e o pipeline do
 /// cérebro já com as ferramentas registradas (`docs/ARQUITETURA.md:81-82`).
@@ -24,6 +26,8 @@ class AppDependencies {
   final WorkoutRepository workoutRepository;
   final ToolRegistry registry;
   final BrainPipeline pipeline;
+  final ShareSheet shareSheet;
+  final CardImageCapturer imageCapturer;
 
   AppDependencies._({
     required this.core,
@@ -31,6 +35,8 @@ class AppDependencies {
     required this.workoutRepository,
     required this.registry,
     required this.pipeline,
+    required this.shareSheet,
+    required this.imageCapturer,
   });
 
   void close() {
@@ -50,22 +56,32 @@ class AppDependencies {
   factory AppDependencies.open({
     required String dbDirectoryPath,
     required ConfirmationGate confirmationGate,
+    required ShareSheet shareSheet,
+    required CardImageCapturer imageCapturer,
   }) {
     return _build(
       core: HealthDataCore.open('$dbDirectoryPath/frankstein_health.sqlite3'),
       foodRepository: FoodRepository.open('$dbDirectoryPath/frankstein_food.sqlite3'),
       workoutRepository: WorkoutRepository.open('$dbDirectoryPath/frankstein_workout.sqlite3'),
       confirmationGate: confirmationGate,
+      shareSheet: shareSheet,
+      imageCapturer: imageCapturer,
     );
   }
 
   /// Teste/demonstração: tudo em memória, sem tocar disco.
-  factory AppDependencies.inMemory({required ConfirmationGate confirmationGate}) {
+  factory AppDependencies.inMemory({
+    required ConfirmationGate confirmationGate,
+    required ShareSheet shareSheet,
+    required CardImageCapturer imageCapturer,
+  }) {
     return _build(
       core: HealthDataCore.openInMemory(),
       foodRepository: FoodRepository.openInMemory(seedTacoData: true),
       workoutRepository: WorkoutRepository.openInMemory(),
       confirmationGate: confirmationGate,
+      shareSheet: shareSheet,
+      imageCapturer: imageCapturer,
     );
   }
 
@@ -74,6 +90,8 @@ class AppDependencies {
     required FoodRepository foodRepository,
     required WorkoutRepository workoutRepository,
     required ConfirmationGate confirmationGate,
+    required ShareSheet shareSheet,
+    required CardImageCapturer imageCapturer,
   }) {
     final mealLogger = MealLogger(foodRepository: foodRepository, core: core);
     final workoutLogger = WorkoutLogger(core: core);
@@ -111,6 +129,8 @@ class AppDependencies {
       workoutRepository: workoutRepository,
       registry: registry,
       pipeline: pipeline,
+      shareSheet: shareSheet,
+      imageCapturer: imageCapturer,
     );
   }
 }

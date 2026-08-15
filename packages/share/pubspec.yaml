@@ -1,12 +1,19 @@
 name: frankstein_share
 description: >-
-  Compartilhamento social — cards renderizados no aparelho, sem SDK proprietário (.claude/rules/share.md).
-  Esqueleto vazio — Fase 2, Ciclo 1. Nenhuma lógica ainda.
+  Compartilhamento social — cards renderizados no aparelho, sem SDK proprietário
+  (.claude/rules/share.md). ShareCardData (treino/corrida) + builders — nada
+  clínico, rota ofuscada, sem chamada de rede.
 publish_to: 'none'
-version: 0.0.1
+version: 0.1.0
 
 environment:
   sdk: ^3.9.0
+
+dependencies:
+  frankstein_activity:
+    path: ../activity
+  frankstein_health_core:
+    path: ../health_core
 
 dev_dependencies:
   lints: ^5.0.0

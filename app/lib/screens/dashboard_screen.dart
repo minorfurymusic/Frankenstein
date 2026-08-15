@@ -1,12 +1,18 @@
 import 'package:flutter/material.dart';
-import 'package:frankstein_tool_registry/tool_registry.dart';
+import 'package:frankstein_health_core/health_core.dart';
+import 'package:frankstein_share/share.dart';
 
-/// Resumo do dia — chama `get_daily_summary` direto no [registry] (não
-/// passa pelo roteador/chat: é uma tela que carrega dado ao abrir, não
-/// uma conversa). `docs/ARQUITETURA.md:81-82`.
+import '../app_dependencies.dart';
+import 'share_preview_screen.dart';
+
+/// Resumo do dia — chama `get_daily_summary` direto no `ToolRegistry`
+/// (não passa pelo roteador/chat: é uma tela que carrega dado ao abrir,
+/// não uma conversa). `docs/ARQUITETURA.md:81-82`. Também oferece
+/// compartilhar o treino/corrida mais recente, quando existir um
+/// (`.claude/rules/share.md`).
 class DashboardScreen extends StatefulWidget {
-  final ToolRegistry registry;
-  const DashboardScreen({super.key, required this.registry});
+  final AppDependencies dependencies;
+  const DashboardScreen({super.key, required this.dependencies});
 
   @override
   State<DashboardScreen> createState() => _DashboardScreenState();
@@ -28,7 +34,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
     final day = now.day.toString().padLeft(2, '0');
     final date = '${now.year}-$month-$day';
 
-    final result = await widget.registry.execute('get_daily_summary', {'date': date});
+    final result = await widget.dependencies.registry.execute('get_daily_summary', {'date': date});
     if (!mounted) return;
     setState(() {
       if (result.success) {
@@ -37,6 +43,43 @@ class _DashboardScreenState extends State<DashboardScreen> {
         _error = result.error;
       }
     });
+  }
+
+  void _shareLatestWorkout() {
+    final core = widget.dependencies.core;
+    final latest = core.queryByType(HealthEventType.workoutSession).lastOrNull;
+    if (latest == null) return;
+
+    final card = buildWorkoutShareCard(latest);
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => SharePreviewScreen(
+        title: 'Compartilhar treino',
+        cardContent: WorkoutCardVisual(data: card),
+        suggestedFileName: 'treino.png',
+        shareText: 'Meu treino de hoje — Frankstein',
+        shareSheet: widget.dependencies.shareSheet,
+        imageCapturer: widget.dependencies.imageCapturer,
+      ),
+    ));
+  }
+
+  void _shareLatestRun() {
+    final core = widget.dependencies.core;
+    final latest = core.queryByType(HealthEventType.gpsTrack).lastOrNull;
+    if (latest == null) return;
+
+    final points = core.gpsTrackPoints(latest.id);
+    final card = buildRunShareCard(latest, points);
+    Navigator.of(context).push(MaterialPageRoute(
+      builder: (_) => SharePreviewScreen(
+        title: 'Compartilhar corrida',
+        cardContent: RunCardVisual(data: card),
+        suggestedFileName: 'corrida.png',
+        shareText: 'Minha corrida — Frankstein',
+        shareSheet: widget.dependencies.shareSheet,
+        imageCapturer: widget.dependencies.imageCapturer,
+      ),
+    ));
   }
 
   @override
@@ -76,11 +119,25 @@ class _DashboardScreenState extends State<DashboardScreen> {
             label: 'Treinos',
             value: '${workouts['count']} (${workouts['total_sets']} séries)',
           ),
+          if ((workouts['count'] as int) > 0)
+            TextButton.icon(
+              key: const Key('share_latest_workout'),
+              onPressed: _shareLatestWorkout,
+              icon: const Icon(Icons.share),
+              label: const Text('Compartilhar último treino'),
+            ),
           _SummaryCard(
             key: const Key('dashboard_runs'),
             label: 'Corridas',
             value: '${runs['count']} (${runs['total_distance_meters']} m)',
           ),
+          if ((runs['count'] as int) > 0)
+            TextButton.icon(
+              key: const Key('share_latest_run'),
+              onPressed: _shareLatestRun,
+              icon: const Icon(Icons.share),
+              label: const Text('Compartilhar última corrida'),
+            ),
         ],
       ),
     );

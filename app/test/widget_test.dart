@@ -2,23 +2,73 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:frankstein/app_dependencies.dart';
+import 'package:frankstein/card_image_capturer.dart';
 import 'package:frankstein/confirmation_gate.dart';
 import 'package:frankstein/main.dart';
+import 'package:frankstein/share_sheet.dart';
 import 'package:frankstein_health_core/health_core.dart';
 
 class _TestApp {
   final AppDependencies dependencies;
   final Widget widget;
-  _TestApp(this.dependencies, this.widget);
+  final FakeShareSheet shareSheet;
+  _TestApp(this.dependencies, this.widget, this.shareSheet);
 }
 
 _TestApp _buildTestApp() {
   final navigatorKey = GlobalKey<NavigatorState>();
+  final shareSheet = FakeShareSheet();
   final dependencies = AppDependencies.inMemory(
     confirmationGate: AppConfirmationGate(navigatorKey),
+    shareSheet: shareSheet,
+    imageCapturer: FakeCardImageCapturer(),
   );
   final widget = FrankstitApp(dependencies: dependencies, navigatorKey: navigatorKey);
-  return _TestApp(dependencies, widget);
+  return _TestApp(dependencies, widget, shareSheet);
+}
+
+HealthEvent _insertWorkoutSessionEvent(HealthDataCore core) {
+  final event = HealthEvent(
+    id: HealthDataCore.newId(),
+    type: HealthEventType.workoutSession,
+    source: HealthEventSource.manual,
+    occurredAt: DateTime.utc(2026, 8, 15, 19, 0),
+    occurredAtTzOffsetMinutes: -180,
+    recordedAt: DateTime.utc(2026, 8, 15, 19, 30),
+    payload: const {'sets_count': 10, 'exercise_ids': ['supino-reto']},
+    confidence: 1.0,
+  );
+  core.insertEvent(event);
+  return event;
+}
+
+HealthEvent _insertGpsTrackEvent(HealthDataCore core) {
+  final event = HealthEvent(
+    id: HealthDataCore.newId(),
+    type: HealthEventType.gpsTrack,
+    source: HealthEventSource.manual,
+    occurredAt: DateTime.utc(2026, 8, 15, 7, 0),
+    occurredAtTzOffsetMinutes: -180,
+    recordedAt: DateTime.utc(2026, 8, 15, 7, 30),
+    payload: const {
+      'distance_meters': 5000.0,
+      'duration_seconds': 1800,
+      'average_pace_seconds_per_km': 360.0,
+    },
+    confidence: 1.0,
+  );
+  core.insertEvent(event);
+  core.insertGpsTrackPoints([
+    for (var m = 0; m <= 1000; m += 100)
+      GpsTrackPoint(
+        eventId: event.id,
+        seq: m ~/ 100,
+        latitude: -23.0 + m / 111194.926644,
+        longitude: -46.0,
+        recordedAt: event.occurredAt.add(Duration(seconds: m)),
+      ),
+  ]);
+  return event;
 }
 
 void main() {
@@ -136,5 +186,72 @@ void main() {
 
     expect(find.textContaining('não registrei nada'), findsOneWidget);
     expect(app.dependencies.core.queryByType(HealthEventType.meal), isEmpty);
+  });
+
+  testWidgets('compartilhar treino: preview obrigatório aparece, share só acontece no toque',
+      (WidgetTester tester) async {
+    final app = _buildTestApp();
+    addTearDown(app.dependencies.close);
+    _insertWorkoutSessionEvent(app.dependencies.core);
+
+    await tester.pumpWidget(app.widget);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('share_latest_workout')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('share_latest_workout')));
+    await tester.pumpAndSettle();
+
+    // Preview obrigatório: o card aparece antes de qualquer compartilhamento,
+    // e nada foi compartilhado só por abrir a tela (.claude/rules/share.md).
+    expect(find.byKey(const Key('workout_card_visual')), findsOneWidget);
+    expect(find.text('10 séries'), findsOneWidget);
+    expect(app.shareSheet.called, isFalse);
+
+    // FakeCardImageCapturer no lugar do RepaintBoundary.toImage() real —
+    // essa parte depende do pipeline de rasterização do engine, que não
+    // completa neste ambiente headless (`app/lib/card_image_capturer.dart`).
+    await tester.tap(find.byKey(const Key('share_button')));
+    await tester.pumpAndSettle();
+
+    expect(app.shareSheet.called, isTrue);
+    expect(app.shareSheet.lastFileName, 'treino.png');
+    expect(app.shareSheet.lastBytes, isNotEmpty);
+  });
+
+  testWidgets('compartilhar corrida: rota chega ofuscada no card (não crua)',
+      (WidgetTester tester) async {
+    final app = _buildTestApp();
+    addTearDown(app.dependencies.close);
+    _insertGpsTrackEvent(app.dependencies.core);
+
+    await tester.pumpWidget(app.widget);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('share_latest_run')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('share_latest_run')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('run_card_visual')), findsOneWidget);
+    // Rota de 1000 m — obfuscateRouteEnds corta os 300 m iniciais/finais,
+    // então o card mostra menos pontos que a rota original de 11.
+    expect(find.textContaining('pontos de rota (ofuscada)'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('share_button')));
+    await tester.pumpAndSettle();
+
+    expect(app.shareSheet.called, isTrue);
+    expect(app.shareSheet.lastFileName, 'corrida.png');
+  });
+
+  testWidgets('sem treino/corrida gravados, botões de compartilhar não aparecem',
+      (WidgetTester tester) async {
+    final app = _buildTestApp();
+    addTearDown(app.dependencies.close);
+
+    await tester.pumpWidget(app.widget);
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('share_latest_workout')), findsNothing);
+    expect(find.byKey(const Key('share_latest_run')), findsNothing);
   });
 }

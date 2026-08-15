@@ -7,53 +7,38 @@
 > Histórico completo de ciclos: `docs/HISTORICO.md`. Este arquivo só guarda o
 > estado **atual** — consulte o histórico sob demanda, não por hábito.
 
-**Fase:** **F3, F4, F5, F6, F7, (parcial) F8 e (parcial) F9 concluídas +
-primeira UI real do app.** Health Data Core, passos, o pipeline do
-cérebro, nutrição (com **catálogo real de alimentos** — Tabela TACO,
-NEPA/UNICAMP, 578 itens), academia, corrida/caminhada (só a parte sem
-Android real) e agora wearable (FC/sono via Health Connect, só a parte
-sem Health Connect real). Esqueleto de Entitlements/Pagamento (F10/F11,
-sem provedor configurado), três ferramentas novas do cérebro
-(`get_daily_summary`, `search_food`, `sync_wearable`) — e **`app/`
-deixou de ser tela em branco**: navegação Resumo/Chat de verdade, ligada
-aos pacotes reais. Detalhe completo em `docs/HISTORICO.md`.
+**Fase:** **F3, F4, F5, F6, F7, (parcial) F8, (parcial) F9 e (parcial)
+F12 concluídas + primeira UI real do app.** Health Data Core, passos, o
+pipeline do cérebro, nutrição (**catálogo real** — Tabela TACO, 578
+itens), academia, corrida/caminhada (parte sem Android real), wearable
+(FC/sono via Health Connect, parte sem Health Connect real),
+compartilhamento social (cards de treino/corrida, parte sem rasterização
+real do engine). Esqueleto de Entitlements/Pagamento (F10/F11, sem
+provedor configurado). Quatro ferramentas novas do cérebro
+(`get_daily_summary`, `search_food`, `sync_wearable`, e o fluxo de
+compartilhamento embora `share_card` não seja uma tool do cérebro em si).
+`app/` deixou de ser tela em branco: navegação Resumo/Chat de verdade,
+ligada aos pacotes reais, com compartilhamento de treino/corrida
+funcionando de ponta a ponta. Detalhe completo em `docs/HISTORICO.md`.
 
-**Ciclo mais recente:** F9 — wearable BLE, seguindo `docs/adr/004a-gadgetbridge.md`
-(aceita): FEDERATE via Android Health Connect, **não** BLE/Kotlin direto
-nem fork do Gadgetbridge (`docs/ARQUITETURA.md` corrigido — dizia
-"BLE wearable (Kotlin, Android)", desatualizado desde a ADR-4a). Novo
-pacote `packages/wearable`: `HeartRateSample`/`SleepSessionSample`
-(leituras com `externalId` obrigatório — todo dado de wearable é dado de
-fonte externa, dedup por `(source, external_id)`), `WearableDataSource`
-(interface abstrata — implementação real sobre Health Connect não feita
-aqui, precisa de Android SDK/device com Gadgetbridge de verdade
-instalado), `WearableSyncLogger` (grava `heart_rate`/`sleep`,
-deduplicando reimportação da mesma janela em vez de tratar como erro),
-`sync_wearable` (ferramenta de escrita com confirmação). **Não
-registrada no app ainda** — diferente de `log_meal`/`log_workout_session`,
-não existe fonte real (`WearableDataSource`) pra ligar na produção; usar
-o `FixtureWearableDataSource` (só teste) no app de verdade seria
-apresentar dado fabricado como se fosse real.
-
-**Ciclo anterior (mesma tarde):** primeira UI do app (`app/`), Resumo +
-Chat. `app/` era um `Scaffold` vazio desde a Fase 2; agora depende de
-verdade de `packages/{health_core,tool_registry,brain,activity,nutrition,summary}`.
-`AppDependencies` (`app/lib/app_dependencies.dart`) abre os 3 repositórios
-reais (`HealthDataCore`, `FoodRepository`, `WorkoutRepository`) e registra
-6 das 7 ferramentas mínimas do MVP (`docs/ARQUITETURA.md:81-82`) num
-`ToolRegistry` + `BrainPipeline`. Tela **Resumo** chama `get_daily_summary`
-direto ao abrir. Tela **Chat** manda texto pro `BrainPipeline` — roteador
-determinístico (`app/lib/chat_router.dart`, comando estruturado explícito,
-mesmo padrão de `packages/brain/test/brain_test.dart`, não é NLU livre)
-reconhece "resumo de hoje", "quantos passos hoje" e
-"registrar refeição TIPO: item gramasg, ..." (esse último é ferramenta de
-escrita — mostra diálogo de confirmação de verdade, `AppConfirmationGate`,
-antes de gravar). Testado de ponta a ponta com comida **real** do catálogo
-TACO (`taco-1`), sem mock. `path_provider` (armazenamento real em device)
-só é usado em `main()` — os testes usam `AppDependencies.inMemory`, sem
-platform channel nenhum, então tudo isso é testável sem device exceto a
-resolução do diretório real (`getApplicationDocumentsDirectory()`), que
-fica **não verificada** aqui.
+**Ciclo mais recente: F12 — compartilhamento social (parcial).**
+`.claude/rules/share.md`: card renderizado no aparelho, preview
+obrigatório, opt-in por campo, nada clínico, rota ofuscada, publicação
+nunca automática. Novo pacote `packages/share`: `WorkoutShareCardData`/
+`RunShareCardData` + `buildWorkoutShareCard`/`buildRunShareCard` — **nunca
+aceitam `HealthEvent` de tipo clínico** (checagem estrutural, não
+convenção), reutilizam `obfuscateRouteEnds` (F8) pra rota. Em `app/`:
+`SharePreviewScreen` (o card visível na tela é literalmente o mesmo
+widget capturado — preview = o que sai, sem diferença), `ShareSheet`
+(real via `share_plus`, BSD-3-Clause — só invoca o share sheet nativo do
+SO, não é SDK de rede social), `CardImageCapturer` (abstrai
+`RepaintBoundary.toImage()`, que **não completa neste ambiente headless**
+— mesma categoria de `path_provider`; a lógica em volta — botão dispara
+captura, preview obrigatório, nada compartilha sozinho — é testada com
+`FakeCardImageCapturer`, só a rasterização real do engine fica não
+verificada). Sem campos sensíveis (peso/IMC/calorias/medidas) ainda —
+decisão registrada, não fabricados pra ter uma UI de opt-in sem dado
+real por trás.
 
 **Não registradas ainda no app:** `start_run` (precisa de captura de GPS
 real), `sync_wearable` (precisa de `WearableDataSource` real sobre
@@ -62,27 +47,29 @@ Health Connect), `query_health_record` (fora do escopo até agora).
 **Pendências ativas (revisado):**
 - **Adiado por decisão, não por bloqueio técnico:** `BarcodeDecoder`
   concreto com `flutter_zxing` em `app/` — sem câmera/emulador real pra
-  validar. O `app/` já tem UI de verdade agora (Resumo/Chat), então essa
-  ressalva original ("app ainda não tem UI") não vale mais; a tela de
-  scanner em si (câmera) é que segue sem device pra provar.
-- `start_run` (ferramenta de escrita de F8) e a captura de GPS real
-  (WRAP OpenTracks Android, PORT iOS) — bloqueadas por falta de
-  SDK/device Android/iOS neste ambiente, mesmo limite de F4.
+  validar.
+- `start_run` (F8) e a captura de GPS real (WRAP OpenTracks Android,
+  PORT iOS) — bloqueadas por falta de SDK/device Android/iOS, mesmo
+  limite de F4.
 - `WearableDataSource` real sobre Health Connect (F9) — precisa do
   plugin Flutter que envolve a API nativa + Android SDK/device com
-  Health Connect e Gadgetbridge de verdade instalados pra validar
+  Health Connect e Gadgetbridge de verdade instalados
   (`docs/adr/004a-gadgetbridge.md`). Equivalente iOS (HealthKit) nem
-  investigado ainda — Gadgetbridge é Android-only.
-- `path_provider` (`getApplicationDocumentsDirectory()`, usado só em
-  `app/lib/main.dart`) — platform channel real, não verificável em
-  `flutter test`/sem device. Todo o resto do app (`AppDependencies`,
-  telas, roteador, confirmação) é testável e testado sem isso.
+  investigado — Gadgetbridge é Android-only.
+- `path_provider` e `CardImageCapturer` real (F12) — platform
+  channel/pipeline de rasterização real, não verificáveis em
+  `flutter test`/sem device. Todo o resto do app é testável e testado
+  sem isso.
 - Água (novo tipo de `HealthEvent`) e refeição/receita composta de
   ingredientes — pendências já registradas em `docs/specs/nutricao.md`,
   não implementadas.
 - Nenhum provedor de pagamento real configurado (F10/F11 é só
   esqueleto, por decisão) — Play Billing/StoreKit/Stripe/Pix ficam pra
   quando o servidor existir.
+- Peso/IMC/calorias/medidas nos cards de compartilhamento (F12) — regra
+  de opt-in por campo já registrada em `.claude/rules/share.md`, mas os
+  campos em si ainda não existem no card; entram desligados por padrão
+  quando entrarem.
 - `search_food`, `get_workout_plan`, `log_workout_session`,
   `get_run_summary` estão registradas no `ToolRegistry` do app mas sem
   regra de roteador de chat ainda (só acessíveis hoje pela tela de
@@ -127,8 +114,9 @@ este status sem revalidar).
 | 8 | Corrida/caminhada com GPS (F8) | **PARCIAL** (`packages/activity`) — `RunCalculator`, `RunLogger`, GPX, ofuscação de rota, `get_run_summary` concluídos e testados; captura de GPS real (WRAP Android/PORT iOS) e `start_run` bloqueados — sem SDK/device Android/iOS neste ambiente |
 | 9 | Wearable BLE (F9) | **PARCIAL** (`packages/wearable`, novo pacote) — `WearableSyncLogger`/`sync_wearable` prontos e testados (FC + sono, dedup por `external_id`); `WearableDataSource` real sobre Health Connect bloqueada — sem Android SDK/device com Gadgetbridge instalado; não registrada no app (sem fonte real pra ligar) |
 | 10/11 | Entitlements/Pagamento | **PARCIAL, esqueleto** (`packages/entitlements`) — `Entitlement`/`EntitlementVerifier` (Ed25519 real), `Subscription`, `PendingPayment`, `WebhookIdempotencyGuard`; nenhum provedor configurado, por decisão |
+| 12 | Compartilhamento social (F12) | **PARCIAL** (`packages/share`, novo pacote) — `WorkoutShareCardData`/`RunShareCardData`, builders com checagem estrutural anti-clínico, rota ofuscada; em `app/`: `SharePreviewScreen`/`ShareSheet`(`share_plus`)/`CardImageCapturer`, testado de ponta a ponta com `FakeCardImageCapturer`; rasterização real (`RepaintBoundary.toImage`) não verificável neste ambiente headless |
 | — | `get_daily_summary`/`sync_wearable` (ferramentas do cérebro) | **CONCLUÍDO** — `get_daily_summary` (`packages/summary`, só leitura, cruza steps/meal/workout_session/gps_track); `sync_wearable` (`packages/wearable`, escrita com confirmação) |
-| — | Primeira UI real do app (`app/`) | **PARCIAL** — telas Resumo + Chat, `AppDependencies` ligada aos pacotes reais, 6 de 7 ferramentas mínimas registradas, roteador de chat cobre 3 delas (`get_daily_summary`, `get_steps`, `log_meal` com confirmação real); `path_provider` não verificável sem device |
+| — | Primeira UI real do app (`app/`) | **PARCIAL** — telas Resumo + Chat, `AppDependencies` ligada aos pacotes reais, 6 de 7 ferramentas mínimas registradas, roteador de chat cobre 3 delas (`get_daily_summary`, `get_steps`, `log_meal` com confirmação real), compartilhamento de treino/corrida (F12); `path_provider`/rasterização real não verificáveis sem device |
 | — | Relatório de eficiência (`docs/EFICIENCIA.md`) | Grupo A adotado como prática; Grupo B aplicado (este arquivo) |
 
 ## Decisões já tomadas (não reabrir sem motivo novo)

@@ -1714,3 +1714,107 @@
   real pra mostrar), mais telas de UI (treino/corrida na tela Resumo,
   comando de chat pras 4 ferramentas que ainda não têm regra de
   roteador), ou aprofundar F10/F11 quando fizer sentido ter servidor.
+
+- **Ciclo — F12: compartilhamento social (parcial).** Usuário disse "não
+  há nada pendente da minha parte, continue" — segui a ordem já
+  combinada (fases seguintes de `docs/PRODUTO.md`, F10/F11 intocadas por
+  já estarem no limite acordado de "estrutura sem configurar provedor").
+
+  Reli `.claude/rules/share.md` antes de codificar (regra carregada por
+  path, `packages/share/**`/`**/*social*` — só aparece quando se toca
+  esses caminhos): card renderizado NO APARELHO, share sheet nativo sem
+  SDK proprietário, preview obrigatório, opt-in campo a campo (peso/IMC/
+  calorias/medidas desligados por padrão), nada clínico tem card sem
+  exceção, rota ofuscada nos 300 m iniciais/finais, publicação nunca
+  automática.
+
+  **`packages/share`** (novo pacote, plain-Dart, depende de `activity` +
+  `health_core`): `WorkoutShareCardData`/`RunShareCardData` — dado já
+  seguro (sem peso/IMC/calorias/medidas: decisão registrada de não
+  incluir esses campos nem desligados, já que não existem no card ainda,
+  em vez de montar UI de opt-in pra campo sem dado real por trás) +
+  `RunShareRoutePoint` (rota já ofuscada, nunca crua). `buildWorkoutShareCard`/
+  `buildRunShareCard`: lançam `WrongEventTypeForShareCardException` se o
+  `HealthEvent` recebido não for exatamente `workout_session`/`gps_track`
+  — é isso que torna "nada clínico tem card" uma garantia estrutural
+  (não dá pra montar um card de `clinical_doc` nem por engano), não uma
+  convenção que alguém precisa lembrar de seguir. `buildRunShareCard`
+  chama `obfuscateRouteEnds` (já existente, F8) internamente — quem
+  chama a função nunca vê a rota crua sair. 6 testes.
+
+  **Em `app/`** (mesma sessão, sem clean room aqui — `app/` não é
+  `packages/nutrition/**`): `ShareSheet` (abstrato) + `NativeShareSheet`
+  (real, via `share_plus: ^10.1.4`, resolvido `10.1.4`, BSD-3-Clause —
+  interpretação registrada: `.claude/rules/licenca.md` diz "compartilhamento
+  .... share sheet nativo (sem SDK)", lido aqui como "sem SDK
+  *proprietário de rede social*" — mesma leitura que já permite ZXing
+  pra código de barras na mesma lista — não como "proibido usar qualquer
+  plugin"; `share_plus` só invoca `ACTION_SEND`/`UIActivityViewController`
+  do sistema, não é Facebook/TikTok SDK) + `FakeShareSheet` (teste).
+  `SharePreviewScreen` — o card visível na tela é literalmente o mesmo
+  widget que vira PNG, não um "modo preview" separado (preview
+  obrigatório por construção, não por convenção de UI). Botão
+  "Compartilhar" só aparece com o card já visível; nada dispara sozinho.
+
+  **Achado durante o teste, não escondido:** `RepaintBoundary.toImage()`/
+  `Image.toByteData()` (necessários pra capturar o card como PNG de
+  verdade) não completam neste ambiente headless — testado com
+  `tester.runAsync`, prints de bisecção confirmaram que a execução trava
+  entre `toImage` e `toByteData` sem lançar exceção nem travar
+  indefinidamente (o teste termina rápido, só que sem o resultado
+  esperado). Mesma categoria de limite de ambiente que já existe pra
+  `path_provider`/Android SDK/Health Connect — não é bug de lógica,
+  é ausência de pipeline de rasterização real neste sandbox. Resolvido
+  com o mesmo padrão de honestidade de hardware do projeto inteiro:
+  `CardImageCapturer` (interface abstrata) + `RealCardImageCapturer`
+  (implementação real, não verificável aqui) + `FakeCardImageCapturer`
+  (devolve bytes fabricados, usado em teste) — a lógica em volta (botão
+  dispara captura, preview obrigatório, nada compartilha sozinho, dado
+  certo chega no `ShareSheet`) fica testada de verdade; só a
+  rasterização em si fica documentada como não verificada, não escondida
+  atrás de um teste que parecia passar mas não teria testado nada de
+  real.
+
+  Botões "Compartilhar último treino"/"Compartilhar última corrida" na
+  tela Resumo, visíveis só quando existe pelo menos um evento do tipo
+  (busca o mais recente via `core.queryByType(...).lastOrNull` — sem
+  ferramenta dedicada do cérebro pra isso, é ação direta de UI, não
+  comando de chat). 3 testes novos de widget: preview aparece antes do
+  compartilhamento (nada disparado só por abrir a tela), rota chega
+  ofuscada no card de corrida, botões não aparecem sem treino/corrida
+  gravado.
+
+  **Prova:**
+  ```
+  $ dart test (share, isolado) → 00:00 +6: All tests passed!
+  $ flutter test (app, isolado) → 00:00 +9: All tests passed!
+  $ make lint (raiz, 11 pacotes + app) → "No issues found!" em todos
+  $ make test (raiz) →
+    health_core +17, brain +5, tool_registry +11, activity +47,
+    nutrition +27, entitlements +14, share +6, summary +3, wearable +10,
+    app +9 — todos "All tests passed!"
+  ```
+  149 testes no total no monorepo (141 antes deste ciclo + 8 novos: 6 em
+  `packages/share`, 3 a mais em `app` — 9 no total, eram 6 antes).
+
+  **Não verificado:** `RepaintBoundary.toImage()`/`Image.toByteData()`
+  em device real (`CardImageCapturer` real, `app/lib/card_image_capturer.dart`)
+  — mesma categoria de `path_provider`; `libsqlite3` em runners
+  `ubuntu-latest` do CI real (item recorrente).
+
+  **Débito técnico:** peso/IMC/calorias/medidas nos cards — campos ainda
+  não existem, regra de opt-in já registrada pra quando existirem, não
+  fabricados agora. Comando de chat pra compartilhar (hoje só botão na
+  tela Resumo) — trabalho de UI futuro, não escondido.
+
+  **Bloqueios / decisões que precisam do usuário:** nenhum. Registro pra
+  revisão, não bloqueio: a leitura de `.claude/rules/licenca.md` ("share
+  sheet nativo, sem SDK") como "sem SDK proprietário de rede social" (não
+  "sem plugin nenhum") — se a intenção era mais restritiva, avisar antes
+  do próximo ciclo tocar `packages/share`/`app/lib/share_sheet.dart` de
+  novo.
+
+  **Próximo ciclo proposto:** em aberto — candidatos: mais comandos de
+  chat (ferramentas já registradas sem regra de roteador), campos
+  sensíveis opt-in nos cards de compartilhamento, ou F13 (wger/Fasten,
+  caminho liberado pela ADR-4).
