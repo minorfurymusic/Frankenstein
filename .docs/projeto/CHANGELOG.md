@@ -8,8 +8,12 @@
 > no formato que a skill espera.
 
 **Repositório:** `github.com/minorfurymusic/Frankenstein`
-**Última atualização:** 2026-08-14 (commit `1f3ae5f`)
-**Total de commits:** 64
+**Última atualização:** 2026-08-15 (commit `8b5e321`)
+**Total de commits:** 65
+
+## 2026-08-15 (F9 — wearable, FC+sono via Health Connect)
+
+- `8b5e321` — feat(wearable): F9 - FC e sono via Health Connect (ADR-4a), parte sem device
 
 ## 2026-08-14, tarde (primeira UI real do app)
 
