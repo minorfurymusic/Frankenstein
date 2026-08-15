@@ -46,7 +46,7 @@ verdade** — a maioria depende de device Android/iOS real (itens 1, 3, 6,
 - [x] 6 de 7 ferramentas mínimas do MVP registradas no `ToolRegistry` do app (falta `start_run`, bloqueada por hardware; `sync_wearable`/`query_health_record` fora de escopo)
 - [x] Testado de ponta a ponta com dado real (TACO `taco-1`) — grava `HealthEvent` de verdade, confirmação/recusa provadas
 - [ ] `path_provider` (armazenamento real em device) — não verificável sem device
-- [ ] Comando de chat pra `search_food`/`get_workout_plan`/`log_workout_session`/`get_run_summary` — só `get_daily_summary`/`get_steps`/`log_meal` têm regra de roteador hoje
+- [x] Comando de chat pra `search_food`/`get_workout_plan`/`log_workout_session`/`get_run_summary` — concluído 2026-08-15, todas as 6 ferramentas registradas têm regra de roteador agora
 
 ## Pendências imediatas
 
@@ -58,4 +58,6 @@ verdade** — a maioria depende de device Android/iOS real (itens 1, 3, 6,
 - [x] ~~Primeira UI do app (Resumo + Chat)~~ — concluído 2026-08-14
 - [x] ~~F9 (wearable, FC+sono via Health Connect)~~ — concluído 2026-08-15 (parte sem device)
 - [x] ~~F12 (compartilhamento social, cards de treino/corrida)~~ — concluído 2026-08-15 (parte sem device)
+- [x] ~~Comandos de chat pras ferramentas restantes~~ — concluído 2026-08-15
+- [ ] F13 (wger + Fasten) — próximo, em andamento
 - [ ] Próxima etapa em aberto: mais comandos de chat (ferramentas já registradas sem regra de roteador), campos sensíveis opt-in nos cards, ou F13 (wger/Fasten)

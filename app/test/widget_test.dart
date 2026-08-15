@@ -6,6 +6,7 @@ import 'package:frankstein/card_image_capturer.dart';
 import 'package:frankstein/confirmation_gate.dart';
 import 'package:frankstein/main.dart';
 import 'package:frankstein/share_sheet.dart';
+import 'package:frankstein_activity/activity.dart';
 import 'package:frankstein_health_core/health_core.dart';
 
 class _TestApp {
@@ -253,5 +254,90 @@ void main() {
 
     expect(find.byKey(const Key('share_latest_workout')), findsNothing);
     expect(find.byKey(const Key('share_latest_run')), findsNothing);
+  });
+
+  Future<void> sendChat(WidgetTester tester, String text) async {
+    await tester.tap(find.text('Chat'));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('chat_input')), text);
+    await tester.tap(find.byKey(const Key('chat_send')));
+    await tester.pumpAndSettle();
+  }
+
+  testWidgets('comando "buscar alimento" (search_food) encontra comida real do catálogo TACO',
+      (WidgetTester tester) async {
+    final app = _buildTestApp();
+    addTearDown(app.dependencies.close);
+
+    await tester.pumpWidget(app.widget);
+    await tester.pumpAndSettle();
+    await sendChat(tester, 'buscar alimento arroz');
+
+    expect(find.textContaining('search_food'), findsOneWidget);
+    // "arroz" bate em vários itens reais do TACO — a mensagem de resposta
+    // não é vazia (results não é []).
+    expect(find.textContaining('results: []'), findsNothing);
+  });
+
+  testWidgets('comando "plano de treino" (get_workout_plan) lê um plano real cadastrado',
+      (WidgetTester tester) async {
+    final app = _buildTestApp();
+    addTearDown(app.dependencies.close);
+    app.dependencies.workoutRepository.insertPlan(WorkoutPlan(
+      id: 'plano-peito',
+      name: 'Treino A — peito',
+      exercises: [
+        PlannedExercise(exerciseId: 'supino-reto', exerciseName: 'Supino reto', targetSets: 4, targetReps: 8),
+      ],
+    ));
+
+    await tester.pumpWidget(app.widget);
+    await tester.pumpAndSettle();
+    await sendChat(tester, 'plano de treino plano-peito');
+
+    expect(find.textContaining('get_workout_plan'), findsOneWidget);
+    expect(find.textContaining('Treino A'), findsOneWidget);
+  });
+
+  testWidgets('comando "resumo da corrida" (get_run_summary) lê um gps_track real gravado',
+      (WidgetTester tester) async {
+    final app = _buildTestApp();
+    addTearDown(app.dependencies.close);
+    final run = _insertGpsTrackEvent(app.dependencies.core);
+
+    await tester.pumpWidget(app.widget);
+    await tester.pumpAndSettle();
+    await sendChat(tester, 'resumo da corrida ${run.id}');
+
+    expect(find.textContaining('get_run_summary'), findsOneWidget);
+    expect(find.textContaining('5000.0'), findsOneWidget);
+  });
+
+  testWidgets('comando "registrar treino" (log_workout_session) confirmado grava HealthEvent de verdade',
+      (WidgetTester tester) async {
+    final app = _buildTestApp();
+    addTearDown(app.dependencies.close);
+    expect(app.dependencies.core.queryByType(HealthEventType.workoutSession), isEmpty);
+
+    await tester.pumpWidget(app.widget);
+    await tester.pumpAndSettle();
+    await sendChat(tester, 'registrar treino: supino-reto 1x8x70, supino-reto 2x6x75');
+
+    // Ferramenta de escrita — precisa do diálogo de confirmação antes de
+    // gravar (.claude/rules/brain.md, passo 4).
+    expect(find.byKey(const Key('confirmation_confirm')), findsOneWidget);
+    expect(app.dependencies.core.queryByType(HealthEventType.workoutSession), isEmpty);
+
+    await tester.tap(find.byKey(const Key('confirmation_confirm')));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('log_workout_session'), findsOneWidget);
+    final events = app.dependencies.core.queryByType(HealthEventType.workoutSession);
+    expect(events, hasLength(1));
+    expect(events.single.payload['sets_count'], 2);
+    final setLogs = app.dependencies.core.queryByType(HealthEventType.setLog);
+    expect(setLogs, hasLength(2));
+    expect(setLogs[0].payload['load_kg'], 70.0);
+    expect(setLogs[1].payload['load_kg'], 75.0);
   });
 }

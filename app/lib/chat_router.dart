@@ -6,20 +6,27 @@ import 'package:frankstein_brain/brain.dart';
 /// `unresolved`, sem LLM implementado nesta fase — `.claude/rules/brain.md`,
 /// passo 1: "Comando frequente NÃO chama o modelo").
 ///
-/// Cobre 3 das 7 ferramentas registradas (`app_dependencies.dart`): duas
-/// de leitura (`get_daily_summary`, `get_steps`) e uma de escrita
-/// (`log_meal`, prova o fluxo de confirmação de ponta a ponta). As
-/// demais (`search_food`, `get_workout_plan`, `log_workout_session`,
-/// `get_run_summary`) ficam acessíveis pelo `ToolRegistry` direto (ex.:
-/// a tela de resumo chama `get_daily_summary` sem passar pelo chat) —
-/// dar regra de chat pra cada uma é trabalho de UI futuro, não escopo
-/// deste ciclo.
+/// Cobre as 7 ferramentas registradas (`app_dependencies.dart`): quatro
+/// de leitura (`get_daily_summary`, `get_steps`, `search_food`,
+/// `get_workout_plan`, `get_run_summary` — cinco, na verdade) e duas de
+/// escrita (`log_meal`, `log_workout_session` — as duas provam o fluxo
+/// de confirmação de ponta a ponta, cada uma com um catálogo/repositório
+/// real por trás).
+///
+/// **Simplificação registrada em `log_workout_session`:** o comando de
+/// chat usa `exercise_name = exercise_id` (o schema real da ferramenta
+/// pede os dois campos separados, `packages/activity/lib/src/workout_tools.dart`)
+/// — um atalho de texto plano não tem como capturar um nome livre de
+/// exercício sem ambiguidade de sintaxe; quem quiser nome diferente do
+/// id ainda pode chamar a ferramenta direto pelo `ToolRegistry`.
 DeterministicRouter buildChatRouter() {
   final logMealItemPattern = RegExp(r'([a-z0-9\-]+)\s+(\d+(?:\.\d+)?)g');
   final logMealPattern = RegExp(
     r'^registrar refeição (breakfast|lunch|dinner|snack): (.+)$',
     caseSensitive: false,
   );
+  final logWorkoutSetPattern = RegExp(r'([a-z0-9\-]+)\s+(\d+)x(\d+)x(\d+(?:\.\d+)?)');
+  final logWorkoutPattern = RegExp(r'^registrar treino: (.+)$', caseSensitive: false);
 
   return DeterministicRouter([
     RouterRule(
@@ -38,6 +45,16 @@ DeterministicRouter buildChatRouter() {
       extractParams: (match) => {'query': match.group(1)!.trim()},
     ),
     RouterRule(
+      toolName: 'get_workout_plan',
+      pattern: RegExp(r'^plano de treino ([a-z0-9\-]+)$', caseSensitive: false),
+      extractParams: (match) => {'plan_id': match.group(1)},
+    ),
+    RouterRule(
+      toolName: 'get_run_summary',
+      pattern: RegExp(r'^resumo da corrida ([a-z0-9\-]+)$', caseSensitive: false),
+      extractParams: (match) => {'event_id': match.group(1)},
+    ),
+    RouterRule(
       toolName: 'log_meal',
       pattern: logMealPattern,
       extractParams: (match) {
@@ -47,6 +64,24 @@ DeterministicRouter buildChatRouter() {
           return {'food_id': m.group(1), 'grams': double.parse(m.group(2)!)};
         }).toList();
         return {'items': items, 'meal_type': mealType};
+      },
+    ),
+    RouterRule(
+      toolName: 'log_workout_session',
+      pattern: logWorkoutPattern,
+      extractParams: (match) {
+        final setsRaw = match.group(1)!;
+        final sets = logWorkoutSetPattern.allMatches(setsRaw).map((m) {
+          final exerciseId = m.group(1)!;
+          return {
+            'exercise_id': exerciseId,
+            'exercise_name': exerciseId,
+            'set_number': int.parse(m.group(2)!),
+            'reps': int.parse(m.group(3)!),
+            'load_kg': double.parse(m.group(4)!),
+          };
+        }).toList();
+        return {'sets': sets};
       },
     ),
   ]);

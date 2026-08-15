@@ -70,11 +70,11 @@ Health Connect), `query_health_record` (fora do escopo até agora).
   de opt-in por campo já registrada em `.claude/rules/share.md`, mas os
   campos em si ainda não existem no card; entram desligados por padrão
   quando entrarem.
-- `search_food`, `get_workout_plan`, `log_workout_session`,
-  `get_run_summary` estão registradas no `ToolRegistry` do app mas sem
-  regra de roteador de chat ainda (só acessíveis hoje pela tela de
-  Resumo ou programaticamente) — dar comando de chat pra cada uma é
-  trabalho de UI futuro.
+- **Resolvido:** todas as 7 ferramentas registradas no app agora têm
+  comando de chat (`app/lib/chat_router.dart`) — "buscar alimento X",
+  "plano de treino ID", "resumo da corrida ID", "registrar treino:
+  exercicio SETxREPSxKG, ...". Testado de ponta a ponta (13 testes de
+  widget em `app/test/widget_test.dart`).
 
 **main sincronizado com a branch designada** — verificar se ainda está em
 sincronia antes de assumir (checar `git log` das duas antes de reusar
@@ -116,7 +116,7 @@ este status sem revalidar).
 | 10/11 | Entitlements/Pagamento | **PARCIAL, esqueleto** (`packages/entitlements`) — `Entitlement`/`EntitlementVerifier` (Ed25519 real), `Subscription`, `PendingPayment`, `WebhookIdempotencyGuard`; nenhum provedor configurado, por decisão |
 | 12 | Compartilhamento social (F12) | **PARCIAL** (`packages/share`, novo pacote) — `WorkoutShareCardData`/`RunShareCardData`, builders com checagem estrutural anti-clínico, rota ofuscada; em `app/`: `SharePreviewScreen`/`ShareSheet`(`share_plus`)/`CardImageCapturer`, testado de ponta a ponta com `FakeCardImageCapturer`; rasterização real (`RepaintBoundary.toImage`) não verificável neste ambiente headless |
 | — | `get_daily_summary`/`sync_wearable` (ferramentas do cérebro) | **CONCLUÍDO** — `get_daily_summary` (`packages/summary`, só leitura, cruza steps/meal/workout_session/gps_track); `sync_wearable` (`packages/wearable`, escrita com confirmação) |
-| — | Primeira UI real do app (`app/`) | **PARCIAL** — telas Resumo + Chat, `AppDependencies` ligada aos pacotes reais, 6 de 7 ferramentas mínimas registradas, roteador de chat cobre 3 delas (`get_daily_summary`, `get_steps`, `log_meal` com confirmação real), compartilhamento de treino/corrida (F12); `path_provider`/rasterização real não verificáveis sem device |
+| — | Primeira UI real do app (`app/`) | **PARCIAL** — telas Resumo + Chat, `AppDependencies` ligada aos pacotes reais, 6 de 7 ferramentas mínimas registradas (falta `start_run`, bloqueada por hardware), **todas as 6 com comando de chat** (`app/lib/chat_router.dart`), compartilhamento de treino/corrida (F12); `path_provider`/rasterização real não verificáveis sem device |
 | — | Relatório de eficiência (`docs/EFICIENCIA.md`) | Grupo A adotado como prática; Grupo B aplicado (este arquivo) |
 
 ## Decisões já tomadas (não reabrir sem motivo novo)

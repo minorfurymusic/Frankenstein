@@ -1818,3 +1818,57 @@
   chat (ferramentas já registradas sem regra de roteador), campos
   sensíveis opt-in nos cards de compartilhamento, ou F13 (wger/Fasten,
   caminho liberado pela ADR-4).
+
+- **Ciclo — comandos de chat pras ferramentas restantes.** Usuário
+  pediu pra testar os comandos e seguir pra F13. Antes do F13, fechei a
+  pendência registrada no ciclo anterior: das 6 ferramentas de leitura/escrita
+  registradas no app (`start_run` fica de fora, bloqueada por hardware),
+  só 3 tinham regra de roteador de chat (`get_daily_summary`, `get_steps`,
+  `log_meal`) — `search_food` já tinha regra (o comentário do arquivo
+  estava desatualizado, dizia que não tinha), `get_workout_plan`,
+  `get_run_summary` e `log_workout_session` não tinham nenhuma.
+
+  `app/lib/chat_router.dart`: adicionadas 3 regras novas — "plano de
+  treino ID" → `get_workout_plan`; "resumo da corrida ID" →
+  `get_run_summary`; "registrar treino: exercicio SETxREPSxKG, ..." →
+  `log_workout_session` (escrita, confirmação). **Simplificação
+  registrada:** o comando de treino usa `exercise_name = exercise_id`
+  (o schema real pede os dois campos separados,
+  `packages/activity/lib/src/workout_tools.dart`) — um comando de texto
+  plano não tem como capturar nome livre de exercício sem ambiguidade de
+  sintaxe; quem quiser nome diferente do id chama a ferramenta direto
+  pelo `ToolRegistry`. Comentário desatualizado no topo do arquivo
+  corrigido (dizia "3 das 7 ferramentas... search_food fica de fora",
+  errado nos dois números).
+
+  4 testes novos de widget, cada um provando o comando real, não só que
+  o texto "parece" reconhecido: `search_food` acha comida real do
+  catálogo TACO; `get_workout_plan` lê um plano cadastrado de verdade em
+  `WorkoutRepository`; `get_run_summary` lê um `gps_track` real gravado
+  (usa o `event.id` de verdade, não um id inventado); `log_workout_session`
+  confirmado grava 1 `workout_session` + 2 `set_log` reais, com
+  `load_kg` batendo exatamente com o que foi digitado no chat.
+
+  **Prova:**
+  ```
+  $ flutter test (app, isolado) → 00:00 +13: All tests passed!
+  $ make lint (raiz, 11 pacotes + app) → "No issues found!" em todos
+  $ make test (raiz) →
+    health_core +17, brain +5, tool_registry +11, activity +47,
+    nutrition +27, entitlements +14, share +6, summary +3, wearable +10,
+    app +13 — todos "All tests passed!"
+  ```
+  153 testes no total no monorepo (149 antes deste ciclo + 4 novos —
+  `app` foi de 9 para 13).
+
+  **Não verificado:** nada novo além do já registrado (`path_provider`,
+  `CardImageCapturer` real, `libsqlite3` em CI real).
+
+  **Débito técnico:** nenhum novo.
+
+  **Bloqueios / decisões que precisam do usuário:** nenhum.
+
+  **Próximo ciclo proposto:** F13 — wger (treino remoto, REST) + Fasten
+  (prontuário, FHIR), FEDERATE conforme Cenário B já decidido
+  (`docs/LICENSE-AUDIT.md`, `docs/adr/004-wger-fasten.md`) — nenhum dos
+  dois é linkado ao binário do Frankstein.
