@@ -1509,3 +1509,109 @@
   **Próximo ciclo proposto:** UI do app (destranca vários itens da
   Definição de Pronto do MVP de uma vez) ou F9 (wearable BLE, caminho já
   liberado pela ADR-4a) — pergunta em aberto pro usuário.
+
+- **Ciclo — primeira UI real do app: Resumo + Chat.** Usuário pediu "todos"
+  (UI do app + F9) — perguntado ordem e escopo antes de codificar (portão
+  de UX/arquitetura, `CLAUDE.md`: "ao chegar num portão... PARE e
+  pergunte"), já que `app/` era um `Scaffold` vazio desde a Fase 2, sem
+  nenhuma dependência dos pacotes já prontos — a maior decisão de
+  arquitetura do projeto até aqui. Confirmado: UI primeiro, depois F9;
+  escopo "Chat + Dashboard mínimos".
+
+  Investigado antes de codificar: API real de `packages/brain`
+  (`DeterministicRouter`/`RouterRule`, `BrainPipeline.handle`,
+  `ConfirmationGate` abstrato, `PipelineResult`/`PipelineOutcome`) e o
+  padrão de roteador já usado em `packages/brain/test/brain_test.dart`
+  — comando estruturado explícito (`registrar refeição TIPO: item
+  gramasg, ...`), não NLU livre, porque não existe LLM real ainda
+  (`.claude/rules/brain.md`, passo 1: "Comando frequente NÃO chama o
+  modelo").
+
+  `app/pubspec.yaml`: dependências de caminho pra `health_core`,
+  `tool_registry`, `brain`, `activity`, `nutrition`, `summary` +
+  `path_provider: ^2.1.4` (BSD-3-Clause, plugin oficial do time Flutter).
+
+  - **`app/lib/app_dependencies.dart`** — `AppDependencies` abre os 3
+    repositórios reais (`HealthDataCore`, `FoodRepository`,
+    `WorkoutRepository`, um arquivo `.sqlite3` cada) e registra 6 das 7
+    ferramentas mínimas do MVP (`docs/ARQUITETURA.md:81-82`) num
+    `ToolRegistry` + `BrainPipeline`: `get_steps`, `get_daily_summary`,
+    `get_run_summary`, `get_workout_plan`, `log_workout_session`,
+    `search_food`, `log_meal`. **Não registradas, por decisão:**
+    `start_run` (sem captura de GPS real, WRAP Android não implementado),
+    `sync_wearable` (F9 não iniciada), `query_health_record` (fora de
+    escopo). Dois construtores: `.open(dbDirectoryPath, confirmationGate)`
+    (produção, banco real) e `.inMemory(confirmationGate)` (teste, sem
+    tocar disco) — a mesma separação testável/não-testável já usada em
+    todo o resto do projeto (StepSensor, RunLogger, etc.).
+  - **`app/lib/chat_router.dart`** — `buildChatRouter()`, 4 regras:
+    `resumo (do dia|de hoje)` → `get_daily_summary`; `quantos passos...`
+    → `get_steps`; `buscar alimento (.+)` → `search_food`; `registrar
+    refeição TIPO: item gramasg, ...` → `log_meal` (mesmo regex de
+    extração de itens do teste de `packages/brain`). As outras 3
+    ferramentas registradas ficam acessíveis só pelo `ToolRegistry`
+    direto por enquanto (a tela de Resumo chama `get_daily_summary`
+    assim) — dar regra de chat pra cada uma é UI futura, não escondido
+    como já feito.
+  - **`app/lib/confirmation_gate.dart`** — `AppConfirmationGate`
+    implementa `ConfirmationGate` de verdade: `AlertDialog` com a
+    descrição da ferramenta e os parâmetros, botões Cancelar/Confirmar.
+    Usa `GlobalKey<NavigatorState>` (não um `BuildContext` direto) porque
+    `AppDependencies` é construído antes da árvore de widgets existir —
+    o gate só precisa do contexto na hora de `confirm()`, que acontece
+    bem depois do primeiro frame.
+  - **`app/lib/screens/dashboard_screen.dart`** — chama
+    `get_daily_summary` direto no `ToolRegistry` ao abrir (não passa pelo
+    roteador — é carregamento de tela, não conversa), mostra passos/
+    refeições/treinos/corridas do dia em cards.
+  - **`app/lib/screens/chat_screen.dart`** — lista de mensagens + campo
+    de texto; manda pro `BrainPipeline.handle`, formata a resposta por
+    `PipelineOutcome` (`unresolved`/`rejected`/`abortedByUser`/`executed`)
+    — nunca esconde um "não entendi" como se tivesse funcionado.
+  - **`app/lib/home_shell.dart`** — navegação Resumo/Chat
+    (`NavigationBar`, Material 3), `IndexedStack` mantém o chat vivo ao
+    trocar de aba.
+  - **`app/lib/main.dart`** — `main()` resolve o diretório real via
+    `path_provider` (`getApplicationDocumentsDirectory()`) e monta
+    `AppDependencies.open(...)`; `FrankstitApp` (o widget em si) não sabe
+    de onde as dependências vieram, só recebe prontas — por isso é
+    testável com `flutter test` sem nenhum platform channel.
+
+  **Prova:**
+  ```
+  $ flutter analyze (app, lib/ inteiro) → "No issues found!"
+  $ flutter test (app, isolado) → 00:00 +6: All tests passed!
+  $ make lint (raiz, todos os pacotes + app) → "No issues found!" em todos
+  $ make test (raiz, todos os pacotes + app) →
+    health_core +17, brain +5, tool_registry +11, activity +47,
+    nutrition +27, entitlements +14, share +1, summary +3, app +6 —
+    todos "All tests passed!"
+  ```
+  131 testes no total no monorepo (125 antes deste ciclo + 6 novos, todos
+  em `app`). Os 6 testes cobrem: app abre na aba Resumo com dashboard
+  zerado (banco vazio); troca de aba pelo bottom nav; comando de leitura
+  reconhecido mostra resposta real de `get_daily_summary`; comando não
+  reconhecido fica `unresolved` (mensagem "Não entendi"); comando de
+  escrita **confirmado** grava um `HealthEvent` de verdade usando comida
+  **real** do catálogo TACO (`taco-1`) — prova que nada foi gravado antes
+  da confirmação, e exatamente 1 evento depois; comando de escrita
+  **recusado** no diálogo não grava nada.
+
+  **Não verificado:** `path_provider`/`getApplicationDocumentsDirectory()`
+  em device real (platform channel, `flutter test` não passa por ele —
+  só `main()` usa isso, todo o resto da árvore de widgets recebe
+  `AppDependencies` já pronta e é testável sem device); `libsqlite3` em
+  runners `ubuntu-latest` do CI real (item recorrente).
+
+  **Débito técnico:** nenhum novo — as lacunas (ferramentas sem regra de
+  chat, `start_run`/`sync_wearable` não registradas) são escopo
+  explicitamente adiado, documentadas, não escondidas atrás de código
+  incompleto.
+
+  **Bloqueios / decisões que precisam do usuário:** nenhum. Próxima etapa
+  natural: F9 (wearable BLE, conforme combinado — "todos": UI primeiro,
+  F9 depois).
+
+  **Próximo ciclo proposto:** F9 — wearable BLE, seguindo o mesmo padrão
+  de escopo honesto de hardware (abstração testável + BLE real
+  documentado como não verificável neste ambiente).

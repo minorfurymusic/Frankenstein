@@ -7,59 +7,64 @@
 > Histórico completo de ciclos: `docs/HISTORICO.md`. Este arquivo só guarda o
 > estado **atual** — consulte o histórico sob demanda, não por hábito.
 
-**Fase:** **F3, F4, F5, F6, F7 e (parcial) F8 concluídas.** Health Data
-Core, passos, o pipeline do cérebro, nutrição (com **catálogo real de
-alimentos** — Tabela TACO, NEPA/UNICAMP, 578 itens, ver abaixo), academia
-e corrida/caminhada (só a parte sem Android real). Além disso: esqueleto
-de Entitlements/Pagamento (F10/F11, sem provedor configurado) e duas
-ferramentas novas do cérebro (`get_daily_summary`, `search_food`).
-Detalhe completo em `docs/HISTORICO.md`.
+**Fase:** **F3, F4, F5, F6, F7 e (parcial) F8 concluídas + primeira UI
+real do app.** Health Data Core, passos, o pipeline do cérebro, nutrição
+(com **catálogo real de alimentos** — Tabela TACO, NEPA/UNICAMP, 578
+itens), academia e corrida/caminhada (só a parte sem Android real).
+Esqueleto de Entitlements/Pagamento (F10/F11, sem provedor configurado),
+duas ferramentas novas do cérebro (`get_daily_summary`, `search_food`) —
+e agora **`app/` deixou de ser tela em branco**: navegação Resumo/Chat
+de verdade, ligada aos pacotes reais. Detalhe completo em
+`docs/HISTORICO.md`.
 
-**Ciclo atual:** manhã de trabalho — tudo que não depende de
-device/emulador Android, numa sessão só (múltiplos commits):
+**Ciclo atual:** tarde — primeira UI do app (`app/`), Resumo + Chat.
+`app/` era um `Scaffold` vazio desde a Fase 2; agora depende de verdade
+de `packages/{health_core,tool_registry,brain,activity,nutrition,summary}`.
+`AppDependencies` (`app/lib/app_dependencies.dart`) abre os 3 repositórios
+reais (`HealthDataCore`, `FoodRepository`, `WorkoutRepository`) e registra
+6 das 7 ferramentas mínimas do MVP (`docs/ARQUITETURA.md:81-82`) num
+`ToolRegistry` + `BrainPipeline`. Tela **Resumo** chama `get_daily_summary`
+direto ao abrir. Tela **Chat** manda texto pro `BrainPipeline` — roteador
+determinístico (`app/lib/chat_router.dart`, comando estruturado explícito,
+mesmo padrão de `packages/brain/test/brain_test.dart`, não é NLU livre)
+reconhece "resumo de hoje", "quantos passos hoje" e
+"registrar refeição TIPO: item gramasg, ..." (esse último é ferramenta de
+escrita — mostra diálogo de confirmação de verdade, `AppConfirmationGate`,
+antes de gravar). Testado de ponta a ponta com comida **real** do catálogo
+TACO (`taco-1`), sem mock. `path_provider` (armazenamento real em device)
+só é usado em `main()` — os testes usam `AppDependencies.inMemory`, sem
+platform channel nenhum, então tudo isso é testável sem device exceto a
+resolução do diretório real (`getApplicationDocumentsDirectory()`), que
+fica **não verificada** aqui.
 
-1. **F8 (corrida/GPS), só a parte sem Android.** Decisão já tomada
-   (`docs/adr/009-gps.md`) é WRAP do OpenTracks no Android — captura de
-   GPS real fica de fora. Implementado: migração `accuracy_meters`,
-   `RunCalculator`, GPX export/import, `obfuscateRouteEnds`, `RunLogger`,
-   `get_run_summary`. `start_run` (escrita) não implementada — sem
-   captura real não há o que fazer de verdade.
-2. **F10/F11, esqueleto sem provedor.** `Entitlement` assinado Ed25519
-   (verificação real testada — sign/verify/detecção de adulteração),
-   `Subscription`, `PendingPayment` (Pix assíncrono), idempotência de
-   webhook. Nenhum SDK de pagamento, nenhuma chave real, nenhum servidor.
-3. **`get_daily_summary`** (novo pacote `packages/summary`, cruza
-   steps/meal/workout_session/gps_track) e **`search_food`** (nutrition).
-4. **Catálogo real de alimentos.** Open Food Facts (fonte original)
-   segue bloqueado pelo proxy — encontrada alternativa real e aberta:
-   **Tabela TACO** (NEPA/UNICAMP, dado público, reprodução permitida com
-   citação da fonte, sem nenhuma relação com o OpenNutriTracker). 578 de
-   597 alimentos importados via `brolesi/taco` (MIT, dados reorganizados
-   do NEPA/UNICAMP). `FoodRepository.open()` agora semeia com o catálogo
-   real por padrão. **Bug pego e corrigido antes de aceitar como
-   pronto:** reabrir um arquivo já semeado batia na `PRIMARY KEY` de
-   `foods.id` — corrigido com `INSERT OR IGNORE` só no caminho de
-   reseed, `insertCustomFood` continua estourando alto em duplicata real.
-
-Itens 3-4 tocam `packages/nutrition/**`, fora do alcance desta sessão
-(clean room, `.claude/rules/port.md`) — implementados por subagentes
-limpos (3 no total), cada um verificado independentemente antes do
-commit (não só aceito pelo autorrelato do subagente).
+**Não registradas ainda no app:** `start_run` (precisa de captura de GPS
+real), `sync_wearable` (F9 não iniciada), `query_health_record` (fora do
+escopo deste ciclo).
 
 **Pendências ativas (revisado):**
 - **Adiado por decisão, não por bloqueio técnico:** `BarcodeDecoder`
   concreto com `flutter_zxing` em `app/` — sem câmera/emulador real pra
-  validar, e o `app/` ainda não tem infraestrutura de UI. Fica pra quando
-  o app shell ganhar UI de verdade.
+  validar. O `app/` já tem UI de verdade agora (Resumo/Chat), então essa
+  ressalva original ("app ainda não tem UI") não vale mais; a tela de
+  scanner em si (câmera) é que segue sem device pra provar.
 - `start_run` (ferramenta de escrita de F8) e a captura de GPS real
   (WRAP OpenTracks Android, PORT iOS) — bloqueadas por falta de
   SDK/device Android/iOS neste ambiente, mesmo limite de F4.
+- `path_provider` (`getApplicationDocumentsDirectory()`, usado só em
+  `app/lib/main.dart`) — platform channel real, não verificável em
+  `flutter test`/sem device. Todo o resto do app (`AppDependencies`,
+  telas, roteador, confirmação) é testável e testado sem isso.
 - Água (novo tipo de `HealthEvent`) e refeição/receita composta de
   ingredientes — pendências já registradas em `docs/specs/nutricao.md`,
   não implementadas.
 - Nenhum provedor de pagamento real configurado (F10/F11 é só
   esqueleto, por decisão) — Play Billing/StoreKit/Stripe/Pix ficam pra
-  quando o app tiver UI e o servidor existir.
+  quando o servidor existir.
+- `search_food`, `get_workout_plan`, `log_workout_session`,
+  `get_run_summary` estão registradas no `ToolRegistry` do app mas sem
+  regra de roteador de chat ainda (só acessíveis hoje pela tela de
+  Resumo ou programaticamente) — dar comando de chat pra cada uma é
+  trabalho de UI futuro.
 
 **main sincronizado com a branch designada** — verificar se ainda está em
 sincronia antes de assumir (checar `git log` das duas antes de reusar
@@ -99,6 +104,7 @@ este status sem revalidar).
 | 8 | Corrida/caminhada com GPS (F8) | **PARCIAL** (`packages/activity`) — `RunCalculator`, `RunLogger`, GPX, ofuscação de rota, `get_run_summary` concluídos e testados; captura de GPS real (WRAP Android/PORT iOS) e `start_run` bloqueados — sem SDK/device Android/iOS neste ambiente |
 | 10/11 | Entitlements/Pagamento | **PARCIAL, esqueleto** (`packages/entitlements`) — `Entitlement`/`EntitlementVerifier` (Ed25519 real), `Subscription`, `PendingPayment`, `WebhookIdempotencyGuard`; nenhum provedor configurado, por decisão |
 | — | `get_daily_summary` (ferramenta do cérebro) | **CONCLUÍDO** (`packages/summary`, novo pacote) — só leitura, cruza steps/meal/workout_session/gps_track |
+| — | Primeira UI real do app (`app/`) | **PARCIAL** — telas Resumo + Chat, `AppDependencies` ligada aos pacotes reais, 6 de 7 ferramentas mínimas registradas, roteador de chat cobre 3 delas (`get_daily_summary`, `get_steps`, `log_meal` com confirmação real); `path_provider` não verificável sem device |
 | — | Relatório de eficiência (`docs/EFICIENCIA.md`) | Grupo A adotado como prática; Grupo B aplicado (este arquivo) |
 
 ## Decisões já tomadas (não reabrir sem motivo novo)

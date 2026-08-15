@@ -24,18 +24,29 @@
 
 ## Definição de Pronto do MVP (`docs/PRODUTO.md:59-68`)
 
-- [ ] 1. Passos contados com a tela bloqueada por 8h, batendo com o sistema (±5%)
-- [ ] 2. Refeição registrada por código de barras, com macros no dashboard — catálogo real (TACO) pronto; falta câmera real (`flutter_zxing`) e UI do app
-- [ ] 3. Pulseira BLE sincroniza FC e sono para o Health Data Core
-- [ ] 4. "Quantas calorias comi hoje e quanto andei?" respondido pelo LLM local, offline
-- [ ] 5. Plano de treino prescrito, executado com séries e carga, progressão visível
-- [ ] 6. Corrida de 5 km gravada com tela bloqueada, rota e splits corretos, bateria medida
-- [ ] 7. Card de corrida compartilhado no Instagram com rota ofuscada e nada clínico
-- [ ] 8. Assinatura ativada por Pix; entitlement chega ao app e sobrevive 7 dias offline
+- [ ] 1. Passos contados com a tela bloqueada por 8h, batendo com o sistema (±5%) — precisa de device Android real
+- [ ] 2. Refeição registrada por código de barras, com macros no dashboard — catálogo real (TACO) pronto, `log_meal` funcionando na UI (via chat); falta câmera real (`flutter_zxing`, sem device pra validar)
+- [ ] 3. Pulseira BLE sincroniza FC e sono para o Health Data Core — F9 não iniciada
+- [~] 4. "Quantas calorias comi hoje e quanto andei?" respondido pelo LLM local, offline — `get_daily_summary` funciona na UI (tela Resumo + comando de chat "resumo de hoje"); falta o LLM real (roteador determinístico cobre só comando estruturado, não pergunta livre)
+- [ ] 5. Plano de treino prescrito, executado com séries e carga, progressão visível — lógica pronta (`get_workout_plan`/`log_workout_session` registradas no app), sem tela dedicada nem comando de chat ainda
+- [ ] 6. Corrida de 5 km gravada com tela bloqueada, rota e splits corretos, bateria medida — precisa de captura de GPS real (WRAP Android)
+- [ ] 7. Card de corrida compartilhado no Instagram com rota ofuscada e nada clínico — F12 não iniciada
+- [ ] 8. Assinatura ativada por Pix; entitlement chega ao app e sobrevive 7 dias offline — modelos prontos (F10/F11), nenhum provedor real configurado
 - [x] 9. `docs/LICENSE-AUDIT.md` fechado e modelo de distribuição decidido — **feito** em 2026-08-09, seção "Fechamento"
 
-**8 dos 9 itens ainda não começaram** (dependem de código de módulo, F3+).
-Item 9 é o primeiro a fechar — decisão, não implementação.
+**1 de 9 itens parcial (item 4), 1 fechado (item 9), 7 ainda não
+começaram de verdade** — a maioria depende de device Android/iOS real
+(itens 1, 3, 6) ou de trabalho de UI/escopo ainda não feito (2, 5, 7, 8).
+
+## Primeira UI do app (`app/`) — 2026-08-14
+
+- [x] `app/` deixou de ser `Scaffold` vazio — depende de verdade de `packages/{health_core,tool_registry,brain,activity,nutrition,summary}`
+- [x] Tela Resumo (`get_daily_summary` ao abrir)
+- [x] Tela Chat (`BrainPipeline` + roteador determinístico + confirmação real via `AlertDialog`)
+- [x] 6 de 7 ferramentas mínimas do MVP registradas no `ToolRegistry` do app (falta `start_run`, bloqueada por hardware; `sync_wearable`/`query_health_record` fora de escopo)
+- [x] Testado de ponta a ponta com dado real (TACO `taco-1`) — grava `HealthEvent` de verdade, confirmação/recusa provadas
+- [ ] `path_provider` (armazenamento real em device) — não verificável sem device
+- [ ] Comando de chat pra `search_food`/`get_workout_plan`/`log_workout_session`/`get_run_summary` — só `get_daily_summary`/`get_steps`/`log_meal` têm regra de roteador hoje
 
 ## Pendências imediatas
 
@@ -44,4 +55,5 @@ Item 9 é o primeiro a fechar — decisão, não implementação.
 - [x] ~~Fechar `docs/LICENSE-AUDIT.md` com a decisão final~~ — feito
 - [x] ~~Iniciar F3 (Health Data Core)~~ — concluído
 - [x] ~~F8 (parte sem Android), F10/F11 (esqueleto), ferramentas extras do cérebro, catálogo real de alimentos~~ — concluído 2026-08-14
-- [ ] Decidir próxima etapa: UI do app (destranca vários itens da Definição de Pronto de uma vez) ou F9 (wearable BLE) — pergunta em aberto pro usuário
+- [x] ~~Primeira UI do app (Resumo + Chat)~~ — concluído 2026-08-14
+- [ ] F9 (wearable BLE) — próxima etapa combinada ("todos": UI primeiro, F9 depois)

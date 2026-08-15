@@ -35,6 +35,20 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.8
 
+  frankstein_activity:
+    path: ../packages/activity
+  frankstein_brain:
+    path: ../packages/brain
+  frankstein_health_core:
+    path: ../packages/health_core
+  frankstein_nutrition:
+    path: ../packages/nutrition
+  frankstein_summary:
+    path: ../packages/summary
+  frankstein_tool_registry:
+    path: ../packages/tool_registry
+  path_provider: ^2.1.4
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
