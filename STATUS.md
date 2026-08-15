@@ -7,19 +7,37 @@
 > Histórico completo de ciclos: `docs/HISTORICO.md`. Este arquivo só guarda o
 > estado **atual** — consulte o histórico sob demanda, não por hábito.
 
-**Fase:** **F3, F4, F5, F6, F7 e (parcial) F8 concluídas + primeira UI
-real do app.** Health Data Core, passos, o pipeline do cérebro, nutrição
-(com **catálogo real de alimentos** — Tabela TACO, NEPA/UNICAMP, 578
-itens), academia e corrida/caminhada (só a parte sem Android real).
-Esqueleto de Entitlements/Pagamento (F10/F11, sem provedor configurado),
-duas ferramentas novas do cérebro (`get_daily_summary`, `search_food`) —
-e agora **`app/` deixou de ser tela em branco**: navegação Resumo/Chat
-de verdade, ligada aos pacotes reais. Detalhe completo em
-`docs/HISTORICO.md`.
+**Fase:** **F3, F4, F5, F6, F7, (parcial) F8 e (parcial) F9 concluídas +
+primeira UI real do app.** Health Data Core, passos, o pipeline do
+cérebro, nutrição (com **catálogo real de alimentos** — Tabela TACO,
+NEPA/UNICAMP, 578 itens), academia, corrida/caminhada (só a parte sem
+Android real) e agora wearable (FC/sono via Health Connect, só a parte
+sem Health Connect real). Esqueleto de Entitlements/Pagamento (F10/F11,
+sem provedor configurado), três ferramentas novas do cérebro
+(`get_daily_summary`, `search_food`, `sync_wearable`) — e **`app/`
+deixou de ser tela em branco**: navegação Resumo/Chat de verdade, ligada
+aos pacotes reais. Detalhe completo em `docs/HISTORICO.md`.
 
-**Ciclo atual:** tarde — primeira UI do app (`app/`), Resumo + Chat.
-`app/` era um `Scaffold` vazio desde a Fase 2; agora depende de verdade
-de `packages/{health_core,tool_registry,brain,activity,nutrition,summary}`.
+**Ciclo mais recente:** F9 — wearable BLE, seguindo `docs/adr/004a-gadgetbridge.md`
+(aceita): FEDERATE via Android Health Connect, **não** BLE/Kotlin direto
+nem fork do Gadgetbridge (`docs/ARQUITETURA.md` corrigido — dizia
+"BLE wearable (Kotlin, Android)", desatualizado desde a ADR-4a). Novo
+pacote `packages/wearable`: `HeartRateSample`/`SleepSessionSample`
+(leituras com `externalId` obrigatório — todo dado de wearable é dado de
+fonte externa, dedup por `(source, external_id)`), `WearableDataSource`
+(interface abstrata — implementação real sobre Health Connect não feita
+aqui, precisa de Android SDK/device com Gadgetbridge de verdade
+instalado), `WearableSyncLogger` (grava `heart_rate`/`sleep`,
+deduplicando reimportação da mesma janela em vez de tratar como erro),
+`sync_wearable` (ferramenta de escrita com confirmação). **Não
+registrada no app ainda** — diferente de `log_meal`/`log_workout_session`,
+não existe fonte real (`WearableDataSource`) pra ligar na produção; usar
+o `FixtureWearableDataSource` (só teste) no app de verdade seria
+apresentar dado fabricado como se fosse real.
+
+**Ciclo anterior (mesma tarde):** primeira UI do app (`app/`), Resumo +
+Chat. `app/` era um `Scaffold` vazio desde a Fase 2; agora depende de
+verdade de `packages/{health_core,tool_registry,brain,activity,nutrition,summary}`.
 `AppDependencies` (`app/lib/app_dependencies.dart`) abre os 3 repositórios
 reais (`HealthDataCore`, `FoodRepository`, `WorkoutRepository`) e registra
 6 das 7 ferramentas mínimas do MVP (`docs/ARQUITETURA.md:81-82`) num
@@ -38,8 +56,8 @@ resolução do diretório real (`getApplicationDocumentsDirectory()`), que
 fica **não verificada** aqui.
 
 **Não registradas ainda no app:** `start_run` (precisa de captura de GPS
-real), `sync_wearable` (F9 não iniciada), `query_health_record` (fora do
-escopo deste ciclo).
+real), `sync_wearable` (precisa de `WearableDataSource` real sobre
+Health Connect), `query_health_record` (fora do escopo até agora).
 
 **Pendências ativas (revisado):**
 - **Adiado por decisão, não por bloqueio técnico:** `BarcodeDecoder`
@@ -50,6 +68,11 @@ escopo deste ciclo).
 - `start_run` (ferramenta de escrita de F8) e a captura de GPS real
   (WRAP OpenTracks Android, PORT iOS) — bloqueadas por falta de
   SDK/device Android/iOS neste ambiente, mesmo limite de F4.
+- `WearableDataSource` real sobre Health Connect (F9) — precisa do
+  plugin Flutter que envolve a API nativa + Android SDK/device com
+  Health Connect e Gadgetbridge de verdade instalados pra validar
+  (`docs/adr/004a-gadgetbridge.md`). Equivalente iOS (HealthKit) nem
+  investigado ainda — Gadgetbridge é Android-only.
 - `path_provider` (`getApplicationDocumentsDirectory()`, usado só em
   `app/lib/main.dart`) — platform channel real, não verificável em
   `flutter test`/sem device. Todo o resto do app (`AppDependencies`,
@@ -102,8 +125,9 @@ este status sem revalidar).
 | 6 | Nutrição/código de barras (F6) | **CONCLUÍDO** (`packages/nutrition`) — `Food`/`FoodRepository` (sqlite3), `MealLogger`, `BarcodeDecoder` (interface, sem câmera real), `log_meal`/`search_food` reais no `ToolRegistry`; **catálogo real** = Tabela TACO (NEPA/UNICAMP, 578 alimentos) desde este ciclo; `flutter_zxing` concreto fica pra depois |
 | 7 | Academia (F7) | **CONCLUÍDO** (`packages/activity`) — `WorkoutPlan`/`WorkoutRepository` (sqlite3), `WorkoutLogger` (`workout_session`+`set_log`, recorde por consulta), `get_workout_plan`/`log_workout_session` reais no `ToolRegistry`; sem dependência de hardware, testado de ponta a ponta |
 | 8 | Corrida/caminhada com GPS (F8) | **PARCIAL** (`packages/activity`) — `RunCalculator`, `RunLogger`, GPX, ofuscação de rota, `get_run_summary` concluídos e testados; captura de GPS real (WRAP Android/PORT iOS) e `start_run` bloqueados — sem SDK/device Android/iOS neste ambiente |
+| 9 | Wearable BLE (F9) | **PARCIAL** (`packages/wearable`, novo pacote) — `WearableSyncLogger`/`sync_wearable` prontos e testados (FC + sono, dedup por `external_id`); `WearableDataSource` real sobre Health Connect bloqueada — sem Android SDK/device com Gadgetbridge instalado; não registrada no app (sem fonte real pra ligar) |
 | 10/11 | Entitlements/Pagamento | **PARCIAL, esqueleto** (`packages/entitlements`) — `Entitlement`/`EntitlementVerifier` (Ed25519 real), `Subscription`, `PendingPayment`, `WebhookIdempotencyGuard`; nenhum provedor configurado, por decisão |
-| — | `get_daily_summary` (ferramenta do cérebro) | **CONCLUÍDO** (`packages/summary`, novo pacote) — só leitura, cruza steps/meal/workout_session/gps_track |
+| — | `get_daily_summary`/`sync_wearable` (ferramentas do cérebro) | **CONCLUÍDO** — `get_daily_summary` (`packages/summary`, só leitura, cruza steps/meal/workout_session/gps_track); `sync_wearable` (`packages/wearable`, escrita com confirmação) |
 | — | Primeira UI real do app (`app/`) | **PARCIAL** — telas Resumo + Chat, `AppDependencies` ligada aos pacotes reais, 6 de 7 ferramentas mínimas registradas, roteador de chat cobre 3 delas (`get_daily_summary`, `get_steps`, `log_meal` com confirmação real); `path_provider` não verificável sem device |
 | — | Relatório de eficiência (`docs/EFICIENCIA.md`) | Grupo A adotado como prática; Grupo B aplicado (este arquivo) |
 

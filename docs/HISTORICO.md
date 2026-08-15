@@ -1615,3 +1615,102 @@
   **Próximo ciclo proposto:** F9 — wearable BLE, seguindo o mesmo padrão
   de escopo honesto de hardware (abstração testável + BLE real
   documentado como não verificável neste ambiente).
+
+- **Ciclo — F9: wearable (FC + sono via Health Connect).** Usuário
+  confirmou que não havia nada pendente da parte dele e pediu pra
+  continuar. Antes de codificar: reli `docs/adr/004a-gadgetbridge.md`
+  (aceita) — a decisão **não** é BLE/Kotlin direto nem fork do
+  Gadgetbridge, é **FEDERATE via Android Health Connect**: o Frankstein
+  nunca fala BLE, só lê o que o Gadgetbridge (app de terceiro que o
+  usuário instala) já escreveu no Health Connect (confirmado por
+  permissão de escrita no manifesto do APK publicado + documentação
+  oficial, ambas citadas na própria ADR). Isso muda o que "F9" significa
+  na prática: não é uma stack BLE pra implementar, é uma integração de
+  plataforma (Health Connect, via plugin Flutter) — `docs/ARQUITETURA.md:13`
+  ainda dizia "BLE wearable (Kotlin, Android)", desatualizado desde a
+  ADR-4a; corrigido pra "wearable via Health Connect (Fase 9)".
+
+  Escopo desta fase é o item 3 da Definição de Pronto do MVP
+  (`docs/PRODUTO.md:62`: "Pulseira BLE sincroniza FC e sono para o
+  Health Data Core") — frequência cardíaca e sono, os dois tipos que já
+  existiam no enum `HealthEventType` desde a Fase 3 (`heart_rate`,
+  `sleep`) mas nunca tinham sido escritos por nenhum módulo até agora.
+  Peso e outros tipos que o Health Connect também exporia (VO₂ máx,
+  SpO₂, etc.) ficam fora — não é esquecimento, é ficar dentro do que a
+  Definição de Pronto pede.
+
+  Novo pacote `packages/wearable` (mesmo raciocínio de `packages/summary`:
+  não pertence a nenhum módulo de domínio existente):
+  - `heart_rate_sample.dart`/`sleep_session_sample.dart`:
+    `HeartRateSample`/`SleepSessionSample`, leituras antes de virar
+    `HealthEvent`. `externalId` **obrigatório** nos dois — toda leitura
+    de wearable é, por definição, dado de fonte externa
+    (`docs/ARQUITETURA.md`: "external_id -- id do evento na fonte
+    externa (wearable, wger, fasten)"), é o que habilita dedup por
+    `(source, external_id)` quando a mesma janela é sincronizada de novo.
+  - `wearable_data_source.dart`: `WearableDataSource` (interface
+    abstrata — mesmo padrão de honestidade de hardware de `StepSensor`
+    F4 e `BarcodeDecoder` F6) + `FixtureWearableDataSource` (só teste,
+    dados fabricados registrados explicitamente). **Implementação real
+    sobre Health Connect não feita neste ciclo** — precisa do plugin
+    Flutter que envolve a API nativa, Android SDK, permissões em
+    runtime, e um Health Connect de verdade com Gadgetbridge escrevendo
+    nele pra validar; nada disso existe neste ambiente.
+  - `wearable_sync_logger.dart`: `WearableSyncLogger.sync(from, to)` lê
+    do `WearableDataSource`, grava `HealthEvent` tipo `heart_rate`/`sleep`
+    com `source: wearable`. **Decisão registrada:** reimportar a mesma
+    janela não é erro — `DuplicateEventException` (já existe desde F3,
+    dedup por `source`+`external_id`) é capturada e contada como "já
+    sincronizado", não propagada. Sincronizar de novo sem controlar
+    exatamente o intervalo coberto é o caso comum, não uma exceção.
+  - `wearable_tools.dart`: `sync_wearable` — ferramenta de escrita
+    (`write: true`), por isso `confirm: true` também (`ToolSpec` já
+    força isso no construtor, `.claude/rules/brain.md` passo 4) — mesmo
+    "é só sincronizar dado que já existe em outro app" ainda é o cérebro
+    decidindo gravar no Health Data Core.
+
+  **Não registrada no `ToolRegistry` do app.** Diferente de
+  `log_meal`/`log_workout_session` (que têm `MealLogger`/`WorkoutLogger`
+  reais por trás), `sync_wearable` precisaria de um `WearableDataSource`
+  de verdade — não existe. Ligar o `FixtureWearableDataSource` (dados
+  fabricados) no app de produção pra "ter alguma coisa" seria apresentar
+  dado fake como se fosse real — exatamente o que `CLAUDE.md` regra 1
+  proíbe. Fica documentado como pendência, não escondido atrás de um
+  handler que finge funcionar.
+
+  **Prova:**
+  ```
+  $ dart test (wearable, isolado) → 00:00 +10: All tests passed!
+  $ make lint (raiz, todos os 10 pacotes + app) → "No issues found!" em todos
+  $ make test (raiz) →
+    health_core +17, brain +5, tool_registry +11, activity +47,
+    nutrition +27, entitlements +14, share +1, summary +3, wearable +10,
+    app +6 — todos "All tests passed!"
+  ```
+  141 testes no total no monorepo (131 antes deste ciclo + 10 novos, todos
+  em `wearable`). Os 10 testes cobrem: validação de
+  `HeartRateSample`/`SleepSessionSample`, filtro de janela de tempo do
+  `FixtureWearableDataSource`, sincronização gravando `HealthEvent` real
+  com `source: wearable` e `externalId` correto, **reimportar a mesma
+  janela não duplica** (segunda chamada de `sync` conta "já sincronizado",
+  banco continua com 1 evento só), validação de `from`/`to` em UTC, e a
+  ferramenta `sync_wearable` de ponta a ponta via `ToolHandler`.
+
+  **Não verificado:** `WearableDataSource` real sobre Health Connect —
+  precisa de Android SDK/device com Health Connect e Gadgetbridge de
+  verdade instalados, que este ambiente não tem; equivalente iOS
+  (HealthKit) nem investigado (Gadgetbridge é Android-only, gap já
+  registrado em `docs/PLATFORM-PARITY.md`); `libsqlite3` em runners
+  `ubuntu-latest` do CI real (item recorrente).
+
+  **Débito técnico:** nenhum novo — a lacuna (`sync_wearable` sem fonte
+  real, não registrada no app) é escopo explicitamente bloqueado por
+  hardware, documentado, não escondido.
+
+  **Bloqueios / decisões que precisam do usuário:** nenhum.
+
+  **Próximo ciclo proposto:** em aberto — candidatos naturais são F12
+  (compartilhamento social, PORT do card de corrida/treino já com dado
+  real pra mostrar), mais telas de UI (treino/corrida na tela Resumo,
+  comando de chat pras 4 ferramentas que ainda não têm regra de
+  roteador), ou aprofundar F10/F11 quando fizer sentido ter servidor.

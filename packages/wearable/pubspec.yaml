@@ -1,0 +1,21 @@
+name: frankstein_wearable
+description: >-
+  Pulseira/relógio BLE via Gadgetbridge (Fase 9, ADR-4a aceita). O Frankstein nunca
+  fala BLE nem embute Gadgetbridge — FEDERATE via Android Health Connect: lê
+  frequência cardíaca e sono que o Gadgetbridge já escreveu lá. sync_wearable
+  registrada no ToolRegistry.
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: ^3.9.0
+
+dependencies:
+  frankstein_health_core:
+    path: ../health_core
+  frankstein_tool_registry:
+    path: ../tool_registry
+
+dev_dependencies:
+  lints: ^5.0.0
+  test: ^1.25.0

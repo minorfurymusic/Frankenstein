@@ -10,7 +10,7 @@ BRAIN LAYER — MLC LLM no aparelho
    |
 TOOL REGISTRY — contrato único de ferramentas
    |
-+-- SENSORES: pedômetro (Flutter) | BLE wearable (Kotlin, Android)
++-- SENSORES: pedômetro (Flutter) | wearable via Health Connect (Fase 9)
 +-- NUTRIÇÃO: refeições + código de barras | base local de alimentos
 +-- ATIVIDADE: treino, séries, GPS de corrida
 +-- SAÚDE/TREINO REMOTO: wger (REST) | Fasten (FHIR)
