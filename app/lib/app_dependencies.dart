@@ -8,12 +8,20 @@ import 'package:frankstein_tool_registry/tool_registry.dart';
 import 'card_image_capturer.dart';
 import 'chat_router.dart';
 import 'share_sheet.dart';
+import 'step_tracking_controller.dart';
 
 /// Junta tudo que o app precisa: os repositórios reais e o pipeline do
 /// cérebro já com as ferramentas registradas (`docs/ARQUITETURA.md:81-82`).
 /// Construído uma vez — em produção (`AppDependencies.open`, com
 /// armazenamento real via `path_provider` resolvido em `main.dart`) ou em
 /// teste (`AppDependencies.inMemory`, sem tocar disco).
+///
+/// `stepTracking` (`StepTrackingController`) liga o sensor de passos real
+/// no Android (`step_sensor_android.dart`, `StepCounterService.kt`) ao
+/// `stepsRepository` — construído aqui, mas `.start()` é chamado
+/// separadamente em `main.dart` (depois do `runApp`, nunca antes — mesmo
+/// cuidado do fix do `sqlite3_flutter_libs`: nada bloqueante antes do
+/// primeiro frame).
 ///
 /// **Não registradas aqui, por decisão, não por esquecimento:**
 /// `start_run` (escrita — só faz sentido com captura de GPS real, WRAP
@@ -30,6 +38,8 @@ class AppDependencies {
   final BrainPipeline pipeline;
   final ShareSheet shareSheet;
   final CardImageCapturer imageCapturer;
+  final StepsRepository stepsRepository;
+  final StepTrackingController stepTracking;
 
   AppDependencies._({
     required this.core,
@@ -39,9 +49,12 @@ class AppDependencies {
     required this.pipeline,
     required this.shareSheet,
     required this.imageCapturer,
+    required this.stepsRepository,
+    required this.stepTracking,
   });
 
   void close() {
+    stepTracking.dispose();
     core.close();
     foodRepository.close();
     workoutRepository.close();
@@ -105,6 +118,17 @@ class AppDependencies {
     // já em UTC (sempre zero). Aqui o receptor é local por padrão.
     int tzOffsetMinutesProvider() => DateTime.now().timeZoneOffset.inMinutes;
 
+    // `deviceId` fixo — o app é single-device nesta fase (sync entre
+    // aparelhos é ADR-3, ainda não implementado). Só existe pra
+    // `StepsRepository.recordSample` rejeitar leitura de "outro
+    // aparelho" (packages/activity/lib/src/steps_repository.dart:50-53),
+    // não é usado pra nada além disso ainda.
+    final stepsRepository = StepsRepository(core: core, deviceId: 'android-device');
+    final stepTracking = StepTrackingController(
+      repository: stepsRepository,
+      tzOffsetMinutesProvider: tzOffsetMinutesProvider,
+    );
+
     final registry = ToolRegistry()
       ..register(getStepsSpec(), getStepsHandler(core))
       ..register(getDailySummarySpec(), getDailySummaryHandler(core))
@@ -138,6 +162,8 @@ class AppDependencies {
       pipeline: pipeline,
       shareSheet: shareSheet,
       imageCapturer: imageCapturer,
+      stepsRepository: stepsRepository,
+      stepTracking: stepTracking,
     );
   }
 }

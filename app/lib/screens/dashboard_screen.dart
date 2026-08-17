@@ -4,6 +4,7 @@ import 'package:frankstein_health_core/health_core.dart';
 import 'package:frankstein_share/share.dart';
 
 import '../app_dependencies.dart';
+import '../step_tracking_controller.dart';
 import 'log_meal_screen.dart';
 import 'log_workout_screen.dart';
 import 'share_preview_screen.dart';
@@ -15,16 +16,16 @@ import 'share_preview_screen.dart';
 /// (`.claude/rules/share.md`).
 ///
 /// **Layout final do dashboard mínimo** (ciclo pós-primeiro teste em
-/// device real): 5 cards — Passos e Corridas não têm ação de registro
-/// rápido porque dependem de sensor/GPS reais que este ciclo não
-/// implementa (trabalho de plataforma nativa Android, fora de escopo
-/// aqui — ver `STATUS.md`); os cards já nascem no formato definitivo,
-/// só passam a mostrar dado real quando o sensor/GPS existir, sem
-/// precisar redesenhar a tela depois. Água/Refeições/Treinos têm "+"
-/// porque não dependem de hardware — cada um monta o mesmo texto de
-/// comando que o chat aceita e manda pro mesmo `BrainPipeline.handle`,
-/// reaproveitando a confirmação já existente (`log_meal_screen.dart`,
-/// `log_workout_screen.dart`, diálogo de água inline abaixo).
+/// device real): 5 cards. Água/Refeições/Treinos têm "+" — cada um monta
+/// o mesmo texto de comando que o chat aceita e manda pro mesmo
+/// `BrainPipeline.handle`, reaproveitando a confirmação já existente
+/// (`log_meal_screen.dart`, `log_workout_screen.dart`, diálogo de água
+/// inline abaixo). Passos usa o sensor Android real
+/// (`step_tracking_controller.dart`, `StepCounterService.kt`) — o card
+/// reflete `StepTrackingStatus` ao vivo (permissão negada, sem sensor,
+/// plataforma sem suporte ainda, ou ativo), sem ação manual (não faz
+/// sentido "adicionar" passo). Corridas continua sem ação — GPS real é o
+/// próximo item de plataforma nativa, card já no formato definitivo.
 class DashboardScreen extends StatefulWidget {
   final AppDependencies dependencies;
   const DashboardScreen({super.key, required this.dependencies});
@@ -168,6 +169,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
     );
   }
 
+  String? _stepsSubtitle(StepTrackingStatus status) {
+    switch (status) {
+      case StepTrackingStatus.unknown:
+        return 'verificando sensor...';
+      case StepTrackingStatus.unsupportedPlatform:
+        return 'sem sensor real ainda (só Android por enquanto)';
+      case StepTrackingStatus.noSensor:
+        return 'este aparelho não tem sensor de passos';
+      case StepTrackingStatus.permissionDenied:
+        return 'permissão negada — sem ela, passos não são contados';
+      case StepTrackingStatus.active:
+        return null;
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final error = _error;
@@ -191,11 +207,26 @@ class _DashboardScreenState extends State<DashboardScreen> {
         key: const Key('dashboard_list'),
         padding: const EdgeInsets.all(16),
         children: [
-          _SummaryCard(
-            key: const Key('dashboard_steps'),
-            label: 'Passos',
-            value: '${steps['total']}',
-            subtitle: 'sem sensor real ainda',
+          ValueListenableBuilder<StepTrackingStatus>(
+            valueListenable: widget.dependencies.stepTracking.status,
+            builder: (context, status, _) {
+              return Column(
+                children: [
+                  _SummaryCard(
+                    key: const Key('dashboard_steps'),
+                    label: 'Passos',
+                    value: '${steps['total']}',
+                    subtitle: _stepsSubtitle(status),
+                  ),
+                  if (status == StepTrackingStatus.permissionDenied)
+                    TextButton(
+                      key: const Key('retry_step_permission'),
+                      onPressed: () => widget.dependencies.stepTracking.start(),
+                      child: const Text('Tentar de novo'),
+                    ),
+                ],
+              );
+            },
           ),
           _SummaryCard(
             key: const Key('dashboard_water'),

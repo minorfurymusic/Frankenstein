@@ -1,4 +1,23 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Contador de passos real (.claude/rules/activity.md: "Foreground
+         service no Android. A contagem NÃO pode parar com a tela
+         bloqueada"). ACTIVITY_RECOGNITION é obrigatória desde o Android 10
+         (API 29) pra ler TYPE_STEP_COUNTER/TYPE_STEP_DETECTOR — permissão
+         de risco, pedida em runtime (MainActivity.kt). FOREGROUND_SERVICE_HEALTH
+         é a permissão normal (concedida automaticamente) exigida desde o
+         Android 14 (API 34) pra declarar foregroundServiceType="health".
+         POST_NOTIFICATIONS é exigida desde o Android 13 (API 33) pra
+         qualquer notificação, incluindo a do foreground service — sem ela
+         o serviço ainda roda, só a notificação não aparece (comportamento
+         documentado do Android, não bug daqui). -->
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_HEALTH"/>
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- required="false": aparelho sem sensor de passos ainda instala o
+         app, só não conta passos — degradação gradual, não trava nada. -->
+    <uses-feature android:name="android.hardware.sensor.stepcounter" android:required="false"/>
+
     <application
         android:label="frankstein"
         android:name="${applicationName}"
@@ -30,6 +49,11 @@
         <meta-data
             android:name="flutterEmbedding"
             android:value="2" />
+
+        <service
+            android:name=".StepCounterService"
+            android:exported="false"
+            android:foregroundServiceType="health"/>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and

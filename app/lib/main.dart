@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -18,6 +20,13 @@ Future<void> main() async {
     imageCapturer: RealCardImageCapturer(),
   );
   runApp(FrankstitApp(dependencies: dependencies, navigatorKey: navigatorKey));
+
+  // Depois do runApp, nunca antes — mesmo cuidado do fix do
+  // sqlite3_flutter_libs (docs/HISTORICO.md): nada bloqueante/assíncrono
+  // longo pode atrasar o primeiro frame. Fire-and-forget: pede permissão,
+  // liga o foreground service, atualiza `dependencies.stepTracking.status`
+  // quando resolver — `DashboardScreen` escuta esse `ValueNotifier`.
+  unawaited(dependencies.stepTracking.start());
 }
 
 /// Shell do app (ADR-1). `AppDependencies` é construído fora daqui — em

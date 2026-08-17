@@ -42,3 +42,13 @@ android {
 flutter {
     source = "../.."
 }
+
+dependencies {
+    // androidx.core (AndroidX Jetpack oficial, Apache-2.0) — biblioteca de
+    // suporte comum a qualquer app Android moderno, sem SDK/binário
+    // proprietário (fora da lista proibida de .claude/rules/licenca.md).
+    // ActivityCompat/ContextCompat usados em MainActivity.kt pra permissão
+    // ACTIVITY_RECOGNITION e startForegroundService. Explícito em vez de
+    // confiar em resolução transitiva do plugin do Flutter.
+    implementation("androidx.core:core-ktx:1.13.1")
+}
