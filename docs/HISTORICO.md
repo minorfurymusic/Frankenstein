@@ -2021,3 +2021,113 @@
 
   **Próximo ciclo proposto:** em aberto, depende do que o teste manual
   no celular encontrar.
+
+- **Ciclo — fix: app travava na splash nativa no primeiro teste em
+  device real.** Você instalou o APK do ciclo anterior e reportou: tela
+  preta com o ícone do Flutter, parada por 10 minutos — nunca chegou na
+  UI. Diagnóstico por leitura de código (sem `adb`/log de device neste
+  ambiente): `main.dart:14` chama `AppDependencies.open(...)` antes do
+  `runApp()`, que abre 3 bancos via `sqlite3.open()` (FFI puro —
+  `packages/health_core/lib/src/health_data_core.dart:42`, e
+  equivalentes em `nutrition`/`activity`), que faz `dlopen('libsqlite3.so')`.
+  Android não expõe essa lib de sistema pra apps normais sem ela vir
+  empacotada no APK — faltava `sqlite3_flutter_libs`.
+
+  Fix: `app/pubspec.yaml` — `sqlite3_flutter_libs: ^0.5.42` (MIT, mesmo
+  mantenedor do pacote `sqlite3`, `.claude/rules/licenca.md` cumprida).
+  Nenhum código Dart mudou. Dois commits: `e310df3` (dependência +
+  `app/pubspec.lock`) e `ac4f67b` (arquivos de plugin gerados por
+  `flutter pub get` pra linux/macos/windows que ficaram sem commitar no
+  primeiro). CI recompilou (run `32055502367`, `conclusion: success`),
+  artifact novo publicado (73,3 MB — cresceu porque agora empacota o
+  binário nativo do SQLite).
+
+  **Prova:** você reinstalou o APK novo e confirmou — abriu direto na
+  aba Resumo, chat respondeu a "resumo de hoje", `registrar refeição`/
+  `registrar treino` (via chat) gravaram e o dashboard refletiu. Primeira
+  confirmação de funcionamento ponta a ponta num Android real, fora
+  deste sandbox.
+
+  **Não verificado:** log de device real (`adb logcat`) nunca foi obtido
+  — o diagnóstico ficou provado pelo resultado (app abriu depois do fix),
+  não pela causa exata capturada em log.
+
+  **Débito técnico:** nenhum novo.
+
+- **Ciclo — dashboard mínimo funcional: água, refeição e treino
+  registráveis por toque.** Ao testar o APK corrigido, você apontou:
+  dashboard zerado (esperado — banco vazio) e chat não reconhece texto
+  livre ("bebi 500ml de água", "comi um pastel") — expliquei que não há
+  LLM ainda, só roteador de regex (`chat_router.dart`), e que só 2 das 4
+  métricas do dashboard tinham qualquer caminho de escrita, mesmo que só
+  via chat digitado. Você pediu "tudo ao mesmo tempo" pra não redesenhar
+  o layout a cada função nova. Proposta que segui: layout final das 5
+  métricas de uma vez (Passos/Água/Refeições/Treinos/Corridas), mas sem
+  misturar sensor de passos real/GPS real (trabalho de plataforma nativa
+  Android, categoria de risco e ciclo de teste diferente) — os dois
+  cards já nascem no formato definitivo, com placeholder honesto ("sem
+  sensor real ainda"/"requer GPS real"), sem precisar redesenhar depois.
+
+  **Tipo `water` novo** (`packages/health_core/lib/src/health_event.dart`):
+  fecha a pendência que `docs/specs/nutricao.md:103-106` já registrava
+  ("água não está listada ainda"). Sem migração de schema — `type` já é
+  `TEXT` livre (`packages/health_core/lib/src/schema.dart:7`).
+  `docs/ARQUITETURA.md:31-32`, `.claude/rules/datacore.md` e
+  `docs/specs/nutricao.md` atualizados pra fechar a pendência.
+
+  `packages/nutrition`: `water_logger.dart` (`WaterLogger`, grava
+  `HealthEvent` tipo `water`, `source: manual`, payload `{amount_ml}`,
+  sem dedup — cada registro é independente, mesmo padrão de `MealLogger`)
+  + `water_tools.dart` (`log_water`, escrita com confirmação). 7 testes
+  novos (`packages/nutrition/test/water_test.dart`).
+
+  `packages/summary/lib/src/daily_summary_tools.dart`: `get_daily_summary`
+  passou a somar água do dia (`water: {count, total_amount_ml}`).
+
+  `app/lib/app_dependencies.dart`: `WaterLogger` construído e `log_water`
+  registrado no `ToolRegistry`. `app/lib/chat_router.dart`: regra nova
+  "registrar água Xml" (agora 8 ferramentas cobertas, não mais 7).
+
+  **UI nova, sem duplicar lógica de escrita** — cada tela/diálogo monta
+  o mesmo texto de comando que o chat aceitaria e manda pro mesmo
+  `BrainPipeline.handle`, reaproveitando a confirmação humana já
+  existente (`AppConfirmationGate`, `.claude/rules/brain.md` passo 4),
+  em vez de reimplementar validação/confirmação/gravação:
+  - `app/lib/screens/log_meal_screen.dart` — busca real no catálogo
+    TACO (`FoodRepository.searchByName`), toque no resultado, diálogo
+    de gramas + tipo de refeição.
+  - `app/lib/screens/log_workout_screen.dart` — formulário (exercício,
+    séries, repetições, carga), gera uma entrada de série por número de
+    série informado.
+  - `app/lib/screens/dashboard_screen.dart` — diálogo rápido de água
+    inline (presets 200/300/500ml + quantidade customizada), "+" nos
+    cards de Refeições/Treinos abrindo as telas acima, recarrega o
+    resumo quando a tela anterior volta com sucesso.
+
+  **Prova:**
+  ```
+  $ dart test (packages/nutrition, isolado) → 00:00 +34: All tests passed!
+     (27 já existiam + 7 novos de água)
+  $ dart test (packages/summary, isolado) → 00:00 +3: All tests passed!
+  $ flutter analyze (app/) → No issues found! (ran in 2.6s)
+  $ flutter test (app/) → 00:16 +16: All tests passed!
+     (13 já existiam + 3 novos: água via dashboard, refeição via
+     LogMealScreen, treino via LogWorkoutScreen — todos gravando
+     HealthEvent real, não mock de UI)
+  $ make lint (raiz, 12 pacotes + app) → "No issues found!" em todos
+  $ make test (raiz) → 12/12 suítes "All tests passed!", sem falha real
+     (grep por "fail"/"error" só bateu em nomes de teste, confirmado)
+  ```
+
+  **Não verificado:** nenhum teste manual no device real deste ciclo
+  ainda — o teste anterior (fix do sqlite3) foi confirmado por você, mas
+  este dashboard novo depende de você instalar o próximo APK.
+
+  **Débito técnico:** nenhum novo.
+
+  **Bloqueios / decisões que precisam do usuário:** nenhum.
+
+  **Próximo ciclo proposto:** passos reais via sensor Android
+  (`TYPE_STEP_COUNTER` + foreground service + `ACTIVITY_RECOGNITION`) ou
+  GPS real pra corrida — ambos trabalho de plataforma nativa, maiores,
+  agora potencialmente testáveis já que o APK abre no seu aparelho.

@@ -8,8 +8,17 @@
 > no formato que a skill espera.
 
 **Repositório:** `github.com/minorfurymusic/Frankenstein`
-**Última atualização:** 2026-08-17 (commit `6610187`)
-**Total de commits:** 72
+**Última atualização:** 2026-08-17 (commit `28afeb8`)
+**Total de commits:** 77
+
+## 2026-08-17 (dashboard mínimo — água, refeição e treino registráveis por toque)
+
+- `28afeb8` — feat(nutrition,summary,app): dashboard mínimo - água, refeição e treino registráveis por toque
+
+## 2026-08-17 (fix: app travava na splash nativa — sqlite3_flutter_libs)
+
+- `e310df3` — fix(app): adiciona sqlite3_flutter_libs — app travava na splash no Android
+- `ac4f67b` — chore(app): registrar sqlite3_flutter_libs nos plugins gerados (desktop)
 
 ## 2026-08-17 (CI publica APK debug como artifact — MVP pra teste manual)
 

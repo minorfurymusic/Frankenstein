@@ -2,7 +2,7 @@
 
 > Gerado pela skill `project-recorder`. Fonte: `docs/PRODUTO.md` (fases e
 > Definição de Pronto do MVP) cruzado com `STATUS.md` (estado real).
-> Última atualização: 2026-08-17.
+> Última atualização: 2026-08-17 (ciclo do dashboard mínimo).
 
 ## Fases (`docs/PRODUTO.md:39-57`)
 
@@ -25,28 +25,40 @@
 ## Definição de Pronto do MVP (`docs/PRODUTO.md:59-68`)
 
 - [ ] 1. Passos contados com a tela bloqueada por 8h, batendo com o sistema (±5%) — precisa de device Android real
-- [ ] 2. Refeição registrada por código de barras, com macros no dashboard — catálogo real (TACO) pronto, `log_meal` funcionando na UI (via chat); falta câmera real (`flutter_zxing`, sem device pra validar)
+- [~] 2. Refeição registrada por código de barras, com macros no dashboard — catálogo real (TACO) pronto, `log_meal` funcionando na UI (busca+toque via `LogMealScreen`, confirmado em device real 2026-08-17); falta câmera real (`flutter_zxing`, sem device pra validar)
 - [~] 3. Pulseira BLE sincroniza FC e sono para o Health Data Core — lógica pronta e testada (`packages/wearable`); falta `WearableDataSource` real sobre Health Connect (sem Android SDK/device com Gadgetbridge aqui)
 - [~] 4. "Quantas calorias comi hoje e quanto andei?" respondido pelo LLM local, offline — `get_daily_summary` funciona na UI (tela Resumo + comando de chat "resumo de hoje"); falta o LLM real (roteador determinístico cobre só comando estruturado, não pergunta livre)
-- [ ] 5. Plano de treino prescrito, executado com séries e carga, progressão visível — lógica pronta (`get_workout_plan`/`log_workout_session` registradas no app), sem tela dedicada nem comando de chat ainda
+- [~] 5. Plano de treino prescrito, executado com séries e carga, progressão visível — lógica pronta (`get_workout_plan`/`log_workout_session`) e UI de registro (`LogWorkoutScreen`, confirmado em device real 2026-08-17); falta tela de progressão/histórico visual
 - [ ] 6. Corrida de 5 km gravada com tela bloqueada, rota e splits corretos, bateria medida — precisa de captura de GPS real (WRAP Android)
 - [~] 7. Card de corrida compartilhado no Instagram com rota ofuscada e nada clínico — card + share sheet nativo funcionam de ponta a ponta (testado com captura fake); falta verificar a rasterização real (`RepaintBoundary.toImage`) num device de verdade
 - [ ] 8. Assinatura ativada por Pix; entitlement chega ao app e sobrevive 7 dias offline — modelos prontos (F10/F11), nenhum provedor real configurado
 - [x] 9. `docs/LICENSE-AUDIT.md` fechado e modelo de distribuição decidido — **feito** em 2026-08-09, seção "Fechamento"
 
-**3 de 9 itens parcial (3, 4, 7), 1 fechado (9), 5 ainda não começaram de
-verdade** — a maioria depende de device Android/iOS real (itens 1, 3, 6,
-7) ou de trabalho de UI/escopo ainda não feito (2, 5, 8).
+**5 de 9 itens parcial (2, 3, 4, 5, 7), 1 fechado (9), 3 ainda não
+começaram de verdade (1, 6, 8)** — os que faltam dependem de device
+Android/iOS real (1, 3, 6, 7) ou de trabalho de escopo ainda não feito
+(8).
 
 ## Primeira UI do app (`app/`) — 2026-08-14
 
 - [x] `app/` deixou de ser `Scaffold` vazio — depende de verdade de `packages/{health_core,tool_registry,brain,activity,nutrition,summary}`
 - [x] Tela Resumo (`get_daily_summary` ao abrir)
 - [x] Tela Chat (`BrainPipeline` + roteador determinístico + confirmação real via `AlertDialog`)
-- [x] 6 de 7 ferramentas mínimas do MVP registradas no `ToolRegistry` do app (falta `start_run`, bloqueada por hardware; `sync_wearable`/`query_health_record` fora de escopo)
+- [x] 8 ferramentas do MVP registradas no `ToolRegistry` do app (falta `start_run`, bloqueada por hardware; `sync_wearable`/`sync_wger`/`sync_fasten_records`/`query_health_record` fora de escopo — sem fonte real)
 - [x] Testado de ponta a ponta com dado real (TACO `taco-1`) — grava `HealthEvent` de verdade, confirmação/recusa provadas
-- [ ] `path_provider` (armazenamento real em device) — não verificável sem device
-- [x] Comando de chat pra `search_food`/`get_workout_plan`/`log_workout_session`/`get_run_summary` — concluído 2026-08-15, todas as 6 ferramentas registradas têm regra de roteador agora
+- [x] `path_provider` — **confirmado em device Android real** (2026-08-17, após fix de `sqlite3_flutter_libs`), primeira verificação fora do sandbox
+- [x] Comando de chat pra `search_food`/`get_workout_plan`/`log_workout_session`/`get_run_summary`/`log_water` — todas as 8 ferramentas registradas têm regra de roteador
+
+## Dashboard mínimo funcional — 2026-08-17
+
+- [x] Layout final: 5 cards (Passos, Água, Refeições, Treinos, Corridas) desenhados de uma vez, sem redesenho a cada função nova
+- [x] Tipo `water` (`HealthEvent`) + `WaterLogger`/`log_water` (`packages/nutrition`)
+- [x] `get_daily_summary` soma água do dia (`packages/summary`)
+- [x] `LogMealScreen` (busca real no catálogo TACO + toque + gramas)
+- [x] `LogWorkoutScreen` (formulário: exercício/séries/repetições/carga)
+- [x] Diálogo rápido de água no dashboard (presets + customizado)
+- [x] Nenhuma tela nova duplica lógica de escrita — todas montam comando e chamam `BrainPipeline.handle`, reaproveitando a confirmação existente
+- [ ] Passos reais (sensor Android) e GPS real (corrida) — cards já no layout definitivo, aguardando ciclo de plataforma nativa
 
 ## Pendências imediatas
 
@@ -60,4 +72,7 @@ verdade** — a maioria depende de device Android/iOS real (itens 1, 3, 6,
 - [x] ~~F12 (compartilhamento social, cards de treino/corrida)~~ — concluído 2026-08-15 (parte sem device)
 - [x] ~~Comandos de chat pras ferramentas restantes~~ — concluído 2026-08-15
 - [x] ~~F13 (wger + Fasten, parte sem servidor real)~~ — concluído 2026-08-17
-- [ ] Próxima etapa em aberto: `WgerClient`/`FastenClient` real (precisa de servidor self-hosted alcançável), campos sensíveis opt-in nos cards, ou F14 (painel B2B)
+- [x] ~~CI publica APK debug como artifact~~ — concluído 2026-08-17
+- [x] ~~Fix: app travava na splash (sqlite3_flutter_libs)~~ — concluído 2026-08-17, confirmado em device real
+- [x] ~~Dashboard mínimo funcional (água/refeição/treino por toque)~~ — concluído 2026-08-17
+- [ ] Próxima etapa em aberto: passos reais via sensor Android, GPS real pra corrida (ambos trabalho de plataforma nativa, agora testáveis em device), `WgerClient`/`FastenClient` real, ou F14 (painel B2B)

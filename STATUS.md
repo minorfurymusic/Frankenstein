@@ -23,7 +23,35 @@ branco: navegação Resumo/Chat de verdade, ligada aos pacotes reais, com
 compartilhamento de treino/corrida funcionando de ponta a ponta. Detalhe
 completo em `docs/HISTORICO.md`.
 
-**Ciclo mais recente: CI publica APK debug como artifact (MVP pra teste
+**Ciclo mais recente: dashboard mínimo funcional — água, refeição e
+treino registráveis por toque, sem digitar comando de chat.** Primeiro
+teste real em Android confirmou o app abrindo (fix do
+`sqlite3_flutter_libs`) mas revelou o dashboard "morto": das 4 métricas,
+só Refeições/Treinos tinham qualquer jeito de gravar dado, e só via
+comando de chat digitado (regex exata). Layout final do dashboard
+desenhado de uma vez (5 cards: Passos, Água, Refeições, Treinos,
+Corridas) pra não precisar redesenhar a cada função nova — Passos e
+Corridas ficam com placeholder honesto ("sem sensor real ainda"/"requer
+GPS real") porque dependem de trabalho de plataforma nativa Android,
+fora deste ciclo. Água/Refeições/Treinos ganharam ação "+" real:
+- **Tipo `water` novo** (`packages/health_core`, `docs/ARQUITETURA.md:31-32`,
+  `.claude/rules/datacore.md`) — fechava pendência registrada desde
+  `docs/specs/nutricao.md`. `packages/nutrition`: `WaterLogger`/
+  `log_water` (escrita com confirmação, payload `{amount_ml}`, mesmo
+  padrão de `MealLogger`/`log_meal`).
+- `get_daily_summary` soma água do dia (`packages/summary`).
+- `app/lib/screens/log_meal_screen.dart` (busca real no catálogo TACO +
+  toque + gramas) e `log_workout_screen.dart` (formulário) — nenhum dos
+  dois reimplementa a lógica de escrita: montam o mesmo texto que o
+  roteador de chat aceita e mandam pro mesmo `BrainPipeline.handle`,
+  reaproveitando a confirmação humana já existente
+  (`.claude/rules/brain.md`, passo 4).
+- Diálogo rápido de água inline no dashboard (presets 200/300/500ml +
+  quantidade customizada), mesmo caminho de confirmação.
+- 3 widget tests novos, ponta a ponta, com dado real gravado no
+  `HealthDataCore` (não mock de UI).
+
+**Ciclo anterior: CI publica APK debug como artifact (MVP pra teste
 manual).** Sandbox de dev não tem Android SDK (`dl.google.com` bloqueado
 pela política de rede do ambiente) — CI (`ubuntu-latest`) já compilava
 via `make build`, mas descartava o resultado com o runner.
@@ -105,9 +133,10 @@ HTTP/FHIR real sobre servidor wger/Fasten alcançável), `query_health_record`
   adicionada pra não entrar sem uso/teste. Filtragem do recurso FHIR
   bruto antes de qualquer prompt de LLM (`.claude/rules/brain.md`) —
   trabalho futuro, ainda não há montagem de prompt real.
-- Água (novo tipo de `HealthEvent`) e refeição/receita composta de
-  ingredientes — pendências já registradas em `docs/specs/nutricao.md`,
-  não implementadas.
+- **Resolvido:** água (novo tipo `water` de `HealthEvent`) — `WaterLogger`/
+  `log_water`, card no dashboard com registro rápido.
+- Refeição/receita composta de ingredientes — pendência ainda em
+  `docs/specs/nutricao.md`, não implementada.
 - Nenhum provedor de pagamento real configurado (F10/F11 é só
   esqueleto, por decisão) — Play Billing/StoreKit/Stripe/Pix ficam pra
   quando o servidor existir.
@@ -162,7 +191,8 @@ este status sem revalidar).
 | 12 | Compartilhamento social (F12) | **PARCIAL** (`packages/share`, novo pacote) — `WorkoutShareCardData`/`RunShareCardData`, builders com checagem estrutural anti-clínico, rota ofuscada; em `app/`: `SharePreviewScreen`/`ShareSheet`(`share_plus`)/`CardImageCapturer`, testado de ponta a ponta com `FakeCardImageCapturer`; rasterização real (`RepaintBoundary.toImage`) não verificável neste ambiente headless |
 | 13 | wger + Fasten (F13) | **PARCIAL** (`packages/wger`, `packages/fasten`, novos pacotes) — `WgerSyncLogger`/`sync_wger` (grava `set_log`, `source: wger`) e `FastenSyncLogger`/`sync_fasten_records` (grava `clinical_doc`, `source: fasten`) prontos e testados com Fixture; `WgerClient`/`FastenClient` real sobre REST v2/FHIR bloqueados — sem servidor wger/Fasten alcançável; não registrados no app (sem fonte real pra ligar) |
 | — | `get_daily_summary`/`sync_wearable` (ferramentas do cérebro) | **CONCLUÍDO** — `get_daily_summary` (`packages/summary`, só leitura, cruza steps/meal/workout_session/gps_track); `sync_wearable` (`packages/wearable`, escrita com confirmação) |
-| — | Primeira UI real do app (`app/`) | **PARCIAL** — telas Resumo + Chat, `AppDependencies` ligada aos pacotes reais, 6 de 7 ferramentas mínimas registradas (falta `start_run`, bloqueada por hardware), **todas as 6 com comando de chat** (`app/lib/chat_router.dart`), compartilhamento de treino/corrida (F12); `path_provider`/rasterização real não verificáveis sem device |
+| — | Primeira UI real do app (`app/`) | **PARCIAL** — telas Resumo + Chat, `AppDependencies` ligada aos pacotes reais, 8 ferramentas registradas (falta `start_run`, bloqueada por hardware), **todas com comando de chat** (`app/lib/chat_router.dart`), compartilhamento de treino/corrida (F12); `path_provider`/rasterização real não verificáveis sem device |
+| — | Dashboard mínimo funcional (água/refeição/treino por toque) | **CONCLUÍDO** — 5 cards no layout final (`app/lib/screens/dashboard_screen.dart`), `LogMealScreen`/`LogWorkoutScreen`/diálogo de água montam texto e reaproveitam `BrainPipeline.handle` + confirmação existente; Passos/Corridas com placeholder honesto até sensor/GPS real existir |
 | — | Relatório de eficiência (`docs/EFICIENCIA.md`) | Grupo A adotado como prática; Grupo B aplicado (este arquivo) |
 
 ## Decisões já tomadas (não reabrir sem motivo novo)
