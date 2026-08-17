@@ -2131,3 +2131,130 @@
   (`TYPE_STEP_COUNTER` + foreground service + `ACTIVITY_RECOGNITION`) ou
   GPS real pra corrida — ambos trabalho de plataforma nativa, maiores,
   agora potencialmente testáveis já que o APK abre no seu aparelho.
+
+- **Ciclo — contador de passos real: primeiro código Kotlin do
+  projeto.** Instrução direta: "Quero que resolva o contador de passos."
+  Investigação prévia (`Explore`, citações conferidas antes de codificar,
+  não confiei de memória): `StepSensor` (`packages/activity/lib/src/step_sensor.dart:16-18`)
+  já existia como interface abstrata desde F4, nunca implementada —
+  `Stream<StepsSample> get readings`. `StepsRepository.attachSensor`
+  (`steps_repository.dart:39-41`) já trata baseline/delta/reset de
+  contador; `flush` (linha 82-105) grava o `HealthEvent`, mas
+  deliberadamente não decide **quando** — política de app/foreground
+  service, documentada como responsabilidade de fora
+  (`steps_repository.dart:19-23`). Nenhuma ADR decide a abordagem
+  técnica de passos (só o requisito funcional em
+  `.claude/rules/activity.md:10-12`, "esse é o bug que matou o projeto
+  anterior") — `docs/PRODUTO.md:23-25` já direciona pra "código próprio,
+  com foreground service", então não havia fork de arquitetura genuíno
+  pra parar num portão; a instrução do usuário já era autorização
+  suficiente pra codificar.
+
+  **Escopo isolado de propósito:** só passos neste ciclo, não GPS — os
+  dois são "trabalho de plataforma nativa" mas GPS tem regras próprias
+  mais pesadas (`.claude/rules/activity.md`: filtro de precisão 20m,
+  orçamento de bateria, ofuscação de rota) que merecem ciclo dedicado,
+  não misturado com o primeiro código Kotlin do projeto.
+
+  **Android nativo** (nenhum arquivo existia antes deste ciclo, além do
+  boilerplate padrão do `flutter create`):
+  - `AndroidManifest.xml`: `ACTIVITY_RECOGNITION` (obrigatória desde
+    Android 10/API 29 pra ler `TYPE_STEP_COUNTER`, pedida em runtime),
+    `FOREGROUND_SERVICE`/`FOREGROUND_SERVICE_HEALTH` (Android 14/API 34,
+    `foregroundServiceType="health"`), `POST_NOTIFICATIONS` (Android
+    13/API 33 — sem ela o serviço roda igual, só a notificação some,
+    comportamento documentado do Android), `<uses-feature
+    android.hardware.sensor.stepcounter required="false">` (degradação
+    gradual em aparelho sem o sensor), declaração do `<service>`.
+  - `StepCounterService.kt`: `Service` + `SensorEventListener` em
+    `TYPE_STEP_COUNTER`, `startForeground` com notificação
+    (`IMPORTANCE_MIN`, não sonora/intrusiva) e `START_STICKY` — o
+    sistema recria o service se matar o processo pra liberar memória,
+    parte do requisito "não pode parar com a tela bloqueada". Guarda a
+    última leitura em memória, `LocalBinder` pra `MainActivity` consultar
+    (`getCurrentReading`) ou registrar um listener de leituras ao vivo.
+  - `MainActivity.kt`: `MethodChannel` (`frankstein/steps` —
+    `hasSensor`/`hasActivityRecognitionPermission`/
+    `requestActivityRecognitionPermission`/`startService`/`stopService`/
+    `getCurrentReading`) + `EventChannel` (`frankstein/steps/stream` —
+    leituras ao vivo enquanto o app está em primeiro plano). Permissão
+    pedida via `ActivityCompat.requestPermissions`, resultado devolvido
+    ao Dart via `MethodChannel.Result` guardado até
+    `onRequestPermissionsResult` chegar (fluxo assíncrono nativo do
+    Android, sem outro jeito de expressar isso num `MethodChannel`
+    síncrono).
+  - `app/android/app/build.gradle.kts`: `androidx.core:core-ktx 1.13.1`
+    (Apache-2.0, AndroidX oficial — não é Play Services/GMS/nenhuma SDK
+    da lista proibida de `.claude/rules/licenca.md`) explícito, pra não
+    depender de resolução transitiva do plugin do Flutter pros
+    `ActivityCompat`/`ContextCompat` usados em `MainActivity.kt`.
+    **Achado ao adicionar:** o hook `pre-edit.sh` bloqueou a primeira
+    tentativa por causa da palavra "Firebase" aparecer no meu próprio
+    comentário explicando que a dependência **não** é isso — falso
+    positivo do regex, corrigido reescrevendo o comentário sem repetir
+    os nomes proibidos literalmente.
+
+  **Dart, camada do app:**
+  - `app/lib/step_sensor_android.dart`: `AndroidStepSensor implements
+    StepSensor` sobre os dois canais — não muda `StepsRepository` em
+    nada, exatamente como a interface prometia desde F4.
+  - `app/lib/step_tracking_controller.dart`: decide a política de flush
+    que `StepsRepository` deixa em aberto — a cada 5 min +
+    `WidgetsBindingObserver` (flush ao pausar/finalizar o app). Expõe
+    `StepTrackingStatus` (`unknown`/`unsupportedPlatform`/`noSensor`/
+    `permissionDenied`/`active`) via `ValueNotifier`, testável. **Achado
+    de design a meio do ciclo:** a primeira versão checava
+    `Platform.isAndroid` direto — só depois percebi que isso mata
+    qualquer teste automatizado dessa lógica, porque `flutter test`
+    **sempre** roda no host (Linux aqui, Linux em qualquer CI também),
+    nunca reporta `Platform.isAndroid == true`. Corrigido: o check virou
+    `isSupportedPlatform` injetável (default `() => Platform.isAndroid`
+    em produção, `() => true` em teste) — sem essa correção, toda a
+    lógica de permissão/status/flush ficaria estruturalmente não
+    testável em qualquer ambiente, não só neste.
+  - `app/lib/app_dependencies.dart`: `stepsRepository`/`stepTracking`
+    construídos em `_build()` (síncrono, sem I/O) — `.start()` fica pra
+    `main.dart` chamar separado, depois do `runApp` (fire-and-forget,
+    `unawaited`), mesmo cuidado do fix do `sqlite3_flutter_libs`: nada
+    bloqueante antes do primeiro frame.
+  - `app/lib/screens/dashboard_screen.dart`: card de Passos vira
+    `ValueListenableBuilder<StepTrackingStatus>`, subtítulo honesto por
+    estado ("verificando sensor...", "permissão negada", "este aparelho
+    não tem sensor de passos", ou nada quando `active`); botão "Tentar de
+    novo" quando a permissão foi negada.
+
+  **Prova:**
+  ```
+  $ flutter analyze (app/, com fatal-infos) → No issues found!
+  $ flutter test test/step_tracking_test.dart → 00:0X +8: All tests passed!
+     (AndroidStepSensor: parsing de MethodChannel/EventChannel mockados,
+      4 testes; StepTrackingController: plataforma sem suporte,
+      permissão negada, sem sensor, ativo-com-leitura-real-no-repositório,
+      4 testes)
+  $ flutter test (app/, completo) → 24/24 "All tests passed!"
+     (16 já existiam + 8 novos, nada quebrou)
+  $ make lint (raiz, 12 pacotes + app) → "No issues found!" em todos
+  $ make test (raiz) → 12/12 suítes "All tests passed!"
+  ```
+
+  **Não verificado, explicitamente:** o sensor `TYPE_STEP_COUNTER`
+  disparando de fato num device Android real; o `StepCounterService`
+  sobrevivendo à tela bloqueada por horas (o próprio requisito que
+  `.claude/rules/activity.md` chama de "o bug que matou o projeto
+  anterior"); o diálogo de permissão `ACTIVITY_RECOGNITION` aparecendo
+  certo; a notificação persistente sendo exibida como esperado. Nada
+  disso é verificável sem `adb`/device físico, que este ambiente não
+  tem — os testes aqui provam a lógica Dart em volta do sensor (parsing,
+  status, política de flush), não o sensor em si. CI só confirma que o
+  Kotlin compila, não que funciona.
+
+  **Débito técnico:** nenhum `TODO` novo — o que falta está registrado
+  como "não verificado", não como código temporário.
+
+  **Bloqueios / decisões que precisam do usuário:** nenhum — só
+  aguardando teste manual no device pra confirmar a parte que não dá pra
+  testar daqui.
+
+  **Próximo ciclo proposto:** GPS real pra corrida (`start_run`), mesma
+  categoria de trabalho — ou aguardar o teste manual deste ciclo antes
+  de decidir, caso o contador de passos precise de ajuste.

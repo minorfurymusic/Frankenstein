@@ -2,7 +2,7 @@
 
 > Gerado pela skill `project-recorder`. Fonte: `docs/PRODUTO.md` (fases e
 > Definição de Pronto do MVP) cruzado com `STATUS.md` (estado real).
-> Última atualização: 2026-08-17 (ciclo do dashboard mínimo).
+> Última atualização: 2026-08-17 (ciclo do contador de passos real).
 
 ## Fases (`docs/PRODUTO.md:39-57`)
 
@@ -10,7 +10,7 @@
 - [x] **F1** — ADRs (**11/11 aceitas** — ADR-4 e ADR-5 confirmadas em 2026-08-09, últimas duas)
 - [x] **F2** — Esqueleto do monorepo + CI + Makefile (CI verde, `ubuntu-latest`, commit `386b711`)
 - [x] **F3** — Health Data Core — schema `HealthEvent` implementado e testado (`packages/health_core`, 15 testes, `make lint`/`make test` verdes).
-- [x] **F4** — Passos — `StepsRepository` implementado e testado (`packages/activity`, agregação de contador cumulativo + reset). Foreground service Android real não implementado — sem device pra testar aqui.
+- [x] **F4** — Passos — `StepsRepository` implementado e testado (`packages/activity`, agregação de contador cumulativo + reset). Foreground service Android real implementado (`StepCounterService.kt`, `TYPE_STEP_COUNTER`) — sensor disparando de fato/sobrevivendo à tela bloqueada não verificável sem device, só CI confirma que compila.
 - [x] **F5** — Cérebro com ferramentas — pipeline provado com 2 ferramentas reais coexistindo (`get_steps`, `log_meal`). MLC LLM real (on-device) não implementado — sem device pra testar neste ambiente; entra depois via interface `ToolCaller`.
 - [x] **F6** — Nutrição + código de barras — `packages/nutrition` implementado e testado (27 testes). **Catálogo real**: Tabela TACO (NEPA/UNICAMP, 578 alimentos) substitui o dataset de fixture na produção desde 2026-08-14. `flutter_zxing` concreto (câmera) fica pra depois.
 - [x] **F7** — Academia: planos + sessão + séries — `packages/activity` (`WorkoutPlan`/`WorkoutRepository`, `WorkoutLogger`, `get_workout_plan`/`log_workout_session`), 14 testes novos. Sem dependência de hardware, testado de ponta a ponta.
@@ -24,7 +24,7 @@
 
 ## Definição de Pronto do MVP (`docs/PRODUTO.md:59-68`)
 
-- [ ] 1. Passos contados com a tela bloqueada por 8h, batendo com o sistema (±5%) — precisa de device Android real
+- [~] 1. Passos contados com a tela bloqueada por 8h, batendo com o sistema (±5%) — `StepCounterService.kt` implementado (2026-08-17); teste de 8h com tela bloqueada e comparação ±5% com o sistema ainda depende de você, num device real
 - [~] 2. Refeição registrada por código de barras, com macros no dashboard — catálogo real (TACO) pronto, `log_meal` funcionando na UI (busca+toque via `LogMealScreen`, confirmado em device real 2026-08-17); falta câmera real (`flutter_zxing`, sem device pra validar)
 - [~] 3. Pulseira BLE sincroniza FC e sono para o Health Data Core — lógica pronta e testada (`packages/wearable`); falta `WearableDataSource` real sobre Health Connect (sem Android SDK/device com Gadgetbridge aqui)
 - [~] 4. "Quantas calorias comi hoje e quanto andei?" respondido pelo LLM local, offline — `get_daily_summary` funciona na UI (tela Resumo + comando de chat "resumo de hoje"); falta o LLM real (roteador determinístico cobre só comando estruturado, não pergunta livre)
@@ -34,8 +34,8 @@
 - [ ] 8. Assinatura ativada por Pix; entitlement chega ao app e sobrevive 7 dias offline — modelos prontos (F10/F11), nenhum provedor real configurado
 - [x] 9. `docs/LICENSE-AUDIT.md` fechado e modelo de distribuição decidido — **feito** em 2026-08-09, seção "Fechamento"
 
-**5 de 9 itens parcial (2, 3, 4, 5, 7), 1 fechado (9), 3 ainda não
-começaram de verdade (1, 6, 8)** — os que faltam dependem de device
+**6 de 9 itens parcial (1, 2, 3, 4, 5, 7), 1 fechado (9), 2 ainda não
+começaram de verdade (6, 8)** — os que faltam dependem de device
 Android/iOS real (1, 3, 6, 7) ou de trabalho de escopo ainda não feito
 (8).
 
@@ -58,7 +58,19 @@ Android/iOS real (1, 3, 6, 7) ou de trabalho de escopo ainda não feito
 - [x] `LogWorkoutScreen` (formulário: exercício/séries/repetições/carga)
 - [x] Diálogo rápido de água no dashboard (presets + customizado)
 - [x] Nenhuma tela nova duplica lógica de escrita — todas montam comando e chamam `BrainPipeline.handle`, reaproveitando a confirmação existente
-- [ ] Passos reais (sensor Android) e GPS real (corrida) — cards já no layout definitivo, aguardando ciclo de plataforma nativa
+- [x] Passos reais (sensor Android) — `StepCounterService.kt` + `step_sensor_android.dart` + `step_tracking_controller.dart`, card do dashboard reflete `StepTrackingStatus` ao vivo
+- [ ] GPS real (corrida) — card já no layout definitivo, aguardando ciclo de plataforma nativa
+
+## Contador de passos real — 2026-08-17
+
+- [x] `AndroidManifest.xml`: `ACTIVITY_RECOGNITION`/`FOREGROUND_SERVICE`/`FOREGROUND_SERVICE_HEALTH`/`POST_NOTIFICATIONS` + `<service>` + `uses-feature stepcounter`
+- [x] `StepCounterService.kt`: foreground service, `TYPE_STEP_COUNTER`, notificação `IMPORTANCE_MIN`, `START_STICKY`
+- [x] `MainActivity.kt`: `MethodChannel`/`EventChannel`, permissão em runtime
+- [x] `app/lib/step_sensor_android.dart`: `StepSensor` real (interface existia desde F4, nunca implementada)
+- [x] `app/lib/step_tracking_controller.dart`: política de flush (5min + pause) + `StepTrackingStatus`
+- [x] Dashboard reflete o status ao vivo, com "Tentar de novo" se a permissão for negada
+- [x] 8 testes novos com platform channel mockado (`TestDefaultBinaryMessengerBinding`) — `isSupportedPlatform` injetável, sem isso a lógica seria estruturalmente não testável (`flutter test` nunca roda com `Platform.isAndroid == true`)
+- [ ] Sensor disparando de fato / service sobrevivendo à tela bloqueada num device real — não verificável sem `adb`, depende de teste manual seu
 
 ## Pendências imediatas
 
@@ -75,4 +87,5 @@ Android/iOS real (1, 3, 6, 7) ou de trabalho de escopo ainda não feito
 - [x] ~~CI publica APK debug como artifact~~ — concluído 2026-08-17
 - [x] ~~Fix: app travava na splash (sqlite3_flutter_libs)~~ — concluído 2026-08-17, confirmado em device real
 - [x] ~~Dashboard mínimo funcional (água/refeição/treino por toque)~~ — concluído 2026-08-17
-- [ ] Próxima etapa em aberto: passos reais via sensor Android, GPS real pra corrida (ambos trabalho de plataforma nativa, agora testáveis em device), `WgerClient`/`FastenClient` real, ou F14 (painel B2B)
+- [x] ~~Contador de passos real (foreground service Android)~~ — concluído 2026-08-17, aguardando teste manual em device
+- [ ] Próxima etapa em aberto: GPS real pra corrida (mesma categoria de trabalho nativo), `WgerClient`/`FastenClient` real, ou F14 (painel B2B)

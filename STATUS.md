@@ -23,7 +23,29 @@ branco: navegação Resumo/Chat de verdade, ligada aos pacotes reais, com
 compartilhamento de treino/corrida funcionando de ponta a ponta. Detalhe
 completo em `docs/HISTORICO.md`.
 
-**Ciclo mais recente: dashboard mínimo funcional — água, refeição e
+**Ciclo mais recente: contador de passos real — primeiro código Kotlin
+do projeto.** Foreground service Android (`StepCounterService.kt`)
+ouvindo `TYPE_STEP_COUNTER`, com notificação persistente e
+`START_STICKY` — cumpre `.claude/rules/activity.md` ("a contagem NÃO
+pode parar com a tela bloqueada, esse é o bug que matou o projeto
+anterior"). `MainActivity.kt`: `MethodChannel`/`EventChannel` (start/
+stop do service, permissão `ACTIVITY_RECOGNITION` em runtime, leitura
+sob demanda). `app/lib/step_sensor_android.dart` implementa `StepSensor`
+(interface que já existia desde F4, nunca implementada) sem tocar
+`StepsRepository`. `app/lib/step_tracking_controller.dart` decide a
+política de "quando persistir" que `StepsRepository` deliberadamente não
+decide — flush a cada 5 min + ao pausar o app — e expõe
+`StepTrackingStatus` (`unknown`/`unsupportedPlatform`/`noSensor`/
+`permissionDenied`/`active`) que o card de Passos do dashboard reflete
+ao vivo. 8 testes novos usando platform channel mockado
+(`TestDefaultBinaryMessengerBinding`) — a única coisa que fica **não
+verificada** é o sensor disparando de verdade e o service sobrevivendo
+à tela bloqueada num device real (sem `adb`/device neste ambiente; CI
+só confirma que o Kotlin compila). Nova dependência:
+`androidx.core:core-ktx 1.13.1` (Apache-2.0, AndroidX oficial, não é
+Play Services/GMS/Firebase — `.claude/rules/licenca.md`).
+
+**Ciclo anterior: dashboard mínimo funcional — água, refeição e
 treino registráveis por toque, sem digitar comando de chat.** Primeiro
 teste real em Android confirmou o app abrindo (fix do
 `sqlite3_flutter_libs`) mas revelou o dashboard "morto": das 4 métricas,
@@ -116,8 +138,13 @@ HTTP/FHIR real sobre servidor wger/Fasten alcançável), `query_health_record`
   concreto com `flutter_zxing` em `app/` — sem câmera/emulador real pra
   validar.
 - `start_run` (F8) e a captura de GPS real (WRAP OpenTracks Android,
-  PORT iOS) — bloqueadas por falta de SDK/device Android/iOS, mesmo
-  limite de F4.
+  PORT iOS) — próximo item de plataforma nativa, mesma categoria do
+  contador de passos (agora implementado); ainda não feito.
+- Sensor de passos real disparando de fato e `StepCounterService`
+  sobrevivendo à tela bloqueada (`.claude/rules/activity.md`) — código
+  implementado e CI confirma que compila, mas só teste manual em device
+  (você) confirma que funciona de verdade; primeiro código Kotlin do
+  projeto, sem precedente local pra comparar.
 - `WearableDataSource` real sobre Health Connect (F9) — precisa do
   plugin Flutter que envolve a API nativa + Android SDK/device com
   Health Connect e Gadgetbridge de verdade instalados
@@ -181,7 +208,7 @@ este status sem revalidar).
 | 1 | **11/11 ADRs registradas** | **11/11 aceitas** — Fase 1 concluída |
 | 2 | Esqueleto do monorepo (F2) | **CONCLUÍDO** — CI verde (`ubuntu-latest`), sandbox de dev sem SDK Android/KVM (limite de ambiente) |
 | 3 | Health Data Core (F3) | **CONCLUÍDO** (`packages/health_core`) — `HealthEvent` append-only, dedup, correção, `gps_track_points` |
-| 4 | Passos, foreground service (F4) | **CONCLUÍDO** (`packages/activity`, `StepsRepository`) — agregação de contador cumulativo, reset de aparelho tratado; foreground service Android real fica pra depois (sem device pra testar aqui) |
+| 4 | Passos, foreground service (F4) | **CONCLUÍDO** (`packages/activity`, `StepsRepository` + `app/android/.../StepCounterService.kt`, `app/lib/step_sensor_android.dart`, `step_tracking_controller.dart`) — agregação de contador cumulativo, reset de aparelho tratado, foreground service Android real implementado; sensor disparando de fato/serviço sobrevivendo à tela bloqueada não verificável neste ambiente (sem `adb`/device), só CI confirma que compila |
 | 5 | Cérebro com 1+ ferramentas (F5) | **pipeline provado com 2 ferramentas reais** (`get_steps`, `log_meal`) coexistindo no mesmo `BrainPipeline`/`ToolRegistry`; LLM on-device real fica pra depois (sem device pra testar aqui) |
 | 6 | Nutrição/código de barras (F6) | **CONCLUÍDO** (`packages/nutrition`) — `Food`/`FoodRepository` (sqlite3), `MealLogger`, `BarcodeDecoder` (interface, sem câmera real), `log_meal`/`search_food` reais no `ToolRegistry`; **catálogo real** = Tabela TACO (NEPA/UNICAMP, 578 alimentos) desde este ciclo; `flutter_zxing` concreto fica pra depois |
 | 7 | Academia (F7) | **CONCLUÍDO** (`packages/activity`) — `WorkoutPlan`/`WorkoutRepository` (sqlite3), `WorkoutLogger` (`workout_session`+`set_log`, recorde por consulta), `get_workout_plan`/`log_workout_session` reais no `ToolRegistry`; sem dependência de hardware, testado de ponta a ponta |
@@ -192,7 +219,7 @@ este status sem revalidar).
 | 13 | wger + Fasten (F13) | **PARCIAL** (`packages/wger`, `packages/fasten`, novos pacotes) — `WgerSyncLogger`/`sync_wger` (grava `set_log`, `source: wger`) e `FastenSyncLogger`/`sync_fasten_records` (grava `clinical_doc`, `source: fasten`) prontos e testados com Fixture; `WgerClient`/`FastenClient` real sobre REST v2/FHIR bloqueados — sem servidor wger/Fasten alcançável; não registrados no app (sem fonte real pra ligar) |
 | — | `get_daily_summary`/`sync_wearable` (ferramentas do cérebro) | **CONCLUÍDO** — `get_daily_summary` (`packages/summary`, só leitura, cruza steps/meal/workout_session/gps_track); `sync_wearable` (`packages/wearable`, escrita com confirmação) |
 | — | Primeira UI real do app (`app/`) | **PARCIAL** — telas Resumo + Chat, `AppDependencies` ligada aos pacotes reais, 8 ferramentas registradas (falta `start_run`, bloqueada por hardware), **todas com comando de chat** (`app/lib/chat_router.dart`), compartilhamento de treino/corrida (F12); `path_provider`/rasterização real não verificáveis sem device |
-| — | Dashboard mínimo funcional (água/refeição/treino por toque) | **CONCLUÍDO** — 5 cards no layout final (`app/lib/screens/dashboard_screen.dart`), `LogMealScreen`/`LogWorkoutScreen`/diálogo de água montam texto e reaproveitam `BrainPipeline.handle` + confirmação existente; Passos/Corridas com placeholder honesto até sensor/GPS real existir |
+| — | Dashboard mínimo funcional (água/refeição/treino por toque) | **CONCLUÍDO** — 5 cards no layout final (`app/lib/screens/dashboard_screen.dart`), `LogMealScreen`/`LogWorkoutScreen`/diálogo de água montam texto e reaproveitam `BrainPipeline.handle` + confirmação existente; card de Passos liga ao sensor real (ver linha F4); Corridas com placeholder honesto até GPS real existir |
 | — | Relatório de eficiência (`docs/EFICIENCIA.md`) | Grupo A adotado como prática; Grupo B aplicado (este arquivo) |
 
 ## Decisões já tomadas (não reabrir sem motivo novo)

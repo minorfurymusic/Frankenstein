@@ -8,8 +8,12 @@
 > no formato que a skill espera.
 
 **Repositório:** `github.com/minorfurymusic/Frankenstein`
-**Última atualização:** 2026-08-17 (commit `28afeb8`)
-**Total de commits:** 77
+**Última atualização:** 2026-08-17 (commit `565bd9b`)
+**Total de commits:** 79
+
+## 2026-08-17 (contador de passos real — primeiro código Kotlin do projeto)
+
+- `565bd9b` — feat(app,android): contador de passos real - foreground service, TYPE_STEP_COUNTER
 
 ## 2026-08-17 (dashboard mínimo — água, refeição e treino registráveis por toque)
 
