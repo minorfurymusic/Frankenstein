@@ -28,7 +28,7 @@ cópia de código.
 ```
 HealthEvent
   id                 uuid
-  type               steps | heart_rate | sleep | meal | weight |
+  type               steps | heart_rate | sleep | meal | weight | water |
                       workout_session | set_log | gps_track | clinical_doc
   source             pedometer | wearable | manual | wger | fasten | llm
   occurred_at        timestamp UTC
@@ -54,6 +54,15 @@ neste ciclo — a regra de dedup e de correção já existiam em prosa desde a
 primeira versão deste documento e em `.claude/rules/datacore.md`, mas os
 campos que elas dependem não estavam na lista de colunas. Preenchimento
 de lacuna, não mudança de decisão.
+
+**Nota (ciclo do dashboard mínimo):** tipo `water` acrescentado —
+`docs/specs/nutricao.md:103-106` já previa "peso e água" como séries
+temporais simples, mas deixava o nome do tipo como pendência de
+implementação ("água não está listada ainda"). Resolvido: `water`,
+payload `{amount_ml}`, `source: manual`, sem dedup por `external_id`
+(mesmo padrão de `meal`). Implementado em `packages/nutrition`
+(`docs/specs/nutricao.md` continua sendo a única fonte de especificação
+do módulo, `.claude/rules/port.md`).
 
 ## Contrato de ferramenta do cérebro
 

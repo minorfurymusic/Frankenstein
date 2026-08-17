@@ -9,6 +9,9 @@
 /// `BarcodeDecoder` (a implementação concreta com câmera real fica para um
 /// ciclo com dispositivo/emulador), e a ferramenta `log_meal` real,
 /// registrável no `ToolRegistry` do cérebro.
+///
+/// `WaterLogger`/`log_water` (ciclo do dashboard mínimo): grava
+/// `HealthEvent` tipo `water`, mesmo padrão de `MealLogger`/`log_meal`.
 library;
 
 export 'src/barcode_decoder.dart';
@@ -19,3 +22,5 @@ export 'src/food_taco_dataset.dart';
 export 'src/meal.dart';
 export 'src/meal_logger.dart';
 export 'src/nutrition_tools.dart';
+export 'src/water_logger.dart';
+export 'src/water_tools.dart';

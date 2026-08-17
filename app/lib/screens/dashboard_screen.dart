@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:frankstein_brain/brain.dart';
 import 'package:frankstein_health_core/health_core.dart';
 import 'package:frankstein_share/share.dart';
 
 import '../app_dependencies.dart';
+import 'log_meal_screen.dart';
+import 'log_workout_screen.dart';
 import 'share_preview_screen.dart';
 
 /// Resumo do dia — chama `get_daily_summary` direto no `ToolRegistry`
@@ -10,6 +13,18 @@ import 'share_preview_screen.dart';
 /// não uma conversa). `docs/ARQUITETURA.md:81-82`. Também oferece
 /// compartilhar o treino/corrida mais recente, quando existir um
 /// (`.claude/rules/share.md`).
+///
+/// **Layout final do dashboard mínimo** (ciclo pós-primeiro teste em
+/// device real): 5 cards — Passos e Corridas não têm ação de registro
+/// rápido porque dependem de sensor/GPS reais que este ciclo não
+/// implementa (trabalho de plataforma nativa Android, fora de escopo
+/// aqui — ver `STATUS.md`); os cards já nascem no formato definitivo,
+/// só passam a mostrar dado real quando o sensor/GPS existir, sem
+/// precisar redesenhar a tela depois. Água/Refeições/Treinos têm "+"
+/// porque não dependem de hardware — cada um monta o mesmo texto de
+/// comando que o chat aceita e manda pro mesmo `BrainPipeline.handle`,
+/// reaproveitando a confirmação já existente (`log_meal_screen.dart`,
+/// `log_workout_screen.dart`, diálogo de água inline abaixo).
 class DashboardScreen extends StatefulWidget {
   final AppDependencies dependencies;
   const DashboardScreen({super.key, required this.dependencies});
@@ -82,6 +97,77 @@ class _DashboardScreenState extends State<DashboardScreen> {
     ));
   }
 
+  Future<void> _openLogMeal() async {
+    final logged = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => LogMealScreen(dependencies: widget.dependencies)),
+    );
+    if (logged == true) _load();
+  }
+
+  Future<void> _openLogWorkout() async {
+    final logged = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(builder: (_) => LogWorkoutScreen(dependencies: widget.dependencies)),
+    );
+    if (logged == true) _load();
+  }
+
+  Future<void> _logWater(double amountMl) async {
+    final result = await widget.dependencies.pipeline.handle('registrar água ${amountMl}ml');
+    if (!mounted) return;
+    if (result.outcome == PipelineOutcome.executed && result.toolResult!.success) {
+      _load();
+    }
+  }
+
+  Future<void> _openQuickWaterDialog() async {
+    final customController = TextEditingController();
+    await showDialog<void>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Registrar água'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Wrap(
+              spacing: 8,
+              children: [200, 300, 500].map((ml) {
+                return OutlinedButton(
+                  key: Key('quick_water_${ml}ml'),
+                  onPressed: () {
+                    Navigator.of(dialogContext).pop();
+                    _logWater(ml.toDouble());
+                  },
+                  child: Text('+${ml}ml'),
+                );
+              }).toList(),
+            ),
+            TextField(
+              key: const Key('log_water_custom_field'),
+              controller: customController,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(labelText: 'Outra quantidade (ml)'),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            key: const Key('log_water_custom_confirm'),
+            onPressed: () {
+              final amount = double.tryParse(customController.text.trim());
+              Navigator.of(dialogContext).pop();
+              if (amount != null && amount > 0) _logWater(amount);
+            },
+            child: const Text('Registrar'),
+          ),
+        ],
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final error = _error;
@@ -95,6 +181,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
     final steps = summary['steps'] as Map<String, dynamic>;
     final meals = summary['meals'] as Map<String, dynamic>;
+    final water = summary['water'] as Map<String, dynamic>;
     final workouts = summary['workouts'] as Map<String, dynamic>;
     final runs = summary['runs'] as Map<String, dynamic>;
 
@@ -108,16 +195,28 @@ class _DashboardScreenState extends State<DashboardScreen> {
             key: const Key('dashboard_steps'),
             label: 'Passos',
             value: '${steps['total']}',
+            subtitle: 'sem sensor real ainda',
+          ),
+          _SummaryCard(
+            key: const Key('dashboard_water'),
+            label: 'Água',
+            value: '${water['total_amount_ml']} ml',
+            onAdd: _openQuickWaterDialog,
+            addKey: const Key('dashboard_add_water'),
           ),
           _SummaryCard(
             key: const Key('dashboard_meals'),
             label: 'Refeições',
             value: '${meals['count']} (${meals['total_energy_kcal']} kcal)',
+            onAdd: _openLogMeal,
+            addKey: const Key('dashboard_add_meal'),
           ),
           _SummaryCard(
             key: const Key('dashboard_workouts'),
             label: 'Treinos',
             value: '${workouts['count']} (${workouts['total_sets']} séries)',
+            onAdd: _openLogWorkout,
+            addKey: const Key('dashboard_add_workout'),
           ),
           if ((workouts['count'] as int) > 0)
             TextButton.icon(
@@ -130,6 +229,7 @@ class _DashboardScreenState extends State<DashboardScreen> {
             key: const Key('dashboard_runs'),
             label: 'Corridas',
             value: '${runs['count']} (${runs['total_distance_meters']} m)',
+            subtitle: 'requer GPS real (não disponível ainda)',
           ),
           if ((runs['count'] as int) > 0)
             TextButton.icon(
@@ -147,14 +247,36 @@ class _DashboardScreenState extends State<DashboardScreen> {
 class _SummaryCard extends StatelessWidget {
   final String label;
   final String value;
-  const _SummaryCard({super.key, required this.label, required this.value});
+  final String? subtitle;
+  final VoidCallback? onAdd;
+  final Key? addKey;
+  const _SummaryCard({
+    super.key,
+    required this.label,
+    required this.value,
+    this.subtitle,
+    this.onAdd,
+    this.addKey,
+  });
 
   @override
   Widget build(BuildContext context) {
     return Card(
       child: ListTile(
         title: Text(label),
-        trailing: Text(value),
+        subtitle: subtitle == null ? null : Text(subtitle!, style: Theme.of(context).textTheme.bodySmall),
+        trailing: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Text(value),
+            if (onAdd != null)
+              IconButton(
+                key: addKey,
+                icon: const Icon(Icons.add),
+                onPressed: onAdd,
+              ),
+          ],
+        ),
       ),
     );
   }

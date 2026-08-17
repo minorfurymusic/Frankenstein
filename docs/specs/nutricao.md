@@ -101,9 +101,10 @@ gravar no Health Data Core já definido em `docs/ARQUITETURA.md` e
     embarcado — ver `docs/OFFLINE-IA.md:31-35`, subconjunto brasileiro do
     Open Food Facts —, ou item personalizado do usuário).
 - **Peso e água** são séries temporais simples (valor + timestamp), tipos
-  próprios de `HealthEvent` a definir na implementação (`weight` já está
-  na lista de tipos em `docs/ARQUITETURA.md:32`; água não está listada
-  ainda — pendência a resolver na implementação, não decidida aqui).
+  próprios de `HealthEvent`. `weight` já estava na lista de tipos em
+  `docs/ARQUITETURA.md:32`; `water` foi resolvido e acrescentado na
+  implementação (ciclo do dashboard mínimo) — payload `{amount_ml}`,
+  sem meta diária nem lembrete (fora de escopo aqui, não implementado).
 - **Receitas/refeições personalizadas** não são um `HealthEvent` — são
   catálogo local reutilizável (referenciado por eventos `meal`, não um
   evento em si), na mesma lógica de "catálogo" que `docs/ARQUITETURA.md`
@@ -127,5 +128,5 @@ gravar no Health Data Core já definido em `docs/ARQUITETURA.md` e
   OpenNutriTracker cita (IOM 2005, WHO, WHO TRS 916, Compendium 2024) ou
   outros — são públicos e citáveis por qualquer implementação, a escolha
   final é de quem implementar, não desta especificação.
-- Tipo de `HealthEvent` para água — não existe ainda na lista de
-  `docs/ARQUITETURA.md:32`, precisa ser adicionado na implementação.
+- ~~Tipo de `HealthEvent` para água~~ — resolvido (ciclo do dashboard
+  mínimo): `water`, ver `docs/ARQUITETURA.md:32`.

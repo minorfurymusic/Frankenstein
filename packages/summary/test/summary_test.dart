@@ -61,6 +61,16 @@ void main() {
         occurredAt: day.add(const Duration(hours: 19)),
       ));
       core.insertEvent(_event(
+        type: HealthEventType.water,
+        payload: {'amount_ml': 250.0},
+        occurredAt: day.add(const Duration(hours: 9)),
+      ));
+      core.insertEvent(_event(
+        type: HealthEventType.water,
+        payload: {'amount_ml': 300.0},
+        occurredAt: day.add(const Duration(hours: 15)),
+      ));
+      core.insertEvent(_event(
         type: HealthEventType.gpsTrack,
         payload: {'distance_meters': 5200.0, 'duration_seconds': 1800},
         occurredAt: day.add(const Duration(hours: 7)),
@@ -81,6 +91,8 @@ void main() {
       expect((data['steps'] as Map)['events_counted'], 2);
       expect((data['meals'] as Map)['count'], 1);
       expect((data['meals'] as Map)['total_energy_kcal'], 650.0);
+      expect((data['water'] as Map)['count'], 2);
+      expect((data['water'] as Map)['total_amount_ml'], 550.0);
       expect((data['workouts'] as Map)['count'], 1);
       expect((data['workouts'] as Map)['total_sets'], 12);
       expect((data['runs'] as Map)['count'], 1);
@@ -92,6 +104,7 @@ void main() {
       expect(result.success, isTrue);
       expect((result.data!['steps'] as Map)['total'], 0);
       expect((result.data!['meals'] as Map)['count'], 0);
+      expect((result.data!['water'] as Map)['count'], 0);
     });
   });
 }

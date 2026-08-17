@@ -350,4 +350,101 @@ void main() {
     expect(setLogs[0].payload['load_kg'], 70.0);
     expect(setLogs[1].payload['load_kg'], 75.0);
   });
+
+  testWidgets('dashboard: "+" da água registra de verdade via diálogo rápido',
+      (WidgetTester tester) async {
+    final app = _buildTestApp();
+    addTearDown(app.dependencies.close);
+    expect(app.dependencies.core.queryByType(HealthEventType.water), isEmpty);
+
+    await tester.pumpWidget(app.widget);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('dashboard_add_water')));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('quick_water_300ml')));
+    await tester.pumpAndSettle();
+
+    // Escrita — mesmo diálogo de confirmação de qualquer outra ferramenta.
+    expect(find.byKey(const Key('confirmation_confirm')), findsOneWidget);
+    expect(app.dependencies.core.queryByType(HealthEventType.water), isEmpty);
+
+    await tester.tap(find.byKey(const Key('confirmation_confirm')));
+    await tester.pumpAndSettle();
+
+    final events = app.dependencies.core.queryByType(HealthEventType.water);
+    expect(events, hasLength(1));
+    expect(events.single.payload['amount_ml'], 300.0);
+    expect(find.text('300.0 ml'), findsOneWidget);
+  });
+
+  testWidgets('dashboard: "+" da refeição abre busca real, registra via LogMealScreen',
+      (WidgetTester tester) async {
+    final app = _buildTestApp();
+    addTearDown(app.dependencies.close);
+    expect(app.dependencies.core.queryByType(HealthEventType.meal), isEmpty);
+
+    await tester.pumpWidget(app.widget);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('dashboard_add_meal')));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(const Key('log_meal_search_field')), 'arroz');
+    await tester.pumpAndSettle();
+
+    // "arroz" bate em vários itens reais do catálogo TACO — pega o primeiro.
+    expect(find.byType(ListTile), findsWidgets);
+    await tester.tap(find.byType(ListTile).first);
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(const Key('log_meal_grams_field')), '150');
+    await tester.tap(find.byKey(const Key('log_meal_confirm_button')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('confirmation_confirm')), findsOneWidget);
+    expect(app.dependencies.core.queryByType(HealthEventType.meal), isEmpty);
+
+    await tester.tap(find.byKey(const Key('confirmation_confirm')));
+    await tester.pumpAndSettle();
+
+    final events = app.dependencies.core.queryByType(HealthEventType.meal);
+    expect(events, hasLength(1));
+    expect(events.single.payload['items'], hasLength(1));
+    expect((events.single.payload['items'] as List).single['grams'], 150.0);
+  });
+
+  testWidgets('dashboard: "+" do treino abre formulário real, registra via LogWorkoutScreen',
+      (WidgetTester tester) async {
+    final app = _buildTestApp();
+    addTearDown(app.dependencies.close);
+    expect(app.dependencies.core.queryByType(HealthEventType.workoutSession), isEmpty);
+
+    await tester.pumpWidget(app.widget);
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byKey(const Key('dashboard_add_workout')));
+    await tester.pumpAndSettle();
+
+    await tester.enterText(find.byKey(const Key('log_workout_exercise_field')), 'supino-reto');
+    await tester.enterText(find.byKey(const Key('log_workout_sets_field')), '2');
+    await tester.enterText(find.byKey(const Key('log_workout_reps_field')), '8');
+    await tester.enterText(find.byKey(const Key('log_workout_load_field')), '60');
+    await tester.tap(find.byKey(const Key('log_workout_submit_button')));
+    await tester.pumpAndSettle();
+
+    expect(find.byKey(const Key('confirmation_confirm')), findsOneWidget);
+    expect(app.dependencies.core.queryByType(HealthEventType.workoutSession), isEmpty);
+
+    await tester.tap(find.byKey(const Key('confirmation_confirm')));
+    await tester.pumpAndSettle();
+
+    final events = app.dependencies.core.queryByType(HealthEventType.workoutSession);
+    expect(events, hasLength(1));
+    expect(events.single.payload['sets_count'], 2);
+    final setLogs = app.dependencies.core.queryByType(HealthEventType.setLog);
+    expect(setLogs, hasLength(2));
+    expect(setLogs.every((s) => s.payload['load_kg'] == 60.0), isTrue);
+  });
 }

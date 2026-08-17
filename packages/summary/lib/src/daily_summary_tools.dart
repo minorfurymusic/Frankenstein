@@ -25,7 +25,7 @@ final Map<String, dynamic> getDailySummarySchema = {
 /// tratado em UTC `[00:00, 24:00)`, não no fuso local de cada evento.
 ToolSpec getDailySummarySpec() => ToolSpec(
       name: 'get_daily_summary',
-      description: 'Resumo do dia: passos, refeições, treino e corrida/caminhada',
+      description: 'Resumo do dia: passos, refeições, água, treino e corrida/caminhada',
       write: false,
       confirm: false,
       module: 'summary',
@@ -47,6 +47,12 @@ ToolHandler getDailySummaryHandler(HealthDataCore core) {
       (sum, e) => sum + ((e.payload['totals'] as Map<String, dynamic>)['energy_kcal'] as num),
     );
 
+    final waterEvents = core.queryByType(HealthEventType.water, from: from, to: to);
+    final totalWaterMl = waterEvents.fold<double>(
+      0,
+      (sum, e) => sum + (e.payload['amount_ml'] as num),
+    );
+
     final workoutEvents = core.queryByType(HealthEventType.workoutSession, from: from, to: to);
     final totalSets = workoutEvents.fold<int>(0, (sum, e) => sum + (e.payload['sets_count'] as int));
 
@@ -65,6 +71,10 @@ ToolHandler getDailySummaryHandler(HealthDataCore core) {
       'meals': {
         'count': mealEvents.length,
         'total_energy_kcal': totalEnergyKcal,
+      },
+      'water': {
+        'count': waterEvents.length,
+        'total_amount_ml': totalWaterMl,
       },
       'workouts': {
         'count': workoutEvents.length,

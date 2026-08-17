@@ -6,12 +6,11 @@ import 'package:frankstein_brain/brain.dart';
 /// `unresolved`, sem LLM implementado nesta fase — `.claude/rules/brain.md`,
 /// passo 1: "Comando frequente NÃO chama o modelo").
 ///
-/// Cobre as 7 ferramentas registradas (`app_dependencies.dart`): quatro
+/// Cobre as 8 ferramentas registradas (`app_dependencies.dart`): cinco
 /// de leitura (`get_daily_summary`, `get_steps`, `search_food`,
-/// `get_workout_plan`, `get_run_summary` — cinco, na verdade) e duas de
-/// escrita (`log_meal`, `log_workout_session` — as duas provam o fluxo
-/// de confirmação de ponta a ponta, cada uma com um catálogo/repositório
-/// real por trás).
+/// `get_workout_plan`, `get_run_summary`) e três de escrita (`log_meal`,
+/// `log_workout_session`, `log_water` — as três provam o fluxo de
+/// confirmação de ponta a ponta).
 ///
 /// **Simplificação registrada em `log_workout_session`:** o comando de
 /// chat usa `exercise_name = exercise_id` (o schema real da ferramenta
@@ -27,6 +26,7 @@ DeterministicRouter buildChatRouter() {
   );
   final logWorkoutSetPattern = RegExp(r'([a-z0-9\-]+)\s+(\d+)x(\d+)x(\d+(?:\.\d+)?)');
   final logWorkoutPattern = RegExp(r'^registrar treino: (.+)$', caseSensitive: false);
+  final logWaterPattern = RegExp(r'^registrar água (\d+(?:\.\d+)?)\s*ml$', caseSensitive: false);
 
   return DeterministicRouter([
     RouterRule(
@@ -83,6 +83,11 @@ DeterministicRouter buildChatRouter() {
         }).toList();
         return {'sets': sets};
       },
+    ),
+    RouterRule(
+      toolName: 'log_water',
+      pattern: logWaterPattern,
+      extractParams: (match) => {'amount_ml': double.parse(match.group(1)!)},
     ),
   ]);
 }

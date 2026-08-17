@@ -18,8 +18,10 @@ import 'share_sheet.dart';
 /// **Não registradas aqui, por decisão, não por esquecimento:**
 /// `start_run` (escrita — só faz sentido com captura de GPS real, WRAP
 /// nativo do Android ainda não implementado, `docs/adr/009-gps.md`),
-/// `sync_wearable` (F9 não iniciada) e `query_health_record` (fora do
-/// escopo deste ciclo).
+/// `sync_wearable`/`sync_wger`/`sync_fasten_records` (nenhuma tem fonte
+/// real conectada ainda — `WearableDataSource`/`WgerClient`/`FastenClient`
+/// concretos não existem, ligar o Fixture em produção seria desonesto) e
+/// `query_health_record` (fora do escopo deste ciclo).
 class AppDependencies {
   final HealthDataCore core;
   final FoodRepository foodRepository;
@@ -95,6 +97,7 @@ class AppDependencies {
   }) {
     final mealLogger = MealLogger(foodRepository: foodRepository, core: core);
     final workoutLogger = WorkoutLogger(core: core);
+    final waterLogger = WaterLogger(core: core);
 
     // DateTime.now() (sem .toUtc()) é hora local de verdade no Dart —
     // diferente do bug já corrigido em StepsRepository.flush()
@@ -115,6 +118,10 @@ class AppDependencies {
       ..register(
         logMealSpec(),
         logMealHandler(mealLogger, tzOffsetMinutesProvider: tzOffsetMinutesProvider),
+      )
+      ..register(
+        logWaterSpec(),
+        logWaterHandler(waterLogger, tzOffsetMinutesProvider: tzOffsetMinutesProvider),
       );
 
     final pipeline = BrainPipeline(
