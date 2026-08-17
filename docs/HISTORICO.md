@@ -1969,3 +1969,55 @@
   `FastenClient` real (precisa do usuário fornecer servidor self-hosted
   alcançável), campos sensíveis opt-in nos cards de compartilhamento
   (F12), ou F14 (painel B2B, produto separado, depois do MVP).
+
+- **Ciclo — CI publica APK debug como artifact (MVP pra teste manual no
+  celular).** Objetivo único: usuário pediu pra empacotar um MVP pra
+  baixar e testar no celular hoje.
+
+  Investigado antes de codificar: `flutter doctor -v` confirmou de novo
+  a ausência de Android SDK neste sandbox (mesmo achado do Ciclo 27,
+  nunca mudou); `curl` direto a `dl.google.com` devolveu `403` na
+  camada do proxy (`$HTTPS_PROXY/__agentproxy/status` confirma
+  `connect_rejected` por política, não falha transitória) — não dá pra
+  instalar o SDK aqui. `app/android/` já existia (esqueleto da Fase 2).
+  `.github/workflows/ci.yml` já rodava `make build` (`flutter build apk
+  --debug`) com sucesso em `ubuntu-latest` desde o Ciclo 27 — mas
+  descartava o APK junto com o runner ao final, sem publicar nada.
+
+  Único ajuste: `actions/upload-artifact@v4` acrescentado depois do
+  passo `build`, publicando `app/build/app/outputs/flutter-apk/app-debug.apk`
+  como artifact `frankstein-debug-apk` (14 dias de retenção). Nenhuma
+  dependência nova, nenhuma mudança de código do app — só CI.
+  Registrado no comentário do próprio workflow: é assinatura debug
+  padrão do Flutter, serve só pra instalação manual de teste, não é
+  canal de distribuição real (ADR-7 continua em aberto quanto a isso).
+
+  **Prova:**
+  ```
+  $ flutter doctor -v → [✗] Android toolchain — Unable to locate Android SDK
+  $ curl -sS -o /dev/null -w "HTTP %{http_code}\n" https://dl.google.com/... → HTTP 000, curl: (56) CONNECT tunnel failed, response 403
+  $ curl -sS "$HTTPS_PROXY/__agentproxy/status" → recentRelayFailures: connect_rejected, dl.google.com:443
+
+  $ make test (raiz, antes do commit) → todos os pacotes + app "All tests passed!"
+
+  GET workflow_run 32023701562 (main, commit 6610187)
+  status: "completed"   conclusion: "success"
+
+  GET list_workflow_run_artifacts (run 32023701562)
+  {"total_count":1,"artifacts":[{"name":"frankstein-debug-apk",
+  "size_in_bytes":70819736,"expires_at":"2026-08-31T11:18:07Z", ...}]}
+  ```
+  APK real gerado e publicado, 67,5 MB, baixável em
+  `github.com/minorfurymusic/Frankenstein/actions/runs/32023701562` →
+  aba "Artifacts".
+
+  **Não verificado:** o app instalado e aberto de verdade num celular
+  Android físico — isso depende do usuário, fora deste ambiente.
+
+  **Débito técnico:** nenhum novo.
+
+  **Bloqueios / decisões que precisam do usuário:** nenhum — só
+  aguardando o teste manual no aparelho.
+
+  **Próximo ciclo proposto:** em aberto, depende do que o teste manual
+  no celular encontrar.

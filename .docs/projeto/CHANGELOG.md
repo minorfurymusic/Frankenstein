@@ -8,8 +8,12 @@
 > no formato que a skill espera.
 
 **Repositório:** `github.com/minorfurymusic/Frankenstein`
-**Última atualização:** 2026-08-17 (commit `2ebd31f`)
-**Total de commits:** 71
+**Última atualização:** 2026-08-17 (commit `6610187`)
+**Total de commits:** 72
+
+## 2026-08-17 (CI publica APK debug como artifact — MVP pra teste manual)
+
+- `6610187` — ci: publicar APK debug como artifact do run
 
 ## 2026-08-17 (F13 — integração federada com wger e Fasten, parte sem servidor real)
 

@@ -23,7 +23,19 @@ branco: navegação Resumo/Chat de verdade, ligada aos pacotes reais, com
 compartilhamento de treino/corrida funcionando de ponta a ponta. Detalhe
 completo em `docs/HISTORICO.md`.
 
-**Ciclo mais recente: F13 — integração federada com wger e Fasten
+**Ciclo mais recente: CI publica APK debug como artifact (MVP pra teste
+manual).** Sandbox de dev não tem Android SDK (`dl.google.com` bloqueado
+pela política de rede do ambiente) — CI (`ubuntu-latest`) já compilava
+via `make build`, mas descartava o resultado com o runner.
+`.github/workflows/ci.yml`: passo `actions/upload-artifact@v4` publica
+`app-debug.apk` (assinatura debug padrão do Flutter, 14 dias de
+retenção). Baixar em qualquer run verde da CI, aba "Actions" do
+GitHub → run → "Artifacts" → `frankstein-debug-apk`. **Não é canal de
+distribuição real** (ADR-7 continua em aberto quanto a isso) — é só
+instalação manual pra teste, com "instalar de fontes desconhecidas"
+liberado manualmente no aparelho.
+
+**Ciclo anterior: F13 — integração federada com wger e Fasten
 (parcial).** `docs/adr/004-wger-fasten.md` (aceita): ambos opcionais,
 federados, nunca linkados ao binário do Frankstein — wger fala REST v2
 (mantém AGPL-3.0 como programa separado), Fasten fala FHIR (mantém
