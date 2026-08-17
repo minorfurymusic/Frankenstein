@@ -38,3 +38,16 @@ jobs:
 
       - name: build
         run: make build
+
+      # APK debug (assinado com a chave debug padrão do Flutter — só serve
+      # pra instalar direto no aparelho pra teste, não é canal de
+      # distribuição real; ADR-7 continua em aberto quanto a isso) exposto
+      # como artifact do run, pra baixar sem precisar de ambiente com SDK
+      # Android — o sandbox de dev deste projeto não tem um
+      # (dl.google.com bloqueado pela política de rede).
+      - name: publicar APK debug
+        uses: actions/upload-artifact@v4
+        with:
+          name: frankstein-debug-apk
+          path: app/build/app/outputs/flutter-apk/app-debug.apk
+          retention-days: 14
