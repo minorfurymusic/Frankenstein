@@ -51,6 +51,7 @@ dependencies:
     path: ../packages/tool_registry
   path_provider: ^2.1.4
   share_plus: ^10.1.4
+  sqlite3_flutter_libs: ^0.5.42
 
 dev_dependencies:
   flutter_test:
