@@ -7,24 +7,49 @@
 > Histórico completo de ciclos: `docs/HISTORICO.md`. Este arquivo só guarda o
 > estado **atual** — consulte o histórico sob demanda, não por hábito.
 
-**Fase:** **F3, F4, F5, F6, F7, (parcial) F8, (parcial) F9 e (parcial)
-F12 concluídas + primeira UI real do app.** Health Data Core, passos, o
-pipeline do cérebro, nutrição (**catálogo real** — Tabela TACO, 578
-itens), academia, corrida/caminhada (parte sem Android real), wearable
-(FC/sono via Health Connect, parte sem Health Connect real),
-compartilhamento social (cards de treino/corrida, parte sem rasterização
-real do engine). Esqueleto de Entitlements/Pagamento (F10/F11, sem
-provedor configurado). Quatro ferramentas novas do cérebro
-(`get_daily_summary`, `search_food`, `sync_wearable`, e o fluxo de
-compartilhamento embora `share_card` não seja uma tool do cérebro em si).
-`app/` deixou de ser tela em branco: navegação Resumo/Chat de verdade,
-ligada aos pacotes reais, com compartilhamento de treino/corrida
-funcionando de ponta a ponta. Detalhe completo em `docs/HISTORICO.md`.
+**Fase:** **F3, F4, F5, F6, F7, (parcial) F8, (parcial) F9, (parcial)
+F12 e (parcial) F13 concluídas + primeira UI real do app.** Health Data
+Core, passos, o pipeline do cérebro, nutrição (**catálogo real** —
+Tabela TACO, 578 itens), academia, corrida/caminhada (parte sem Android
+real), wearable (FC/sono via Health Connect, parte sem Health Connect
+real), compartilhamento social (cards de treino/corrida, parte sem
+rasterização real do engine), integração federada com wger/Fasten
+(parte sem servidor real). Esqueleto de Entitlements/Pagamento (F10/F11,
+sem provedor configurado). Seis ferramentas novas do cérebro
+(`get_daily_summary`, `search_food`, `sync_wearable`, `sync_wger`,
+`sync_fasten_records`, e o fluxo de compartilhamento embora `share_card`
+não seja uma tool do cérebro em si). `app/` deixou de ser tela em
+branco: navegação Resumo/Chat de verdade, ligada aos pacotes reais, com
+compartilhamento de treino/corrida funcionando de ponta a ponta. Detalhe
+completo em `docs/HISTORICO.md`.
 
-**Ciclo mais recente: F12 — compartilhamento social (parcial).**
+**Ciclo mais recente: F13 — integração federada com wger e Fasten
+(parcial).** `docs/adr/004-wger-fasten.md` (aceita): ambos opcionais,
+federados, nunca linkados ao binário do Frankstein — wger fala REST v2
+(mantém AGPL-3.0 como programa separado), Fasten fala FHIR (mantém
+GPL-3.0). Sem restrição de clean-room (`.claude/rules/port.md` só cobre
+`packages/nutrition`) — ambas são APIs públicas padronizadas pra
+consumo por terceiros. Dois pacotes novos, mesmo padrão de "escopo
+honesto" de F4/F6/F9/F12: `packages/wger` (`WgerSetLogSample`,
+`WgerClient`/`FixtureWgerClient`, `WgerSyncLogger` grava `set_log` com
+`source: wger`, `sync_wger` — escrita com confirmação) e
+`packages/fasten` (`FastenDocumentSample` guarda o recurso FHIR bruto,
+`FastenClient`/`FixtureFastenClient`, `FastenSyncLogger` grava
+`clinical_doc` com `source: fasten`, `sync_fasten_records` — escrita com
+confirmação). Cliente HTTP/FHIR real não escrito — sem servidor
+wger/Fasten alcançável neste ambiente, dependência `http` não
+adicionada pra não ficar sem teste. Nenhum dos dois registrado em
+`app/` (mesmo tratamento de `sync_wearable`: sem cliente real, seria
+desonesto ligar o Fixture em produção). De quebra: corrigido um bug
+latente em `app/test/widget_test.dart` — datas fixas (`DateTime.utc(2026,
+8, 15, ...)`) que quebravam assim que o relógio real passava do dia
+fixado (aconteceu neste ciclo, `date -u` mostrou 17/08); trocado por
+`_todayNoonUtc()`, calculado em tempo de execução.
+
+**Ciclo anterior: F12 — compartilhamento social (parcial).**
 `.claude/rules/share.md`: card renderizado no aparelho, preview
 obrigatório, opt-in por campo, nada clínico, rota ofuscada, publicação
-nunca automática. Novo pacote `packages/share`: `WorkoutShareCardData`/
+nunca automática. Pacote `packages/share`: `WorkoutShareCardData`/
 `RunShareCardData` + `buildWorkoutShareCard`/`buildRunShareCard` — **nunca
 aceitam `HealthEvent` de tipo clínico** (checagem estrutural, não
 convenção), reutilizam `obfuscateRouteEnds` (F8) pra rota. Em `app/`:
@@ -42,7 +67,9 @@ real por trás.
 
 **Não registradas ainda no app:** `start_run` (precisa de captura de GPS
 real), `sync_wearable` (precisa de `WearableDataSource` real sobre
-Health Connect), `query_health_record` (fora do escopo até agora).
+Health Connect), `sync_wger`/`sync_fasten_records` (precisam de cliente
+HTTP/FHIR real sobre servidor wger/Fasten alcançável), `query_health_record`
+(fora do escopo até agora).
 
 **Pendências ativas (revisado):**
 - **Adiado por decisão, não por bloqueio técnico:** `BarcodeDecoder`
@@ -60,6 +87,12 @@ Health Connect), `query_health_record` (fora do escopo até agora).
   channel/pipeline de rasterização real, não verificáveis em
   `flutter test`/sem device. Todo o resto do app é testável e testado
   sem isso.
+- `WgerClient`/`FastenClient` real sobre REST v2/FHIR (F13) — precisa de
+  servidor wger/Fasten real alcançável (self-hosted, URL+credenciais do
+  usuário), não disponível neste ambiente; dependência `http` não
+  adicionada pra não entrar sem uso/teste. Filtragem do recurso FHIR
+  bruto antes de qualquer prompt de LLM (`.claude/rules/brain.md`) —
+  trabalho futuro, ainda não há montagem de prompt real.
 - Água (novo tipo de `HealthEvent`) e refeição/receita composta de
   ingredientes — pendências já registradas em `docs/specs/nutricao.md`,
   não implementadas.
@@ -115,6 +148,7 @@ este status sem revalidar).
 | 9 | Wearable BLE (F9) | **PARCIAL** (`packages/wearable`, novo pacote) — `WearableSyncLogger`/`sync_wearable` prontos e testados (FC + sono, dedup por `external_id`); `WearableDataSource` real sobre Health Connect bloqueada — sem Android SDK/device com Gadgetbridge instalado; não registrada no app (sem fonte real pra ligar) |
 | 10/11 | Entitlements/Pagamento | **PARCIAL, esqueleto** (`packages/entitlements`) — `Entitlement`/`EntitlementVerifier` (Ed25519 real), `Subscription`, `PendingPayment`, `WebhookIdempotencyGuard`; nenhum provedor configurado, por decisão |
 | 12 | Compartilhamento social (F12) | **PARCIAL** (`packages/share`, novo pacote) — `WorkoutShareCardData`/`RunShareCardData`, builders com checagem estrutural anti-clínico, rota ofuscada; em `app/`: `SharePreviewScreen`/`ShareSheet`(`share_plus`)/`CardImageCapturer`, testado de ponta a ponta com `FakeCardImageCapturer`; rasterização real (`RepaintBoundary.toImage`) não verificável neste ambiente headless |
+| 13 | wger + Fasten (F13) | **PARCIAL** (`packages/wger`, `packages/fasten`, novos pacotes) — `WgerSyncLogger`/`sync_wger` (grava `set_log`, `source: wger`) e `FastenSyncLogger`/`sync_fasten_records` (grava `clinical_doc`, `source: fasten`) prontos e testados com Fixture; `WgerClient`/`FastenClient` real sobre REST v2/FHIR bloqueados — sem servidor wger/Fasten alcançável; não registrados no app (sem fonte real pra ligar) |
 | — | `get_daily_summary`/`sync_wearable` (ferramentas do cérebro) | **CONCLUÍDO** — `get_daily_summary` (`packages/summary`, só leitura, cruza steps/meal/workout_session/gps_track); `sync_wearable` (`packages/wearable`, escrita com confirmação) |
 | — | Primeira UI real do app (`app/`) | **PARCIAL** — telas Resumo + Chat, `AppDependencies` ligada aos pacotes reais, 6 de 7 ferramentas mínimas registradas (falta `start_run`, bloqueada por hardware), **todas as 6 com comando de chat** (`app/lib/chat_router.dart`), compartilhamento de treino/corrida (F12); `path_provider`/rasterização real não verificáveis sem device |
 | — | Relatório de eficiência (`docs/EFICIENCIA.md`) | Grupo A adotado como prática; Grupo B aplicado (este arquivo) |

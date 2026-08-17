@@ -2,7 +2,7 @@
 
 > Gerado pela skill `project-recorder`. Fonte: `docs/PRODUTO.md` (fases e
 > Definição de Pronto do MVP) cruzado com `STATUS.md` (estado real).
-> Última atualização: 2026-08-15.
+> Última atualização: 2026-08-17.
 
 ## Fases (`docs/PRODUTO.md:39-57`)
 
@@ -19,7 +19,7 @@
 - [~] **F10** — Entitlements — PARCIAL, esqueleto: `Entitlement`/`EntitlementVerifier` (Ed25519 real, testado), graça offline, `Subscription`, `PendingPayment`, `WebhookIdempotencyGuard` (`packages/entitlements`). Nenhum provedor configurado, por decisão.
 - [~] **F11** — Pagamentos (um canal só) — PARCIAL: modelos de `Subscription`/`PendingPayment` (Pix assíncrono) prontos; nenhum provedor (Play Billing/StoreKit/Stripe/Pix real) configurado, por decisão (mecanismo desenhado na ADR-7 aceita)
 - [~] **F12** — Compartilhamento social — PARCIAL: `packages/share` (`WorkoutShareCardData`/`RunShareCardData`, checagem estrutural anti-clínico, rota ofuscada), `SharePreviewScreen`/`ShareSheet`/`CardImageCapturer` em `app/`, 8 testes novos. Rasterização real (`RepaintBoundary.toImage`) não verificável sem device
-- [ ] **F13** — wger + Fasten — não iniciado (caminho liberado: ADR-4 aceita)
+- [~] **F13** — wger + Fasten — PARCIAL: `packages/wger` (`WgerSyncLogger`/`sync_wger`, grava `set_log`, `source: wger`, dedup por `external_id`), `packages/fasten` (`FastenSyncLogger`/`sync_fasten_records`, grava `clinical_doc`, `source: fasten`), 16 testes novos. `WgerClient`/`FastenClient` real sobre REST v2/FHIR bloqueados — sem servidor wger/Fasten alcançável neste ambiente; não registrados no app (sem fonte real pra ligar)
 - [ ] **F14** — Painel B2B (produto separado, depois do MVP) — não iniciado
 
 ## Definição de Pronto do MVP (`docs/PRODUTO.md:59-68`)
@@ -59,5 +59,5 @@ verdade** — a maioria depende de device Android/iOS real (itens 1, 3, 6,
 - [x] ~~F9 (wearable, FC+sono via Health Connect)~~ — concluído 2026-08-15 (parte sem device)
 - [x] ~~F12 (compartilhamento social, cards de treino/corrida)~~ — concluído 2026-08-15 (parte sem device)
 - [x] ~~Comandos de chat pras ferramentas restantes~~ — concluído 2026-08-15
-- [ ] F13 (wger + Fasten) — próximo, em andamento
-- [ ] Próxima etapa em aberto: mais comandos de chat (ferramentas já registradas sem regra de roteador), campos sensíveis opt-in nos cards, ou F13 (wger/Fasten)
+- [x] ~~F13 (wger + Fasten, parte sem servidor real)~~ — concluído 2026-08-17
+- [ ] Próxima etapa em aberto: `WgerClient`/`FastenClient` real (precisa de servidor self-hosted alcançável), campos sensíveis opt-in nos cards, ou F14 (painel B2B)

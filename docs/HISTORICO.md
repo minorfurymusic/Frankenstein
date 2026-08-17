@@ -1872,3 +1872,100 @@
   (prontuário, FHIR), FEDERATE conforme Cenário B já decidido
   (`docs/LICENSE-AUDIT.md`, `docs/adr/004-wger-fasten.md`) — nenhum dos
   dois é linkado ao binário do Frankstein.
+
+- **Ciclo — F13: integração federada com wger e Fasten (parcial).**
+  Usuário confirmou ("o f13.") depois de eu ter relido
+  `docs/adr/004-wger-fasten.md` (aceita) pra fundamentar o escopo:
+  ambos opcionais, federados, nunca linkados ao binário do Frankstein —
+  wger fala REST v2 (mantém AGPL-3.0 como programa separado), Fasten
+  fala FHIR (mantém GPL-3.0), `docs/LICENSE-AUDIT.md` "Cenário B". Sem
+  restrição de clean-room (`.claude/rules/port.md` só cobre
+  `packages/nutrition`, contaminação por causa da falta de API pública
+  do OpenNutriTracker) — wger e Fasten expõem API pública padronizada
+  (REST/FHIR) feita pra terceiros consumirem, não há reimplementação de
+  lógica interna a partir de source.
+
+  Dois pacotes novos, mesmo padrão de "escopo honesto" usado desde F4
+  (`StepSensor`)/F6 (`BarcodeDecoder`)/F9 (`WearableDataSource`)/F12
+  (`CardImageCapturer`): interface abstrata + Fixture testável + real
+  explicitamente adiado e documentado como não verificável neste
+  ambiente (sem servidor wger/Fasten alcançável, dependência `http`
+  não adicionada pra não ficar sem uso/teste).
+
+  `packages/wger` (`packages/wger/lib/src/wger_set_log_sample.dart`,
+  `wger_client.dart`, `wger_sync_logger.dart`, `wger_tools.dart`):
+  `WgerSetLogSample` (`externalId`, `exerciseName`, `reps` >0,
+  `weightKg` ≥0, `recordedAt` UTC) + `WgerClient`/`FixtureWgerClient`
+  (filtra por janela `[from, to]`) + `WgerSyncLogger` (grava
+  `HealthEvent` tipo `set_log`, `source: wger`, payload
+  `exercise_name`/`reps`/`load_kg`, dedup por `externalId` via
+  `DuplicateEventException` — mesmo padrão de `WearableSyncLogger`,
+  não cria `workout_session` sintética, cada set_log fica solto,
+  limitação de escopo documentada, não bug) + `sync_wger`
+  (`write: true, confirm: true`, `module: 'wger'`).
+
+  `packages/fasten` (`packages/fasten/lib/src/fasten_document_sample.dart`,
+  `fasten_client.dart`, `fasten_sync_logger.dart`, `fasten_tools.dart`):
+  `FastenDocumentSample` (`externalId`, `resourceType`, `title`,
+  `rawResource` — o recurso FHIR bruto, sem filtro; filtragem pro
+  cérebro/LLM registrada como trabalho futuro em
+  `.claude/rules/brain.md`, ainda não construída porque não há
+  montagem de prompt real, só o roteador determinístico) +
+  `FastenClient`/`FixtureFastenClient` + `FastenSyncLogger` (grava
+  `HealthEvent` tipo `clinical_doc`, `source: fasten`, mesma lógica de
+  dedup) + `sync_fasten_records` (`write: true, confirm: true`,
+  `module: 'fasten'`).
+
+  Nenhum dos dois registrado em `app/lib/app_dependencies.dart` — mesmo
+  tratamento de `sync_wearable`: sem cliente real, ligar o Fixture em
+  produção seria desonesto.
+
+  `Makefile:PACKAGES` — adicionados `wger fasten` no fim da lista.
+
+  **Bug achado e corrigido de quebra:** ao rodar `make test` completo
+  pela primeira vez com os pacotes novos, 2 testes de `app/` falharam
+  (`compartilhar treino...`, `compartilhar corrida...`) com
+  `Found 0 widgets with key [<'share_latest_workout'>]`. Descartei
+  regressão (`git diff app/` vazio, `git status --short app/` limpo) e
+  rodei `date -u` → `Mon Aug 17 10:52:18 UTC 2026`: o relógio real já
+  tinha passado a data fixa `DateTime.utc(2026, 8, 15, ...)` que
+  `app/test/widget_test.dart` usava pra inserir eventos de teste, então
+  a consulta "hoje" do `DashboardScreen` (`DateTime.now().toUtc()`) não
+  batia mais com os eventos inseridos, os contadores ficavam zerados, e
+  os botões de compartilhar (renderização condicional) nunca apareciam.
+  Corrigido com um helper `_todayNoonUtc()` que calcula "hoje" em tempo
+  de execução (meio-dia UTC, evita borda de fuso) — trocado nos dois
+  helpers de inserção (`_insertWorkoutSessionEvent`,
+  `_insertGpsTrackEvent`). Confirmado que não sobrava nenhuma outra
+  data `2026` fixa no arquivo.
+
+  **Prova:**
+  ```
+  $ dart test (packages/wger, isolado) → 00:00 +9: All tests passed!
+  $ dart test (packages/fasten, isolado) → 00:00 +7: All tests passed!
+  $ flutter analyze (app/, depois do fix) → No issues found! (ran in 3.1s)
+  $ flutter test (app/, depois do fix) → 00:09 +13: All tests passed!
+  $ make lint (raiz, 12 pacotes + app) → "No issues found!" em todos
+  $ make test (raiz) →
+    health_core, brain, tool_registry, activity +47, nutrition +27,
+    entitlements +14, share +6, summary +3, wearable +10, wger +9,
+    fasten +7, app +13 — todos "All tests passed!"
+  ```
+  169 testes no total no monorepo (153 antes deste ciclo + 16 novos —
+  9 de `wger` + 7 de `fasten`).
+
+  **Não verificado:** `WgerClient`/`FastenClient` real sobre REST
+  v2/FHIR — precisa de servidor wger/Fasten self-hosted alcançável
+  (URL+credenciais do usuário), não disponível neste ambiente.
+  Filtragem do recurso FHIR bruto antes de qualquer prompt de LLM —
+  trabalho futuro, sem montagem de prompt real ainda pra aplicar.
+
+  **Débito técnico:** nenhum novo — o real fica marcado como não
+  verificado, não como código temporário com `TODO`.
+
+  **Bloqueios / decisões que precisam do usuário:** nenhum.
+
+  **Próximo ciclo proposto:** em aberto — candidatos: `WgerClient`/
+  `FastenClient` real (precisa do usuário fornecer servidor self-hosted
+  alcançável), campos sensíveis opt-in nos cards de compartilhamento
+  (F12), ou F14 (painel B2B, produto separado, depois do MVP).

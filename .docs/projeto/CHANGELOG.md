@@ -8,8 +8,16 @@
 > no formato que a skill espera.
 
 **Repositório:** `github.com/minorfurymusic/Frankenstein`
-**Última atualização:** 2026-08-15 (commit `48ce0a8`)
-**Total de commits:** 66
+**Última atualização:** 2026-08-17 (commit `2ebd31f`)
+**Total de commits:** 71
+
+## 2026-08-17 (F13 — integração federada com wger e Fasten, parte sem servidor real)
+
+- `2ebd31f` — feat(wger,fasten): F13 - integração federada com wger (REST) e Fasten (FHIR), parte sem servidor real
+
+## 2026-08-15 (comandos de chat pras ferramentas restantes)
+
+- `fd0849c` — feat(app): comandos de chat para get_workout_plan, get_run_summary, log_workout_session
 
 ## 2026-08-15 (F12 — compartilhamento social, cards de treino/corrida)
 
