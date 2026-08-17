@@ -28,14 +28,24 @@ _TestApp _buildTestApp() {
   return _TestApp(dependencies, widget, shareSheet);
 }
 
+// "Hoje" ao meio-dia UTC — não a meia-noite (evita o evento cair no dia
+// UTC errado por causa da hora exata em que o teste rodar) nem uma data
+// fixa (`DashboardScreen`/`get_daily_summary` consultam o dia real via
+// `DateTime.now()`; uma data hardcoded quebra sozinha quando o relógio
+// real passa dela — já aconteceu neste projeto).
+DateTime _todayNoonUtc() {
+  final now = DateTime.now().toUtc();
+  return DateTime.utc(now.year, now.month, now.day, 12, 0);
+}
+
 HealthEvent _insertWorkoutSessionEvent(HealthDataCore core) {
   final event = HealthEvent(
     id: HealthDataCore.newId(),
     type: HealthEventType.workoutSession,
     source: HealthEventSource.manual,
-    occurredAt: DateTime.utc(2026, 8, 15, 19, 0),
+    occurredAt: _todayNoonUtc(),
     occurredAtTzOffsetMinutes: -180,
-    recordedAt: DateTime.utc(2026, 8, 15, 19, 30),
+    recordedAt: _todayNoonUtc().add(const Duration(minutes: 30)),
     payload: const {'sets_count': 10, 'exercise_ids': ['supino-reto']},
     confidence: 1.0,
   );
@@ -48,9 +58,9 @@ HealthEvent _insertGpsTrackEvent(HealthDataCore core) {
     id: HealthDataCore.newId(),
     type: HealthEventType.gpsTrack,
     source: HealthEventSource.manual,
-    occurredAt: DateTime.utc(2026, 8, 15, 7, 0),
+    occurredAt: _todayNoonUtc(),
     occurredAtTzOffsetMinutes: -180,
-    recordedAt: DateTime.utc(2026, 8, 15, 7, 30),
+    recordedAt: _todayNoonUtc().add(const Duration(minutes: 30)),
     payload: const {
       'distance_meters': 5000.0,
       'duration_seconds': 1800,
