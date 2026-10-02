@@ -1,6 +1,7 @@
 # ADR-2 — Modelo LLM, quantização, RAM mínima, perfis A/B/C
 
-**Status:** aceito
+**Status:** substituído por ADR-11 (2026-10-02) — cérebro em nuvem com a
+chave do usuário. Mantido como registro histórico.
 **Data:** 2026-08-05
 
 ## Contexto

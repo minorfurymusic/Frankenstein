@@ -2258,3 +2258,36 @@
   **Próximo ciclo proposto:** GPS real pra corrida (`start_run`), mesma
   categoria de trabalho — ou aguardar o teste manual deste ciclo antes
   de decidir, caso o contador de passos precise de ajuste.
+
+- **Ciclo — decisões de produto + prompt de design (2026-10-02). Sem código.**
+  Retomada depois de ~6 semanas parado. Checagem de estado: árvore limpa,
+  `main` = branch designada = `cb4b362`; CI do contador de passos (run
+  `32064428426`) `conclusion: success` — primeiro Kotlin do projeto compila;
+  artifact do APK expirado (retenção de 14 dias, `list_workflow_run_artifacts`
+  → `total_count: 0`).
+
+  Decisões explícitas do usuário, registradas:
+  1. **IA em nuvem com a chave de API do próprio usuário** — ADR-11, substitui
+     ADR-2 (MLC LLM local, nunca compilado). Sem chave: roteador + telas
+     manuais, 100% offline. Com chave: só sob envio explícito, consentimento
+     antes do primeiro envio, cartões de proposta confirmados um a um antes de
+     gravar. Conflito com `.claude/rules/brain.md` ("prontuário bruto nunca
+     entra no prompt") resolvido por revisão da regra: o app nunca anexa
+     sozinho dado clínico guardado; documento anexado pelo próprio usuário
+     naquela mensagem pode ir.
+  2. **Pagamento:** fazer agora toda a parte do app; provedor depois.
+  3. **Servidor:** entre as últimas etapas.
+  4. **iOS abandonado; nome RLT — Real Life Track** — ADR-12 (altera ADR-1 e
+     ADR-7; ADR-5/licença não muda).
+  5. **Layout vem do Claude Design** — `docs/design/PROMPT-CLAUDE-DESIGN.md`.
+  6. **5 abas:** Início, Saúde, Cérebro, Nutrição, Exercícios.
+  7. **Fórmulas "mais avançadas"** — proposta feita na conversa, aguardando
+     aprovação e conferência de fonte primária antes de implementar.
+  Estratégia: terminar layout + funções antes de uma rodada única de testes.
+
+  **Não verificado:** contador de passos em aparelho (sem teste desde 17/08);
+  capacidades multimodais de cada provedor de IA (conferir na doc oficial na
+  implementação).
+
+  **Pendente de aprovação:** editar `CLAUDE.md` (linha 3 ainda diz "LLM local
+  (MLC LLM)"; seção "FASE ATUAL" desatualizada desde a Fase 2).

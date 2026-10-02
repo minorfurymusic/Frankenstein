@@ -23,7 +23,18 @@ branco: navegação Resumo/Chat de verdade, ligada aos pacotes reais, com
 compartilhamento de treino/corrida funcionando de ponta a ponta. Detalhe
 completo em `docs/HISTORICO.md`.
 
-**Ciclo mais recente: contador de passos real — primeiro código Kotlin
+**Ciclo mais recente (2026-10-02): decisões de produto + prompt de design.**
+Sem código. ADR-11 (IA em nuvem com chave do usuário, substitui ADR-2),
+ADR-12 (Android apenas, nome RLT), `.claude/rules/brain.md` reescrita pra
+ADR-11, `docs/PRODUTO.md`/`docs/OFFLINE-IA.md`/`docs/MONETIZACAO.md`
+apontando pra nova decisão, e `docs/design/PROMPT-CLAUDE-DESIGN.md` (todas as
+telas e funções, pro Claude Design). CI do contador de passos (run
+`32064428426`, commit `cb4b362`) confirmou `conclusion: success` — o Kotlin
+compila; o APK desse run expirou (retenção de 14 dias). Contador de passos
+continua sem teste em aparelho. **Aguardando:** layout do Claude Design;
+aprovação das fórmulas de saúde.
+
+**Ciclo anterior: contador de passos real — primeiro código Kotlin
 do projeto.** Foreground service Android (`StepCounterService.kt`)
 ouvindo `TYPE_STEP_COUNTER`, com notificação persistente e
 `START_STICKY` — cumpre `.claude/rules/activity.md` ("a contagem NÃO
@@ -226,8 +237,21 @@ este status sem revalidar).
 
 - Código aberto, copyleft aceito.
 - **Sem anúncios em nenhuma superfície.** Sistema de anúncios foi cancelado.
-- Offline-first: a IA roda no aparelho do usuário.
-- Grátis = tudo que roda no aparelho. Pago = tudo que consome servidor.
+- **Nome do produto: RLT — Real Life Track. Android apenas, iOS abandonado**
+  (ADR-12, 2026-10-02).
+- **Cérebro: IA em nuvem com a chave de API do próprio usuário** (ADR-11,
+  2026-10-02, substitui o LLM local da ADR-2). Sem chave = roteador
+  determinístico, 100% offline. Com chave = só sob envio explícito, com
+  consentimento, e tudo que a IA propõe passa por confirmação antes de gravar.
+- **Navegação: 5 abas** — Início, Saúde, Cérebro, Nutrição, Exercícios
+  (`docs/PRODUTO.md`). Layout vem do Claude Design
+  (`docs/design/PROMPT-CLAUDE-DESIGN.md`).
+- **Estratégia de entrega (2026-10-02):** terminar layout + todas as funções
+  antes de uma rodada única de testes no aparelho, em vez de testar etapa por
+  etapa. Servidor fica entre as últimas etapas. Pagamento: fazer agora toda a
+  parte do app; provedor por último.
+- Grátis = tudo que roda no aparelho (inclui IA com a chave do usuário — não
+  custa servidor nosso). Pago = tudo que consome servidor.
 - Monetização: assinatura R$20/US$10 + B2B para profissionais de saúde.
 - Escopo inclui módulo de academia (planos, treino, corrida/caminhada com GPS)
   e compartilhamento social (Instagram, TikTok, Facebook).

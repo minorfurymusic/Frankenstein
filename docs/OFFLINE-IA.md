@@ -1,5 +1,12 @@
 # OFFLINE-IA — o cérebro no aparelho
 
+> **Substituído em parte pela ADR-11 (2026-10-02).** O motor local (MLC LLM,
+> perfis A e B, distribuição de pesos) não será construído — a IA passa a ser em
+> nuvem, com a chave de API do próprio usuário. **Continua valendo:** o perfil C
+> como modo padrão (roteador determinístico, 100% offline, sem chave), a regra 3
+> abaixo (o app é 100% funcional sem a IA) e as seções de base de alimentos e
+> licenças. Perfis A/B e distribuição de pesos ficam como registro histórico.
+
 O celular do usuário é o servidor. Isso é o que torna o custo por usuário igual a zero.
 
 ## Perfis por capacidade do aparelho

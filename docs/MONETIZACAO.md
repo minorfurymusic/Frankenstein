@@ -16,7 +16,10 @@ Só o que custa servidor de verdade:
 2. Acesso web ao painel pessoal
 3. Conector de prontuário (Fasten/FHIR) para hospitais e planos
 4. wger hospedado
-5. Cérebro reforçado em nuvem, com teto explícito de consultas/mês
+5. Cérebro reforçado em nuvem, com teto explícito de consultas/mês — **opção
+   futura** (ADR-11): o caminho padrão é o usuário usar a própria chave de API,
+   de graça para nós; um cérebro hospedado pelo projeto só faz sentido depois do
+   servidor existir
 6. Histórico consolidado em nuvem
 7. Conta familiar (até 4 pessoas)
 8. Suporte prioritário

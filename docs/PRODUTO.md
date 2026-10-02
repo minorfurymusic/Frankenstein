@@ -1,9 +1,23 @@
-# PRODUTO — Frankstein
+# PRODUTO — RLT — Real Life Track
+
+> Nome de trabalho do repositório: Frankstein. Nome do produto: **RLT — Real
+> Life Track** (ADR-12, 2026-10-02). **Android apenas** (ADR-12).
 
 ## Visão
-Um aplicativo de saúde 7-em-1, offline-first, onde um LLM local é o cérebro que
-recebe comandos em linguagem natural e distribui para os módulos. Os dados de
-saúde do usuário não saem do aparelho, salvo ação explícita dele.
+Um aplicativo de saúde 7-em-1, offline-first, onde o cérebro recebe comandos em
+linguagem natural e distribui para os módulos. Sem chave de IA, um roteador
+determinístico no aparelho resolve os comandos estruturados; com a chave de API
+do próprio usuário, uma IA em nuvem multimodal entende texto livre, foto, PDF,
+áudio e vídeo (ADR-11, substitui o LLM local da ADR-2). Os dados de saúde do
+usuário não saem do aparelho, salvo ação explícita dele — enviar uma mensagem à
+IA é essa ação.
+
+## Navegação (decidida em 2026-10-02)
+5 abas: **Início** (estado do dia e metas), **Saúde** (histórico médico,
+remédios, exames, sinais vitais, corpo), **Cérebro** (conversa com a IA, com
+anexos), **Nutrição** (refeições, dietas, água, fotos de pratos),
+**Exercícios** (passos, academia, corrida). Conta e Configurações ficam fora
+das abas. Detalhe de telas: `docs/design/PROMPT-CLAUDE-DESIGN.md`.
 
 ## Os 7 insumos
 
@@ -60,7 +74,9 @@ F14 Painel B2B (produto separado, depois do MVP)
 1. Passos contados com a tela bloqueada por 8h, batendo com o sistema (±5%).
 2. Refeição registrada por código de barras, com macros no dashboard.
 3. Pulseira BLE sincroniza FC e sono para o Health Data Core.
-4. "Quantas calorias comi hoje e quanto andei?" respondido pelo LLM local, offline.
+4. "Quantas calorias comi hoje e quanto andei?" respondido offline pelo roteador
+   (sem chave); com a chave do usuário, texto livre e foto respondidos pela IA em
+   nuvem (ADR-11 — antes: "pelo LLM local, offline").
 5. Plano de treino prescrito, executado com séries e carga, progressão visível.
 6. Corrida de 5 km gravada com tela bloqueada, rota e splits corretos, bateria medida.
 7. Card de corrida compartilhado no Instagram com rota ofuscada e nada clínico.
