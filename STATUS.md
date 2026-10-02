@@ -34,7 +34,12 @@ barra de 5 abas com Cérebro no centro), shell de 5 abas + Conta pelo avatar,
 nome "RLT" no Android. Saúde/Nutrição/Exercícios ainda dizem "em construção"
 (próximo ciclo). Antes, no mesmo dia: ADR-15 ganhou água por kg com piso
 EFSA por sexo, o modelo de meta de calorias descrito pelo usuário e a
-proposta de divisão de macros (números aguardam aprovação).
+proposta de divisão de macros (números aguardam aprovação). CI do commit
+`98a3af1` (runs `37037454729`/`37037452301`): `conclusion: success`, APK no
+artefato `frankstein-debug-apk`. **Pendente do usuário:** ícone do app (vai
+mandar depois); domínio `.com.br` para o `applicationId` (hoje
+`br.com.frankstein.frankstein`; vira `br.com.<domínio>` — não deu para
+conferir disponibilidade daqui, registro.br bloqueado pela rede).
 
 **Ciclo anterior (2026-10-02): revisão do layout do Claude Design.**
 Sem código. Layout salvo em `docs/design/rlt-layout/` (81 pranchetas +
