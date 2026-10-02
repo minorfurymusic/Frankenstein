@@ -45,6 +45,8 @@ dependencies:
     path: ../packages/health_records
   frankstein_nutrition:
     path: ../packages/nutrition
+  frankstein_profile:
+    path: ../packages/profile
   frankstein_share:
     path: ../packages/share
   frankstein_summary:

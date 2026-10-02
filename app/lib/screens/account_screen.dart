@@ -1,12 +1,24 @@
 import 'package:flutter/material.dart';
 
+import '../app_dependencies.dart';
 import '../theme/rlt_colors.dart';
+import 'account/goals_screen.dart';
+import 'account/preferences_screen.dart';
+import 'account/profile_screen.dart';
 import '../theme/rlt_theme.dart';
 
 /// Conta e Configurações, aberta pelo avatar do Início (prancheta Conta).
 /// Nesta etapa só a lista de seções existe; "Sobre" já abre as licenças.
 class AccountScreen extends StatelessWidget {
-  const AccountScreen({super.key});
+  final AppDependencies deps;
+  const AccountScreen({super.key, required this.deps});
+
+  Widget? _screenFor(String title) => switch (title) {
+        'Perfil' => ProfileScreen(deps: deps),
+        'Metas' => GoalsScreen(deps: deps),
+        'Preferências' => PreferencesScreen(deps: deps),
+        _ => null,
+      };
 
   static const _sections = <(String, String, IconData)>[
     ('Perfil', 'Dados usados nas fórmulas', Icons.person_outline),
@@ -47,9 +59,16 @@ class AccountScreen extends StatelessWidget {
               title: Text(title, style: t.titleSmall),
               subtitle: Text(subtitle),
               trailing: const Icon(Icons.chevron_right),
-              // TODO(frankstein): telas Conta* (pranchetas ContaPerfil, ContaMetas, ContaCerebro…).
-              onTap: () => ScaffoldMessenger.of(context)
-                  .showSnackBar(SnackBar(content: Text('$title: tela em construção.'))),
+              key: Key('account_$title'),
+              onTap: () {
+                final screen = _screenFor(title);
+                if (screen != null) {
+                  Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => screen));
+                  return;
+                }
+                // TODO(frankstein): telas ContaCerebro, ContaAssinatura, ContaPermissoes, ContaDispositivos, ContaLembretes, ContaPrivacidade.
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$title: tela em construção.')));
+              },
             ),
           ListTile(
             key: const Key('account_about'),

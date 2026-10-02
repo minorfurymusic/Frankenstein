@@ -26,7 +26,7 @@ class _HomeShellState extends State<HomeShell> {
   RltTab _tab = RltTab.inicio;
 
   void _openAccount() {
-    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const AccountScreen()));
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => AccountScreen(deps: widget.dependencies)));
   }
 
   PreferredSizeWidget? _appBar() {

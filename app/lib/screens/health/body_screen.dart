@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:frankstein_health_records/health_records.dart';
+import 'package:frankstein_profile/profile.dart';
 
 import '../../app_dependencies.dart';
 import '../../data/health_read_model.dart';
@@ -76,6 +77,12 @@ class _BodyScreenState extends State<BodyScreen> {
           final t = Theme.of(context).textTheme;
           final weights = deps.healthRead.weights();
           final fat = deps.healthRead.measurements('body_fat');
+          final waist = deps.healthRead.measurements('waist');
+          final height = deps.profileRepository.load()?.heightMeters;
+          final bmi = height == null || weights.isEmpty ? null : HealthFormulas.bmi(weightKg: weights.first.value, heightMeters: height);
+          final whtr = height == null || waist.isEmpty
+              ? null
+              : HealthFormulas.waistToHeight(waistMeters: waist.first.value / 100, heightMeters: height);
           final cutoff = DateTime.now().subtract(Duration(days: 30 * _months));
           final chartPoints = [for (final w in weights.where((w) => w.local.isAfter(cutoff))) ChartPoint(w.local, w.value)];
           return ListView(
@@ -98,9 +105,25 @@ class _BodyScreenState extends State<BodyScreen> {
                   unit: fat.isEmpty ? null : '%',
                   caption: fat.isEmpty ? 'Sem registro' : _delta(fat, 'ponto', decimals: 0),
                 ),
-                // TODO(frankstein): IMC (OMS) e cintura/altura precisam da altura do Perfil (ciclo Conta › Perfil, ADR-15).
-                RltStatTile(icon: Icons.straighten, iconColor: c.primary, label: 'IMC', value: '—', caption: 'Informe sua altura em Conta › Perfil'),
-                RltStatTile(icon: Icons.straighten, iconColor: c.primary, label: 'Cintura/altura', value: '—', caption: 'Informe sua altura em Conta › Perfil'),
+                RltStatTile(
+                  key: const Key('body_bmi'),
+                  icon: Icons.straighten,
+                  iconColor: c.primary,
+                  label: 'IMC',
+                  value: bmi == null ? '—' : formatNumber(bmi, decimals: 1),
+                  caption: height == null
+                      ? 'Informe sua altura em Conta › Perfil'
+                      : (bmi == null ? 'Registre seu peso' : '${HealthFormulas.bmiCategory(bmi)} · referência 18,5 a 24,9'),
+                ),
+                RltStatTile(
+                  icon: Icons.straighten,
+                  iconColor: c.primary,
+                  label: 'Cintura/altura',
+                  value: whtr == null ? '—' : formatNumber(whtr, decimals: 2),
+                  caption: height == null
+                      ? 'Informe sua altura em Conta › Perfil'
+                      : (whtr == null ? 'Registre a cintura' : 'Referência: até 0,5'),
+                ),
               ]),
               const SizedBox(height: RltSpace.l),
               Card(
@@ -172,7 +195,7 @@ class _BodyFormState extends State<BodyForm> {
   }
 
   void _save() {
-    final v = double.tryParse(_value.text.replaceAll(',', '.'));
+    final v = parseNumber(_value.text);
     if (v == null) {
       showRltError(context, ArgumentError('preencha o valor em número'));
       return;

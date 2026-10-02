@@ -3,12 +3,14 @@ import 'package:frankstein_brain/brain.dart';
 import 'package:frankstein_health_core/health_core.dart';
 import 'package:frankstein_health_records/health_records.dart';
 import 'package:frankstein_nutrition/nutrition.dart';
+import 'package:frankstein_profile/profile.dart';
 import 'package:frankstein_summary/summary.dart';
 import 'package:frankstein_tool_registry/tool_registry.dart';
 
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart' show ThemeMode, ValueNotifier;
 
 import 'card_image_capturer.dart';
+import 'data/day_read_model.dart';
 import 'data/health_read_model.dart';
 import 'chat_router.dart';
 import 'share_sheet.dart';
@@ -55,6 +57,18 @@ class AppDependencies {
   final BodyLogger bodyLogger;
   final HealthReadModel healthRead;
 
+  final ProfileRepository profileRepository;
+  final DayReadModel dayRead;
+  final GoalsService goals;
+
+  /// Tema escolhido em Conta › Preferências (claro, escuro ou sistema).
+  final ValueNotifier<ThemeMode> themeMode;
+
+  void setThemeMode(ThemeMode mode) {
+    profileRepository.setSetting('theme_mode', mode.name);
+    themeMode.value = mode;
+  }
+
   /// Sobe a cada gravação feita pelas telas; quem mostra dado escuta e
   /// recarrega.
   final ValueNotifier<int> dataVersion = ValueNotifier(0);
@@ -78,10 +92,16 @@ class AppDependencies {
     required this.vitalSignLogger,
     required this.bodyLogger,
     required this.healthRead,
+    required this.profileRepository,
+    required this.dayRead,
+    required this.goals,
+    required this.themeMode,
   });
 
   void close() {
     dataVersion.dispose();
+    themeMode.dispose();
+    profileRepository.close();
     stepTracking.dispose();
     core.close();
     foodRepository.close();
@@ -108,6 +128,7 @@ class AppDependencies {
       foodRepository: FoodRepository.open('$dbDirectoryPath/frankstein_food.sqlite3'),
       workoutRepository: WorkoutRepository.open('$dbDirectoryPath/frankstein_workout.sqlite3'),
       medicationRepository: MedicationRepository.open('$dbDirectoryPath/frankstein_medications.sqlite3'),
+      profileRepository: ProfileRepository.open('$dbDirectoryPath/frankstein_profile.sqlite3'),
       confirmationGate: confirmationGate,
       shareSheet: shareSheet,
       imageCapturer: imageCapturer,
@@ -125,6 +146,7 @@ class AppDependencies {
       foodRepository: FoodRepository.openInMemory(seedTacoData: true),
       workoutRepository: WorkoutRepository.openInMemory(),
       medicationRepository: MedicationRepository.openInMemory(),
+      profileRepository: ProfileRepository.openInMemory(),
       confirmationGate: confirmationGate,
       shareSheet: shareSheet,
       imageCapturer: imageCapturer,
@@ -136,6 +158,7 @@ class AppDependencies {
     required FoodRepository foodRepository,
     required WorkoutRepository workoutRepository,
     required MedicationRepository medicationRepository,
+    required ProfileRepository profileRepository,
     required ConfirmationGate confirmationGate,
     required ShareSheet shareSheet,
     required CardImageCapturer imageCapturer,
@@ -211,6 +234,9 @@ class AppDependencies {
         logBodyMeasurementHandler(bodyLogger, tzOffsetMinutesProvider: tzOffsetMinutesProvider),
       );
 
+    final healthRead = HealthReadModel(core: core, medications: medicationRepository, agenda: agenda);
+    final dayRead = DayReadModel(core: core);
+
     final pipeline = BrainPipeline(
       registry: registry,
       callers: [buildChatRouter()],
@@ -232,7 +258,16 @@ class AppDependencies {
       symptomLogger: symptomLogger,
       vitalSignLogger: vitalSignLogger,
       bodyLogger: bodyLogger,
-      healthRead: HealthReadModel(core: core, medications: medicationRepository, agenda: agenda),
+      healthRead: healthRead,
+      profileRepository: profileRepository,
+      dayRead: dayRead,
+      goals: GoalsService(profiles: profileRepository, health: healthRead, days: dayRead),
+      themeMode: ValueNotifier(
+        ThemeMode.values.firstWhere(
+          (m) => m.name == profileRepository.getSetting('theme_mode'),
+          orElse: () => ThemeMode.system,
+        ),
+      ),
     );
   }
 }

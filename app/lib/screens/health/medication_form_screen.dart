@@ -112,7 +112,7 @@ class _MedicationFormScreenState extends State<MedicationFormScreen> {
       );
 
   void _save() {
-    final dose = double.tryParse(_dose.text.replaceAll(',', '.'));
+    final dose = parseNumber(_dose.text);
     if (dose == null) {
       showRltError(context, ArgumentError('informe a dose em número'));
       return;

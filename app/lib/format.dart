@@ -37,3 +37,16 @@ String relativeDayTime(DateTime local, {DateTime? now}) {
 }
 
 DateTime _dateOnly(DateTime d) => DateTime(d.year, d.month, d.day);
+
+/// Lê número digitado no jeito brasileiro ou não: "68,4", "68.4", "1.200",
+/// "1.200,5". `null` se não for número.
+double? parseNumber(String text) {
+  var s = text.trim().replaceAll(' ', '');
+  if (s.isEmpty) return null;
+  if (s.contains(',')) {
+    s = s.replaceAll('.', '').replaceAll(',', '.');
+  } else if (RegExp(r'^\d{1,3}(\.\d{3})+$').hasMatch(s)) {
+    s = s.replaceAll('.', '');
+  }
+  return double.tryParse(s);
+}

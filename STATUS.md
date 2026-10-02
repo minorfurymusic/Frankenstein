@@ -23,7 +23,18 @@ branco: navegação Resumo/Chat de verdade, ligada aos pacotes reais, com
 compartilhamento de treino/corrida funcionando de ponta a ponta. Detalhe
 completo em `docs/HISTORICO.md`.
 
-**Ciclo mais recente (2026-10-02): aba Saúde.** Tela inicial (resumos +
+**Ciclo mais recente (2026-10-02): perfil e metas.** Pacote novo
+`packages/profile` (perfil, ajustes manuais, preferências; calculadora da
+ADR-15 com coeficientes conferidos, 18 testes com valores calculados à
+mão). Telas Conta › Perfil, Metas (meta do dia + "de onde veio o número" +
+ajuste manual) e Preferências (tema claro/escuro/sistema guardado). Corpo
+mostra IMC (faixas OMS) e cintura/altura. `app/lib/data/day_read_model.dart`
+soma o dia **local** de cada evento. **Achado:** `get_daily_summary`
+(`packages/summary/lib/src/daily_summary_tools.dart`) soma o dia UTC — no
+Brasil, o que acontece depois das 21:00 cai no dia seguinte; as telas novas
+já usam o dia local, a ferramenta será corrigida no ciclo do Início.
+
+**Ciclo anterior (2026-10-02): aba Saúde.** Tela inicial (resumos +
 seções + aviso fixo), Remédios (agenda de hoje com tomei/pulei gravando
 `medication_dose`, adesão de 30 dias, ativos/encerrados, cadastro/edição,
 encerrar tratamento), Histórico médico (diário de sintomas + formulário),

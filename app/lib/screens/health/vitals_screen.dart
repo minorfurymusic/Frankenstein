@@ -177,7 +177,7 @@ class _VitalFormState extends State<VitalForm> {
     super.dispose();
   }
 
-  double? _num(TextEditingController c) => double.tryParse(c.text.replaceAll(',', '.'));
+  double? _num(TextEditingController c) => parseNumber(c.text);
 
   void _save() {
     final a = _num(_a);

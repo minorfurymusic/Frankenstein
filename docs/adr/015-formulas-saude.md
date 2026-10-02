@@ -1,8 +1,8 @@
 # ADR-15 — Fórmulas de saúde usadas nas metas e medidas
 
-**Status:** aceito (decisão explícita do usuário, 2026-10-02). Coeficientes
-exatos **a conferir na fonte primária antes de codificar** — os valores
-abaixo foram escritos de memória e estão marcados como tal.
+**Status:** aceito (decisão explícita do usuário, 2026-10-02). Implementado
+em `packages/profile/lib/src/goal_calculator.dart` (2026-10-02), com os
+coeficientes conferidos por busca — ver "Conferência dos coeficientes".
 **Data:** 2026-10-02
 
 ## Contexto
@@ -95,7 +95,20 @@ TACO ou a estimativa da IA).
   10–35%, gordura 20–35%, carboidrato 45–65% das calorias; fora da faixa, o
   app mostra aviso e a pessoa ajusta.
 
-## Não verificado
+## Conferência dos coeficientes (2026-10-02, por busca)
 
-- Coeficientes das fórmulas acima e do método US Navy (escritos de memória).
+- Mifflin-St Jeor (Am J Clin Nutr 1990): `10·kg + 6,25·cm − 5·idade + 5 / −161`
+  — confere (o artigo original usa 9,99 e 4,92; as referências clínicas
+  arredondam para 10 e 5).
+- Katch-McArdle: `370 + 21,6 × massa magra` — confere.
+- US Navy (Hodgdon & Beckett 1984), em cm, com Siri `495/D − 450`:
+  homem `D = 1,0324 − 0,19077·log10(cintura − pescoço) + 0,15456·log10(altura)`;
+  mulher `D = 1,29579 − 0,35004·log10(cintura + quadril − pescoço) + 0,22100·log10(altura)`.
+- Passada pela altura (ACSM, fonte secundária): 0,415 (homem) / 0,413 (mulher).
+- Caminhada moderada (Compêndio 2024, 2,8–3,4 mph): MET 3,8 — **fonte
+  secundária**; pacompendium.com bloqueado pela rede deste ambiente.
+- Passos → calorias: passos × passada = distância; tempo a 4,83 km/h;
+  `(3,8 − 1) × kg × horas`.
+
+## Não verificado
 - Fonte primária da regra 30–35 ml/kg (só material secundário consultado).

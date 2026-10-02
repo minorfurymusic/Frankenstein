@@ -58,14 +58,16 @@ class FrankstitApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
-      navigatorKey: navigatorKey,
-      title: 'RLT',
-      theme: RltTheme.light(),
-      darkTheme: RltTheme.dark(),
-      // TODO(frankstein): escolha claro/escuro/sistema em Conta > Preferências.
-      themeMode: ThemeMode.system,
-      home: HomeShell(dependencies: dependencies),
+    return ValueListenableBuilder<ThemeMode>(
+      valueListenable: dependencies.themeMode,
+      builder: (context, mode, _) => MaterialApp(
+        navigatorKey: navigatorKey,
+        title: 'RLT',
+        theme: RltTheme.light(),
+        darkTheme: RltTheme.dark(),
+        themeMode: mode,
+        home: HomeShell(dependencies: dependencies),
+      ),
     );
   }
 }
