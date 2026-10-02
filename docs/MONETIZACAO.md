@@ -5,7 +5,11 @@ binários proprietários e linká-los a módulos GPL/AGPL viola a licença.
 
 ## Degraus
 
-### GRÁTIS — para sempre, sem conta, sem nuvem
+> **Alterado pela ADR-13 (2026-10-02):** login com Google passa a ser
+> obrigatório para todos. O degrau grátis continua grátis e sem limite, mas
+> deixa de ser "sem conta". Dado de saúde continua no aparelho.
+
+### GRÁTIS — para sempre, sem nuvem
 Tudo que roda no aparelho, sem limite, sem expiração, **sem cadastro**.
 Sem login significa sem servidor e sem você virar controlador de dados na LGPD.
 É o argumento de marketing mais forte do produto: os dados nunca saem do celular.

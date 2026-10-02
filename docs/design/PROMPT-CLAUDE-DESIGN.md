@@ -2,6 +2,7 @@
 
 > Gerado em 2026-10-02 a partir das decisões registradas em `docs/PRODUTO.md`,
 > ADR-11 (IA em nuvem com chave do usuário), ADR-12 (Android apenas, nome RLT),
+> ADR-13 (login com Google obrigatório),
 > ADR-7 (regras de assinatura dentro do app), `.claude/rules/share.md`,
 > `.claude/rules/brain.md` e `docs/specs/nutricao.md`. Copie tudo abaixo da
 > linha para o Claude Design.
@@ -30,9 +31,10 @@ vitais, corpo, passos, treino de academia e corrida. O centro do app é o
 manda foto, PDF, áudio ou vídeo, e a IA organiza tudo no lugar certo do app.
 
 Princípios que o design precisa transmitir:
-- **Privacidade:** os dados ficam no celular. Sem conta, sem cadastro, sem anúncio.
-- **Funciona offline:** tudo funciona sem internet. Só a IA do Cérebro usa internet,
-  e só quando a pessoa envia uma mensagem.
+- **Privacidade:** os dados de saúde ficam no celular. A conta (login com Google)
+  só identifica a pessoa. Sem anúncio.
+- **Funciona offline:** depois do primeiro login, tudo funciona sem internet. Só a
+  IA do Cérebro usa internet, e só quando a pessoa envia uma mensagem.
 - **Nada é gravado sem confirmação:** quando a IA entende algo, ela mostra cartões
   com o que vai registrar; a pessoa confirma, edita ou descarta cada um.
 
@@ -53,14 +55,19 @@ lembretes/notificações.
 ## 0. Primeiro uso (onboarding)
 
 1. Boas-vindas: o que é o RLT, em 3 telas curtas no máximo.
-2. Privacidade: "seus dados ficam no seu celular" — explicação simples.
-3. Perfil: sexo biológico (usado nas fórmulas), data de nascimento, altura, peso,
+2. **Entrar com Google** (obrigatório, é o único jeito de entrar): botão "Entrar
+   com Google" que abre a tela de login do Google; links para política de
+   privacidade e termos. Estados: carregando, erro, sem internet ("conecte-se
+   para o primeiro acesso").
+3. Privacidade: "seus dados de saúde ficam no seu celular" — explicação simples.
+4. Perfil: sexo biológico (usado nas fórmulas), data de nascimento, altura, peso,
    nível de atividade, objetivo (perder peso, manter, ganhar massa, saúde geral).
-4. Metas sugeridas, todas editáveis: calorias, proteína/carboidrato/gordura, água,
+   Nome e foto já vêm da conta Google, editáveis.
+5. Metas sugeridas, todas editáveis: calorias, proteína/carboidrato/gordura, água,
    passos. Mostrar de onde veio o número ("calculado pelo seu perfil").
-5. Permissões, uma por vez, explicando o porquê: atividade física (contar passos),
+6. Permissões, uma por vez, explicando o porquê: atividade física (contar passos),
    notificações (lembrete de remédio e água). Botão "agora não" sempre visível.
-6. IA (opcional): "Quer ativar a IA? Você usa sua própria chave." — botões
+7. IA (opcional): "Quer ativar a IA? Você usa sua própria chave." — botões
    "Configurar agora" e "Depois".
 
 ## 1. Aba Início
@@ -245,14 +252,16 @@ Igual a uma conversa com um assistente de IA.
 
 ## 6. Conta e Configurações (pelo avatar)
 
+- **Conta:** foto, nome e e-mail da conta Google; sair; **excluir conta e todos
+  os dados** (com confirmação forte, explicando o que é apagado).
 - **Perfil:** dados usados nas fórmulas (sexo biológico, nascimento, altura,
   peso, atividade, objetivo, % de gordura opcional).
 - **Metas:** calorias, macros, água, passos, sono.
 - **Cérebro (IA):** escolher o provedor de IA, colar a chave, testar a chave,
   ver exatamente o que é enviado, termo de consentimento, apagar a chave. Explicar
   o modo básico (sem chave).
-- **Assinatura:** plano atual e recursos Premium com selo. Tela "Já assinei" com
-  dois campos: e-mail e código, e "reenviar código".
+- **Assinatura:** plano atual (vinculado à conta Google), recursos Premium com
+  selo, botão "atualizar status da assinatura".
   **Regra rígida: nenhum preço, nenhum valor, nenhum link ou texto dizendo onde
   comprar** — só o estado do plano e o selo "Premium".
 - **Permissões:** passos, notificações, câmera, microfone, localização (corrida),
@@ -277,7 +286,8 @@ permissão · estado sem internet · campo de mensagem com anexos e gravação d
 ## O que NÃO desenhar
 
 - Anúncios de qualquer tipo.
-- Login, cadastro ou senha (não existe conta; só o "Já assinei" para quem paga).
+- Cadastro por formulário, senha ou outro login além do Google (o único jeito de
+  entrar é "Entrar com Google").
 - Preço, valor ou botão de comprar dentro do app.
 - Publicação automática em rede social.
 - Qualquer tela em que a IA dê diagnóstico, sugira remédio ou mude dose.

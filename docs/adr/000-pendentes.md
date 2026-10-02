@@ -1,7 +1,9 @@
 # ADRs
 
-13 registradas. **12 em vigor, 1 substituída** (ADR-2, pela ADR-11 em
-2026-10-02). ADR-1 e ADR-7 foram alteradas pela ADR-12 (Android apenas).
+14 registradas. **13 em vigor, 1 substituída** (ADR-2, pela ADR-11 em
+2026-10-02). ADR-1 e ADR-7 foram alteradas pela ADR-12 (Android apenas); a
+ADR-7 também pela ADR-13 (login Google substitui o código de "Já assinei"
+quando houver servidor).
 Nenhuma virou "aceita" sem confirmação explícita do usuário.
 
 | ADR | Assunto | Bloqueia | Status |
@@ -19,5 +21,6 @@ Nenhuma virou "aceita" sem confirmação explícita do usuário.
 | [ADR-10](010-substitutos-livres.md) | Substitutos livres de dependências proprietárias | F2 | **aceito** |
 | [ADR-11](011-cerebro-nuvem-chave-usuario.md) | Cérebro em nuvem com a chave de API do próprio usuário (substitui ADR-2) | F5 | **aceito** |
 | [ADR-12](012-android-only-nome-rlt.md) | Android apenas; nome do produto RLT — Real Life Track | — | **aceito** |
+| [ADR-13](013-login-google-obrigatorio.md) | Login com Google obrigatório (mecanismo técnico decidido na fase do servidor) | servidor | **aceito (produto); técnico em aberto** |
 
 `_MODELO.md` neste diretório é o template usado em todas.

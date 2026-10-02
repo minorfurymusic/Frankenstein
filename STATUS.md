@@ -243,6 +243,11 @@ este status sem revalidar).
   2026-10-02, substitui o LLM local da ADR-2). Sem chave = roteador
   determinístico, 100% offline. Com chave = só sob envio explícito, com
   consentimento, e tudo que a IA propõe passa por confirmação antes de gravar.
+- **Login com Google obrigatório** (ADR-13, 2026-10-02), sem Play Services.
+  Achado: sem Play Services o login no Android depende de domínio + servidor
+  nosso pra trocar o código → implementação fica junto com o servidor; a
+  alternativa é uma exceção à regra de licença só pro login. Decidir lá.
+- **IA registra, não diagnostica nem receita** (reconfirmado 2026-10-02).
 - **Navegação: 5 abas** — Início, Saúde, Cérebro, Nutrição, Exercícios
   (`docs/PRODUTO.md`). Layout vem do Claude Design
   (`docs/design/PROMPT-CLAUDE-DESIGN.md`).
