@@ -23,7 +23,21 @@ branco: navegação Resumo/Chat de verdade, ligada aos pacotes reais, com
 compartilhamento de treino/corrida funcionando de ponta a ponta. Detalhe
 completo em `docs/HISTORICO.md`.
 
-**Ciclo mais recente (2026-10-02): decisões de produto + prompt de design.**
+**Ciclo mais recente (2026-10-02): camada de dados da aba Saúde.** Pacote
+novo `packages/health_records`: remédios (catálogo editável + agenda
+calculada por dia + doses tomadas/puladas como eventos `medication_dose`,
+inclusive dose avulsa sem cadastro), sintomas, sinais vitais (pressão,
+glicemia, temperatura, saturação; FC manual na série `heart_rate`) e corpo
+(peso, circunferências, % de gordura). Banco em SI, conversão pra unidade
+clínica em `units.dart`. 6 ferramentas do cérebro registradas no app
+(`add_medication`, `log_medication_dose`, `get_medication_agenda`,
+`log_symptom`, `log_vital_sign`, `log_body_measurement`). 4 tipos novos de
+`HealthEvent`. Hook `.claude/hooks/lib.sh` ajustado (autorizado) pra
+entender ADR substituída. Sem tela ainda — aguarda o layout do Claude
+Design. Sem regra de chat ainda pra essas ferramentas (a IA em nuvem é que
+vai chamá-las). `make lint` 13/13, `make test` 13/13 suítes, 214 testes.
+
+**Ciclo anterior (2026-10-02): decisões de produto + prompt de design.**
 Sem código. ADR-11 (IA em nuvem com chave do usuário, substitui ADR-2),
 ADR-12 (Android apenas, nome RLT), `.claude/rules/brain.md` reescrita pra
 ADR-11, `docs/PRODUTO.md`/`docs/OFFLINE-IA.md`/`docs/MONETIZACAO.md`

@@ -1,6 +1,7 @@
 import 'package:frankstein_activity/activity.dart';
 import 'package:frankstein_brain/brain.dart';
 import 'package:frankstein_health_core/health_core.dart';
+import 'package:frankstein_health_records/health_records.dart';
 import 'package:frankstein_nutrition/nutrition.dart';
 import 'package:frankstein_summary/summary.dart';
 import 'package:frankstein_tool_registry/tool_registry.dart';
@@ -34,6 +35,7 @@ class AppDependencies {
   final HealthDataCore core;
   final FoodRepository foodRepository;
   final WorkoutRepository workoutRepository;
+  final MedicationRepository medicationRepository;
   final ToolRegistry registry;
   final BrainPipeline pipeline;
   final ShareSheet shareSheet;
@@ -45,6 +47,7 @@ class AppDependencies {
     required this.core,
     required this.foodRepository,
     required this.workoutRepository,
+    required this.medicationRepository,
     required this.registry,
     required this.pipeline,
     required this.shareSheet,
@@ -58,6 +61,7 @@ class AppDependencies {
     core.close();
     foodRepository.close();
     workoutRepository.close();
+    medicationRepository.close();
   }
 
   /// Produção: bancos reais em arquivo, um por módulo (mesma separação
@@ -78,6 +82,7 @@ class AppDependencies {
       core: HealthDataCore.open('$dbDirectoryPath/frankstein_health.sqlite3'),
       foodRepository: FoodRepository.open('$dbDirectoryPath/frankstein_food.sqlite3'),
       workoutRepository: WorkoutRepository.open('$dbDirectoryPath/frankstein_workout.sqlite3'),
+      medicationRepository: MedicationRepository.open('$dbDirectoryPath/frankstein_medications.sqlite3'),
       confirmationGate: confirmationGate,
       shareSheet: shareSheet,
       imageCapturer: imageCapturer,
@@ -94,6 +99,7 @@ class AppDependencies {
       core: HealthDataCore.openInMemory(),
       foodRepository: FoodRepository.openInMemory(seedTacoData: true),
       workoutRepository: WorkoutRepository.openInMemory(),
+      medicationRepository: MedicationRepository.openInMemory(),
       confirmationGate: confirmationGate,
       shareSheet: shareSheet,
       imageCapturer: imageCapturer,
@@ -104,6 +110,7 @@ class AppDependencies {
     required HealthDataCore core,
     required FoodRepository foodRepository,
     required WorkoutRepository workoutRepository,
+    required MedicationRepository medicationRepository,
     required ConfirmationGate confirmationGate,
     required ShareSheet shareSheet,
     required CardImageCapturer imageCapturer,
@@ -146,6 +153,32 @@ class AppDependencies {
       ..register(
         logWaterSpec(),
         logWaterHandler(waterLogger, tzOffsetMinutesProvider: tzOffsetMinutesProvider),
+      )
+      // Aba Saúde (packages/health_records).
+      ..register(addMedicationSpec(), addMedicationHandler(medicationRepository))
+      ..register(
+        logMedicationDoseSpec(),
+        logMedicationDoseHandler(
+          MedicationDoseLogger(core: core),
+          medicationRepository,
+          tzOffsetMinutesProvider: tzOffsetMinutesProvider,
+        ),
+      )
+      ..register(
+        getMedicationAgendaSpec(),
+        getMedicationAgendaHandler(MedicationAgenda(repository: medicationRepository, core: core)),
+      )
+      ..register(
+        logSymptomSpec(),
+        logSymptomHandler(SymptomLogger(core: core), tzOffsetMinutesProvider: tzOffsetMinutesProvider),
+      )
+      ..register(
+        logVitalSignSpec(),
+        logVitalSignHandler(VitalSignLogger(core: core), tzOffsetMinutesProvider: tzOffsetMinutesProvider),
+      )
+      ..register(
+        logBodyMeasurementSpec(),
+        logBodyMeasurementHandler(BodyLogger(core: core), tzOffsetMinutesProvider: tzOffsetMinutesProvider),
       );
 
     final pipeline = BrainPipeline(
@@ -158,6 +191,7 @@ class AppDependencies {
       core: core,
       foodRepository: foodRepository,
       workoutRepository: workoutRepository,
+      medicationRepository: medicationRepository,
       registry: registry,
       pipeline: pipeline,
       shareSheet: shareSheet,

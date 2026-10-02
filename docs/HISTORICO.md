@@ -2291,3 +2291,61 @@
 
   **Pendente de aprovação:** editar `CLAUDE.md` (linha 3 ainda diz "LLM local
   (MLC LLM)"; seção "FASE ATUAL" desatualizada desde a Fase 2).
+
+- **Ciclo — ADR-13 (login Google obrigatório) + camada de dados da aba
+  Saúde (2026-10-02).**
+  Decisões do usuário: login com Google **obrigatório**, **pelo navegador**
+  (sem Play Services); regra "a IA registra, não diagnostica" **mantida**.
+  Achado ao checar viabilidade (busca; `developers.google.com` bloqueado pela
+  rede do ambiente): o Google desativou por padrão redirecionamento por
+  esquema customizado em clientes OAuth Android novos e recomenda o SDK dele
+  (Play Services). Sem Play Services, login Google no Android depende de
+  domínio + servidor nosso → ADR-13 aceita o produto e deixa o mecanismo pra
+  fase do servidor. Prompt de design atualizado (tela "Entrar com Google",
+  conta, excluir conta). Commit `334bdf9`.
+
+  **Bloqueio de hook resolvido com autorização:** `.claude/hooks/pre-edit.sh`
+  exigia ADR-2 com status literal "aceito"; depois da ADR-11 ela é
+  "substituído por ADR-11". Com autorização explícita, `.claude/hooks/lib.sh`
+  ganhou `adr_decidida`: vale status começando com "aceito" ou "substituído
+  por ADR-N" com a ADR-N decidida. Testado: estado atual libera; ADR-11
+  proposta, ADR-11 ausente e ADR-3 proposta continuam bloqueando. Primeiro
+  teste da regra falhou — `[íi]` em colchete quebra no locale C (o `í` vira
+  2 bytes); trocado por `[^ ]*`.
+
+  **Aba Saúde — `packages/health_records` (novo):** `Medication` (catálogo,
+  `LocalDate` sem fuso, horários em minutos, `endDate` nulo = uso contínuo),
+  `MedicationRepository` (sqlite3, editar = salvar mesmo id, `endOn` encerra
+  sem apagar, `scheduleFor(dia)`), `MedicationDoseLogger` (`medication_dose`,
+  aceita dose avulsa), `MedicationAgenda` (previsto x acontecido, última
+  marcação vale, histórico append-only preservado), `SymptomLogger`,
+  `VitalSignLogger`, `BodyLogger`, 6 ferramentas. Unidades no banco em SI
+  (`.claude/rules/00-inviolaveis.md`): pressão kPa, glicemia mmol/L,
+  saturação e gordura em fração, medidas em metros; FC manual em bpm na
+  série `heart_rate` existente (mesma do wearable — desvio de SI que já
+  existia, mantido por consistência). "Uso contínuo até o fim do ano" fica
+  como padrão de quem cadastra (IA/tela), não do modelo. 4 tipos novos em
+  `health_event.dart`, `docs/ARQUITETURA.md`, `.claude/rules/datacore.md`.
+
+  **Erro meu corrigido:** o teste novo do app (`health_records_wiring_test`)
+  falhou 2/2 no `tearDown` — `StepTrackingController.dispose()` usa o
+  `WidgetsBinding` e faltava `TestWidgetsFlutterBinding.ensureInitialized()`
+  no teste. Não afeta produção (o binding sempre existe no app).
+
+  **Prova:**
+  ```
+  $ dart test (health_core) → +19: All tests passed (17 + 2 novos)
+  $ dart test (health_records) → +23: All tests passed
+  $ flutter test test/health_records_wiring_test.dart → +2: All tests passed
+  $ make lint → LINT EXIT: 0, 13x "No issues found"
+  $ make test → TEST EXIT: 0, 13x "All tests passed", 0x "Some tests failed"
+    +19 +5 +11 +47 +34 +14 +6 +3 +10 +9 +7 +23 +26 = 214 testes
+  ```
+
+  **Não verificado:** nada roda em aparelho neste ciclo (sem tela). Contador
+  de passos continua sem teste em aparelho desde 17/08.
+
+  **Débito técnico:** nenhum `TODO` novo.
+
+  **Pendente de decisão do usuário:** fórmulas de saúde (tabela proposta);
+  editar `CLAUDE.md` (linha 3 e "FASE ATUAL" desatualizadas).

@@ -141,6 +141,13 @@ packages:
       relative: true
     source: path
     version: "0.1.0"
+  frankstein_health_records:
+    dependency: "direct main"
+    description:
+      path: "../packages/health_records"
+      relative: true
+    source: path
+    version: "0.1.0"
   frankstein_nutrition:
     dependency: "direct main"
     description:

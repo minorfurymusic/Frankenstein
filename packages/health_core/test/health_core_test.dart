@@ -334,6 +334,21 @@ void main() {
     });
   });
 
+  group('HealthEventType — valor gravado no banco', () {
+    test('todo tipo faz ida e volta wireValue -> fromWireValue', () {
+      for (final type in HealthEventType.values) {
+        expect(HealthEventType.fromWireValue(type.wireValue), type);
+      }
+    });
+
+    test('tipos da aba Saúde existem com o nome documentado em docs/ARQUITETURA.md', () {
+      expect(HealthEventType.medicationDose.wireValue, 'medication_dose');
+      expect(HealthEventType.symptom.wireValue, 'symptom');
+      expect(HealthEventType.vitalSign.wireValue, 'vital_sign');
+      expect(HealthEventType.bodyMeasurement.wireValue, 'body_measurement');
+    });
+  });
+
   group('HealthEvent — validação', () {
     test('rejeita occurredAt fora de UTC', () {
       expect(

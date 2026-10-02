@@ -9,7 +9,11 @@ enum HealthEventType {
   workoutSession,
   setLog,
   gpsTrack,
-  clinicalDoc;
+  clinicalDoc,
+  medicationDose,
+  symptom,
+  vitalSign,
+  bodyMeasurement;
 
   /// Valor gravado no banco — snake_case, igual à documentação.
   String get wireValue => switch (this) {
@@ -23,6 +27,10 @@ enum HealthEventType {
         HealthEventType.setLog => 'set_log',
         HealthEventType.gpsTrack => 'gps_track',
         HealthEventType.clinicalDoc => 'clinical_doc',
+        HealthEventType.medicationDose => 'medication_dose',
+        HealthEventType.symptom => 'symptom',
+        HealthEventType.vitalSign => 'vital_sign',
+        HealthEventType.bodyMeasurement => 'body_measurement',
       };
 
   static HealthEventType fromWireValue(String value) => switch (value) {
@@ -36,6 +44,10 @@ enum HealthEventType {
         'set_log' => HealthEventType.setLog,
         'gps_track' => HealthEventType.gpsTrack,
         'clinical_doc' => HealthEventType.clinicalDoc,
+        'medication_dose' => HealthEventType.medicationDose,
+        'symptom' => HealthEventType.symptom,
+        'vital_sign' => HealthEventType.vitalSign,
+        'body_measurement' => HealthEventType.bodyMeasurement,
         _ => throw ArgumentError('tipo de HealthEvent desconhecido: $value'),
       };
 }

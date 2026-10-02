@@ -29,7 +29,8 @@ cópia de código.
 HealthEvent
   id                 uuid
   type               steps | heart_rate | sleep | meal | weight | water |
-                      workout_session | set_log | gps_track | clinical_doc
+                      workout_session | set_log | gps_track | clinical_doc |
+                      medication_dose | symptom | vital_sign | body_measurement
   source             pedometer | wearable | manual | wger | fasten | llm
   occurred_at        timestamp UTC
   recorded_at        timestamp

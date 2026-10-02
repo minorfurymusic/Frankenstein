@@ -41,6 +41,8 @@ dependencies:
     path: ../packages/brain
   frankstein_health_core:
     path: ../packages/health_core
+  frankstein_health_records:
+    path: ../packages/health_records
   frankstein_nutrition:
     path: ../packages/nutrition
   frankstein_share:

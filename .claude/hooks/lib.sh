@@ -35,10 +35,23 @@ adr_status() {
   grep -m1 '^\*\*Status:\*\*' "$file" | sed -E 's/^\*\*Status:\*\* *//'
 }
 
+# Uma ADR vale como decidida se o status começa com "aceito", ou se foi
+# "substituído por ADR-N" e a ADR-N vale como decidida (ADR-2 → ADR-11,
+# 2026-10-02). Profundidade limitada pra não entrar em ciclo.
+adr_decidida() {
+  local id="$1" depth="${2:-0}" status next
+  (( depth > 5 )) && return 1
+  status=$(adr_status "$id")
+  [[ "$status" == aceito* ]] && return 0
+  # "[^ ]*" em vez de "[íi]": no locale C o "í" vira 2 bytes e quebra o colchete.
+  if [[ "$status" =~ ^substitu[^\ ]*\ por\ ADR-([0-9]+) ]]; then
+    next=$(printf '%03d' "$((10#${BASH_REMATCH[1]}))")
+    adr_decidida "$next" "$((depth + 1))"
+    return $?
+  fi
+  return 1
+}
+
 adrs_1_2_3_aceitas() {
-  local s1 s2 s3
-  s1=$(adr_status 001)
-  s2=$(adr_status 002)
-  s3=$(adr_status 003)
-  [[ "$s1" == "aceito" && "$s2" == "aceito" && "$s3" == "aceito" ]]
+  adr_decidida 001 && adr_decidida 002 && adr_decidida 003
 }
