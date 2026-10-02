@@ -23,7 +23,20 @@ branco: navegação Resumo/Chat de verdade, ligada aos pacotes reais, com
 compartilhamento de treino/corrida funcionando de ponta a ponta. Detalhe
 completo em `docs/HISTORICO.md`.
 
-**Ciclo mais recente (2026-10-02): revisão do layout do Claude Design.**
+**Ciclo mais recente (2026-10-02): base visual do RLT.** Tema claro/escuro
+com os tokens do layout (`app/lib/theme/`), Figtree embutida (OFL 1.1,
+instâncias estáticas 400–800 geradas por `tool/fonts/make_figtree_instances.sh`,
+licença em Conta > Sobre), componentes da prancheta Componentes
+(`app/lib/widgets/`: cartão de proposta em 4 estados, cartão de remédio,
+anel, barra de macro, linha do tempo, selos, aviso de saúde, estados
+vazio/sem permissão/sem internet/carregando, campo de mensagem com voz,
+barra de 5 abas com Cérebro no centro), shell de 5 abas + Conta pelo avatar,
+nome "RLT" no Android. Saúde/Nutrição/Exercícios ainda dizem "em construção"
+(próximo ciclo). Antes, no mesmo dia: ADR-15 ganhou água por kg com piso
+EFSA por sexo, o modelo de meta de calorias descrito pelo usuário e a
+proposta de divisão de macros (números aguardam aprovação).
+
+**Ciclo anterior (2026-10-02): revisão do layout do Claude Design.**
 Sem código. Layout salvo em `docs/design/rlt-layout/` (81 pranchetas +
 `canvas.json`), revisão em `docs/design/REVISAO-LAYOUT.md`: todas as seções
 do prompt cobertas; nenhuma violação de regra (preço, anúncio, login extra,

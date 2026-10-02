@@ -19,7 +19,7 @@
     <uses-feature android:name="android.hardware.sensor.stepcounter" android:required="false"/>
 
     <application
-        android:label="frankstein"
+        android:label="RLT"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
         <activity

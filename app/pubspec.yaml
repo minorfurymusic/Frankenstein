@@ -1,5 +1,5 @@
 name: frankstein
-description: "Frankstein — app de saude offline-first"
+description: "RLT — Real Life Track, app de saude offline-first"
 # The following line prevents the package from being accidentally published to
 # pub.dev using `flutter pub publish`. This is preferred for private packages.
 publish_to: 'none' # Remove this line if you wish to publish to pub.dev
@@ -76,6 +76,27 @@ flutter:
   # included with your application, so that you can use the icons in
   # the material Icons class.
   uses-material-design: true
+
+  # Licença da Figtree (OFL 1.1) — registrada no LicenseRegistry em main.dart
+  # para aparecer em Conta > Sobre > Licenças.
+  assets:
+    - assets/fonts/figtree/OFL.txt
+
+  # Figtree embutida (nada de Google Fonts em tempo de execução — regra 7).
+  # Instâncias estáticas geradas por tool/fonts/make_figtree_instances.sh.
+  fonts:
+    - family: Figtree
+      fonts:
+        - asset: assets/fonts/figtree/Figtree-w400.ttf
+          weight: 400
+        - asset: assets/fonts/figtree/Figtree-w500.ttf
+          weight: 500
+        - asset: assets/fonts/figtree/Figtree-w600.ttf
+          weight: 600
+        - asset: assets/fonts/figtree/Figtree-w700.ttf
+          weight: 700
+        - asset: assets/fonts/figtree/Figtree-w800.ttf
+          weight: 800
 
   # To add assets to your application, add an assets section, like this:
   # assets:

@@ -83,7 +83,7 @@ HealthEvent _insertGpsTrackEvent(HealthDataCore core) {
 }
 
 void main() {
-  testWidgets('app sobe na aba Resumo, com o dashboard carregado (zerado, sem eventos)',
+  testWidgets('app sobe na aba Início, com o dashboard carregado (zerado, sem eventos)',
       (WidgetTester tester) async {
     final app = _buildTestApp();
     addTearDown(app.dependencies.close);
@@ -96,14 +96,14 @@ void main() {
     expect(find.text('0'), findsOneWidget); // passos
   });
 
-  testWidgets('alterna para a aba Chat pelo bottom nav', (WidgetTester tester) async {
+  testWidgets('alterna para a aba Cérebro pela barra de navegação', (WidgetTester tester) async {
     final app = _buildTestApp();
     addTearDown(app.dependencies.close);
 
     await tester.pumpWidget(app.widget);
     await tester.pumpAndSettle();
 
-    await tester.tap(find.text('Chat'));
+    await tester.tap(find.byKey(const Key('nav_cerebro')));
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('chat_input')), findsOneWidget);
@@ -116,7 +116,7 @@ void main() {
 
     await tester.pumpWidget(app.widget);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Chat'));
+    await tester.tap(find.byKey(const Key('nav_cerebro')));
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byKey(const Key('chat_input')), 'resumo de hoje');
@@ -133,7 +133,7 @@ void main() {
 
     await tester.pumpWidget(app.widget);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Chat'));
+    await tester.tap(find.byKey(const Key('nav_cerebro')));
     await tester.pumpAndSettle();
 
     await tester.enterText(find.byKey(const Key('chat_input')), 'oi, tudo bem?');
@@ -152,7 +152,7 @@ void main() {
 
     await tester.pumpWidget(app.widget);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Chat'));
+    await tester.tap(find.byKey(const Key('nav_cerebro')));
     await tester.pumpAndSettle();
 
     await tester.enterText(
@@ -182,7 +182,7 @@ void main() {
 
     await tester.pumpWidget(app.widget);
     await tester.pumpAndSettle();
-    await tester.tap(find.text('Chat'));
+    await tester.tap(find.byKey(const Key('nav_cerebro')));
     await tester.pumpAndSettle();
 
     await tester.enterText(
@@ -267,7 +267,7 @@ void main() {
   });
 
   Future<void> sendChat(WidgetTester tester, String text) async {
-    await tester.tap(find.text('Chat'));
+    await tester.tap(find.byKey(const Key('nav_cerebro')));
     await tester.pumpAndSettle();
     await tester.enterText(find.byKey(const Key('chat_input')), text);
     await tester.tap(find.byKey(const Key('chat_send')));
