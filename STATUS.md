@@ -29,9 +29,11 @@ Sem código. Layout salvo em `docs/design/rlt-layout/` (81 pranchetas +
 do prompt cobertas; nenhuma violação de regra (preço, anúncio, login extra,
 diagnóstico, publicação automática, iOS). Uma divergência de monetização:
 "Relatórios para levar à consulta" e "Mais espaço para fotos e exames"
-aparecem como Premium sem estar em `docs/MONETIZACAO.md`. **Aguardando:**
-decisão sobre essa divergência, aprovação das fórmulas, como entrar no APK de
-teste antes do servidor existir (login é obrigatório, ADR-13).
+aparecem como Premium sem estar em `docs/MONETIZACAO.md`. **Decidido no
+mesmo dia:** ADR-14 (relatório é Premium; "mais espaço" removido), ADR-15
+(fórmulas de saúde aprovadas, coeficientes a conferir na fonte antes de
+codificar), ADR-13 atualizada (login entra no início da rodada de testes;
+servidor em aberto), `CLAUDE.md` atualizado (IA em nuvem, fase atual).
 
 **Ciclo anterior (2026-10-02): camada de dados da aba Saúde.** Pacote
 novo `packages/health_records`: remédios (catálogo editável + agenda

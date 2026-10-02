@@ -5,6 +5,12 @@
 Altera `docs/MONETIZACAO.md` ("grátis sem cadastro") e ADR-7 (fluxo "Já assinei").
 **Data:** 2026-10-02
 
+> **Atualização (2026-10-02, usuário):** o login entra **quando começarem os
+> testes das telas**, não no fim do projeto. O servidor continua em aberto —
+> o usuário volta a esse assunto mais tarde. Como o mecanismo técnico
+> (seção "Opções") depende de servidor ou de exceção à regra de licença,
+> essa escolha vira portão no início da rodada de testes.
+
 ## Contexto
 
 Até aqui o projeto prometia o degrau grátis "sem conta, sem cadastro"

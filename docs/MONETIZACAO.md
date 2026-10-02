@@ -14,8 +14,13 @@ Tudo que roda no aparelho, sem limite, sem expiração, **sem cadastro**.
 Sem login significa sem servidor e sem você virar controlador de dados na LGPD.
 É o argumento de marketing mais forte do produto: os dados nunca saem do celular.
 
+> **Alterado pela ADR-14 (2026-10-02):** o relatório para levar à consulta é
+> só do Premium, mesmo sendo gerado no aparelho — é a única exceção a "tudo
+> que roda no aparelho é grátis". Exportar os dados continua grátis e sem
+> limite (relatório ≠ exportação).
+
 ### PREMIUM — R$ 20 / US$ 10 por mês
-Só o que custa servidor de verdade:
+Relatório para levar à consulta (ADR-14) e o que custa servidor de verdade:
 1. Backup criptografado e sincronização entre aparelhos
 2. Acesso web ao painel pessoal
 3. Conector de prontuário (Fasten/FHIR) para hospitais e planos

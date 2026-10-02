@@ -1,9 +1,10 @@
 # ADRs
 
-14 registradas. **13 em vigor, 1 substituída** (ADR-2, pela ADR-11 em
+16 registradas. **15 em vigor, 1 substituída** (ADR-2, pela ADR-11 em
 2026-10-02). ADR-1 e ADR-7 foram alteradas pela ADR-12 (Android apenas); a
 ADR-7 também pela ADR-13 (login Google substitui o código de "Já assinei"
 quando houver servidor).
+A ADR-14 alterou `docs/MONETIZACAO.md` (relatório para consulta é Premium).
 Nenhuma virou "aceita" sem confirmação explícita do usuário.
 
 | ADR | Assunto | Bloqueia | Status |
@@ -22,5 +23,7 @@ Nenhuma virou "aceita" sem confirmação explícita do usuário.
 | [ADR-11](011-cerebro-nuvem-chave-usuario.md) | Cérebro em nuvem com a chave de API do próprio usuário (substitui ADR-2) | F5 | **aceito** |
 | [ADR-12](012-android-only-nome-rlt.md) | Android apenas; nome do produto RLT — Real Life Track | — | **aceito** |
 | [ADR-13](013-login-google-obrigatorio.md) | Login com Google obrigatório (mecanismo técnico decidido na fase do servidor) | servidor | **aceito (produto); técnico em aberto** |
+| [ADR-14](014-recursos-premium-relatorio.md) | Relatório para consulta é Premium; "mais espaço" removido da tela Assinatura | — | **aceito** |
+| [ADR-15](015-formulas-saude.md) | Fórmulas de saúde (Mifflin-St Jeor / Katch-McArdle, METs 2024, ISSN, IMC, cintura/altura, US Navy) | metas | **aceito; coeficientes a conferir** |
 
 `_MODELO.md` neste diretório é o template usado em todas.

@@ -53,10 +53,9 @@ Nenhuma seção do prompt ficou sem prancheta.
    não tem limite; o que é pago é backup/sincronização em nuvem
    (`docs/MONETIZACAO.md:19`).
 
-Recomendação: na implementação, a tela Assinatura usa a lista de
-`docs/MONETIZACAO.md` (backup criptografado e sincronização, acesso web,
-prontuário de hospital, histórico em nuvem, conta familiar, suporte
-prioritário) e mantém o visual do design. Precisa de aprovação.
+**Decidido (ADR-14, 2026-10-02):** o relatório para consulta **fica Premium**;
+"mais espaço para fotos e exames" **sai da tela**. A tela Assinatura usa a
+lista da ADR-14 e mantém o visual do design.
 
 ## 4. Sistema visual (de `Tokens.dc.html`)
 
@@ -89,4 +88,6 @@ prioritário) e mantém o visual do design. Precisa de aprovação.
 - **D. Integrações:** IA em nuvem com chave do usuário, câmera e código de
   barras (ZXing), GPS e mapa (osmdroid/MapLibre), Health Connect, assinatura
   do lado do cliente.
-- **E. Por último:** servidor e login Google de verdade (ADR-13).
+- **E. Início da rodada de testes:** login Google (ADR-13, atualização de
+  2026-10-02). Servidor: em aberto, o usuário volta a esse assunto.
+- Metas e medidas usam as fórmulas da ADR-15.

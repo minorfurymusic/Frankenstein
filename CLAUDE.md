@@ -1,7 +1,9 @@
-# Frankstein — instruções do projeto
+# Frankstein (produto: RLT — Real Life Track) — instruções do projeto
 
-App de saúde 7-em-1, offline-first, com LLM local (MLC LLM) como cérebro que
-recebe comandos em linguagem natural e distribui para os módulos.
+App de saúde 7-em-1 para Android, offline-first. O cérebro é uma IA em nuvem
+com a chave de API do próprio usuário (ADR-11): recebe comandos em linguagem
+natural e distribui para os módulos; sem chave, funciona em modo básico com
+roteador determinístico, sem rede.
 Código aberto (copyleft). **Sem anúncios. Sem telemetria. Sem rastreador.**
 
 ## REGRAS INVIOLÁVEIS
@@ -69,9 +71,10 @@ Nenhum ciclo termina sem `make test` executado e a saída colada.
 
 ## FASE ATUAL
 
-**Fase 2 — esqueleto do monorepo (F2, `docs/PRODUTO.md`).**
-Fases 0 (reconhecimento) e 1 (ADRs) concluídas — ver `docs/adr/000-pendentes.md`.
-Shell Flutter em `app/`, pacotes vazios em `packages/*` conforme
-`docs/ARQUITETURA.md`. Nenhum módulo, LLM ou banco implementado ainda —
-isso entra fase a fase, cada um com sua própria ADR/ficha já aceita antes
-de codificar.
+**Implementação do layout RLT** (`docs/design/rlt-layout/`, revisão em
+`docs/design/REVISAO-LAYOUT.md`). Pacotes de dados de F3–F13 já existem
+(estado em `STATUS.md`). Estratégia decidida pelo usuário: construir **todas**
+as telas e funções antes de uma rodada única de teste no aparelho. Ordem:
+base visual → telas sobre dados existentes → telas com dado novo →
+integrações → servidor. Toda decisão nova continua passando por ADR aceita
+antes de codificar (`docs/adr/000-pendentes.md`).
