@@ -1,0 +1,855 @@
+{
+  "v": 3,
+  "attachments": {},
+  "boards": {
+    "Academia.dc.html": {
+      "h": 2008,
+      "page": "exercicios",
+      "title": "Academia",
+      "w": 1224,
+      "x": 3912,
+      "y": 0
+    },
+    "AcademiaEstados.dc.html": {
+      "h": 1768,
+      "page": "exercicios",
+      "title": "Academia — estados",
+      "w": 1224,
+      "x": 904,
+      "y": 2188
+    },
+    "AdicaoRapida.dc.html": {
+      "h": 896,
+      "page": "nutricao",
+      "title": "Adição rápida",
+      "w": 824,
+      "x": 0,
+      "y": 1996
+    },
+    "AdicionarAlimento.dc.html": {
+      "h": 1768,
+      "page": "nutricao",
+      "title": "Adicionar alimento",
+      "w": 1224,
+      "x": 2208,
+      "y": 0
+    },
+    "CerebroCartoesEstados.dc.html": {
+      "h": 1356,
+      "page": "cerebro",
+      "title": "Cérebro — confirmar, editar, descartar e perguntas",
+      "w": 824,
+      "x": 2208,
+      "y": 0
+    },
+    "CerebroChat.dc.html": {
+      "h": 1496,
+      "page": "cerebro",
+      "title": "Cérebro — cartões de proposta",
+      "w": 824,
+      "x": 1304,
+      "y": 0
+    },
+    "CerebroConsentimento.dc.html": {
+      "h": 996,
+      "page": "cerebro",
+      "title": "Cérebro — consentimento",
+      "w": 824,
+      "x": 1704,
+      "y": 2868
+    },
+    "CerebroConversas.dc.html": {
+      "h": 1768,
+      "page": "cerebro",
+      "title": "Cérebro — conversas",
+      "w": 1224,
+      "x": 0,
+      "y": 0
+    },
+    "CerebroEntradas.dc.html": {
+      "h": 1888,
+      "page": "cerebro",
+      "title": "Cérebro — anexos, voz e mídia",
+      "w": 1624,
+      "x": 0,
+      "y": 2868
+    },
+    "CerebroEstados.dc.html": {
+      "h": 1888,
+      "page": "cerebro",
+      "title": "Cérebro — estados",
+      "w": 2024,
+      "x": 2608,
+      "y": 2868
+    },
+    "CerebroFotoPrato.dc.html": {
+      "h": 1396,
+      "page": "cerebro",
+      "title": "Cérebro — foto de prato com peso",
+      "w": 824,
+      "x": 3112,
+      "y": 0
+    },
+    "CerebroReceita.dc.html": {
+      "h": 2688,
+      "page": "cerebro",
+      "title": "Cérebro — foto de receita médica",
+      "w": 824,
+      "x": 4016,
+      "y": 0
+    },
+    "CodigoBarras.dc.html": {
+      "h": 1768,
+      "page": "nutricao",
+      "title": "Código de barras",
+      "w": 1624,
+      "x": 3512,
+      "y": 0
+    },
+    "Compartilhar.dc.html": {
+      "h": 1968,
+      "page": "exercicios",
+      "title": "Compartilhar treino ou corrida",
+      "w": 824,
+      "x": 0,
+      "y": 6244
+    },
+    "Componentes.dc.html": {
+      "h": 2560,
+      "page": "componentes",
+      "title": "Componentes reutilizáveis",
+      "w": 1648,
+      "x": 0,
+      "y": 0
+    },
+    "Conta.dc.html": {
+      "h": 1136,
+      "page": "conta",
+      "title": "Conta e configurações",
+      "w": 824,
+      "x": 0,
+      "y": 0
+    },
+    "ContaAssinatura.dc.html": {
+      "h": 1768,
+      "page": "conta",
+      "title": "Assinatura",
+      "w": 1224,
+      "x": 1704,
+      "y": 2148
+    },
+    "ContaCerebro.dc.html": {
+      "h": 1768,
+      "page": "conta",
+      "title": "Cérebro (IA) — configurações",
+      "w": 1624,
+      "x": 0,
+      "y": 2148
+    },
+    "ContaDispositivos.dc.html": {
+      "h": 1768,
+      "page": "conta",
+      "title": "Dispositivos",
+      "w": 1224,
+      "x": 3912,
+      "y": 2148
+    },
+    "ContaEstados.dc.html": {
+      "h": 2248,
+      "page": "conta",
+      "title": "Conta — estados",
+      "w": 824,
+      "x": 4016,
+      "y": 4096
+    },
+    "ContaExcluir.dc.html": {
+      "h": 1968,
+      "page": "conta",
+      "title": "Sair e excluir conta",
+      "w": 1224,
+      "x": 904,
+      "y": 0
+    },
+    "ContaLembretes.dc.html": {
+      "h": 896,
+      "page": "conta",
+      "title": "Lembretes",
+      "w": 824,
+      "x": 0,
+      "y": 4096
+    },
+    "ContaMetas.dc.html": {
+      "h": 896,
+      "page": "conta",
+      "title": "Metas",
+      "w": 824,
+      "x": 3112,
+      "y": 0
+    },
+    "ContaPerfil.dc.html": {
+      "h": 896,
+      "page": "conta",
+      "title": "Perfil",
+      "w": 824,
+      "x": 2208,
+      "y": 0
+    },
+    "ContaPermissoes.dc.html": {
+      "h": 896,
+      "page": "conta",
+      "title": "Permissões",
+      "w": 824,
+      "x": 3008,
+      "y": 2148
+    },
+    "ContaPreferencias.dc.html": {
+      "h": 896,
+      "page": "conta",
+      "title": "Preferências",
+      "w": 824,
+      "x": 2208,
+      "y": 4096
+    },
+    "ContaPrivacidade.dc.html": {
+      "h": 1768,
+      "page": "conta",
+      "title": "Privacidade e dados",
+      "w": 1224,
+      "x": 904,
+      "y": 4096
+    },
+    "ContaSobre.dc.html": {
+      "h": 896,
+      "page": "conta",
+      "title": "Sobre",
+      "w": 824,
+      "x": 3112,
+      "y": 4096
+    },
+    "Corpo.dc.html": {
+      "h": 1096,
+      "page": "saude",
+      "title": "Corpo",
+      "w": 824,
+      "x": 1704,
+      "y": 9232
+    },
+    "CorpoEstados.dc.html": {
+      "h": 1928,
+      "page": "saude",
+      "title": "Corpo — estados",
+      "w": 1224,
+      "x": 2608,
+      "y": 9232
+    },
+    "CorridaAoVivo.dc.html": {
+      "h": 1848,
+      "page": "exercicios",
+      "title": "Corrida — ao vivo",
+      "w": 824,
+      "x": 4016,
+      "y": 2188
+    },
+    "CorridaEstados.dc.html": {
+      "h": 1848,
+      "page": "exercicios",
+      "title": "Corrida — estados",
+      "w": 2024,
+      "x": 1808,
+      "y": 4216
+    },
+    "CorridaHistorico.dc.html": {
+      "h": 936,
+      "page": "exercicios",
+      "title": "Corrida — histórico",
+      "w": 824,
+      "x": 904,
+      "y": 4216
+    },
+    "CorridaIniciar.dc.html": {
+      "h": 936,
+      "page": "exercicios",
+      "title": "Corrida — iniciar",
+      "w": 824,
+      "x": 3112,
+      "y": 2188
+    },
+    "CorridaResumo.dc.html": {
+      "h": 1336,
+      "page": "exercicios",
+      "title": "Corrida — resumo",
+      "w": 824,
+      "x": 0,
+      "y": 4216
+    },
+    "DetalheAlimento.dc.html": {
+      "h": 1276,
+      "page": "nutricao",
+      "title": "Detalhe do alimento",
+      "w": 824,
+      "x": 904,
+      "y": 1996
+    },
+    "DietaMetas.dc.html": {
+      "h": 1928,
+      "page": "nutricao",
+      "title": "Dieta e metas",
+      "w": 824,
+      "x": 0,
+      "y": 4144
+    },
+    "ExameMarcador.dc.html": {
+      "h": 1016,
+      "page": "saude",
+      "title": "Exame — evolução do marcador",
+      "w": 824,
+      "x": 904,
+      "y": 7044
+    },
+    "Exames.dc.html": {
+      "h": 2008,
+      "page": "saude",
+      "title": "Exames e documentos",
+      "w": 824,
+      "x": 0,
+      "y": 7044
+    },
+    "ExamesEstados.dc.html": {
+      "h": 2008,
+      "page": "saude",
+      "title": "Exames — estados",
+      "w": 1224,
+      "x": 1808,
+      "y": 7044
+    },
+    "ExerciciosEstados.dc.html": {
+      "h": 2008,
+      "page": "exercicios",
+      "title": "Exercícios — estados",
+      "w": 1624,
+      "x": 904,
+      "y": 0
+    },
+    "ExerciciosHoje.dc.html": {
+      "h": 1016,
+      "page": "exercicios",
+      "title": "Exercícios — hoje",
+      "w": 824,
+      "x": 0,
+      "y": 0
+    },
+    "GaleriaPratos.dc.html": {
+      "h": 1768,
+      "page": "nutricao",
+      "title": "Galeria de pratos",
+      "w": 824,
+      "x": 3616,
+      "y": 1996
+    },
+    "Historico.dc.html": {
+      "h": 1928,
+      "page": "saude",
+      "title": "Histórico médico",
+      "w": 1224,
+      "x": 1704,
+      "y": 4936
+    },
+    "HistoricoEstados.dc.html": {
+      "h": 1928,
+      "page": "saude",
+      "title": "Histórico — estados",
+      "w": 1224,
+      "x": 3912,
+      "y": 4936
+    },
+    "Inicio.dc.html": {
+      "h": 2056,
+      "page": "inicio",
+      "title": "Início — painel do dia",
+      "w": 824,
+      "x": 0,
+      "y": 0
+    },
+    "InicioCalendario.dc.html": {
+      "h": 1768,
+      "page": "inicio",
+      "title": "Início — outros dias",
+      "w": 824,
+      "x": 3008,
+      "y": 0
+    },
+    "InicioEstados.dc.html": {
+      "h": 1768,
+      "page": "inicio",
+      "title": "Início — estados",
+      "w": 2024,
+      "x": 904,
+      "y": 0
+    },
+    "InicioFonteGrande.dc.html": {
+      "h": 896,
+      "page": "inicio",
+      "title": "Início — fonte grande",
+      "w": 824,
+      "x": 0,
+      "y": 2236
+    },
+    "Lembretes.dc.html": {
+      "h": 1768,
+      "page": "inicio",
+      "title": "Lembretes e notificações",
+      "w": 1224,
+      "x": 3912,
+      "y": 0
+    },
+    "Login.dc.html": {
+      "h": 1768,
+      "page": "onboarding",
+      "title": "Entrar com Google",
+      "w": 1624,
+      "x": 1304,
+      "y": 0
+    },
+    "Main.dc.html": {
+      "h": 1768,
+      "page": "onboarding",
+      "title": "Boas-vindas",
+      "w": 1224,
+      "x": 0,
+      "y": 0
+    },
+    "NutricaoDiario.dc.html": {
+      "h": 1968,
+      "page": "nutricao",
+      "title": "Nutrição — diário",
+      "w": 824,
+      "x": 1808,
+      "y": 1996
+    },
+    "NutricaoEstados.dc.html": {
+      "h": 1768,
+      "page": "nutricao",
+      "title": "Nutrição — estados",
+      "w": 1224,
+      "x": 904,
+      "y": 0
+    },
+    "NutricaoHoje.dc.html": {
+      "h": 1816,
+      "page": "nutricao",
+      "title": "Nutrição — hoje",
+      "w": 824,
+      "x": 0,
+      "y": 0
+    },
+    "NutricaoTendencias.dc.html": {
+      "h": 1396,
+      "page": "nutricao",
+      "title": "Nutrição — tendências",
+      "w": 824,
+      "x": 2712,
+      "y": 1996
+    },
+    "OnbIA.dc.html": {
+      "h": 896,
+      "page": "onboarding",
+      "title": "Ativar IA",
+      "w": 824,
+      "x": 1808,
+      "y": 2068
+    },
+    "OnbMetas.dc.html": {
+      "h": 936,
+      "page": "onboarding",
+      "title": "Metas sugeridas",
+      "w": 824,
+      "x": 0,
+      "y": 2068
+    },
+    "OnbPerfil.dc.html": {
+      "h": 1888,
+      "page": "onboarding",
+      "title": "Perfil",
+      "w": 824,
+      "x": 3912,
+      "y": 0
+    },
+    "OnbPermissoes.dc.html": {
+      "h": 1768,
+      "page": "onboarding",
+      "title": "Permissões",
+      "w": 824,
+      "x": 904,
+      "y": 2068
+    },
+    "OnbPrivacidade.dc.html": {
+      "h": 896,
+      "page": "onboarding",
+      "title": "Privacidade",
+      "w": 824,
+      "x": 3008,
+      "y": 0
+    },
+    "OutrasAtividades.dc.html": {
+      "h": 896,
+      "page": "exercicios",
+      "title": "Outras atividades",
+      "w": 824,
+      "x": 3912,
+      "y": 4216
+    },
+    "Passos.dc.html": {
+      "h": 2008,
+      "page": "exercicios",
+      "title": "Passos",
+      "w": 1224,
+      "x": 2608,
+      "y": 0
+    },
+    "PlanoTreino.dc.html": {
+      "h": 1096,
+      "page": "exercicios",
+      "title": "Plano de treino — criar e editar",
+      "w": 824,
+      "x": 0,
+      "y": 2188
+    },
+    "Receitas.dc.html": {
+      "h": 1928,
+      "page": "saude",
+      "title": "Receitas médicas",
+      "w": 824,
+      "x": 2712,
+      "y": 2108
+    },
+    "ReceitasEstados.dc.html": {
+      "h": 1928,
+      "page": "saude",
+      "title": "Receitas — estados",
+      "w": 1624,
+      "x": 0,
+      "y": 4936
+    },
+    "ReceitasProprias.dc.html": {
+      "h": 1768,
+      "page": "nutricao",
+      "title": "Receitas e refeições próprias",
+      "w": 824,
+      "x": 904,
+      "y": 4144
+    },
+    "RemedioForm.dc.html": {
+      "h": 2648,
+      "page": "saude",
+      "title": "Remédio — cadastrar e editar",
+      "w": 824,
+      "x": 904,
+      "y": 2108
+    },
+    "Remedios.dc.html": {
+      "h": 976,
+      "page": "saude",
+      "title": "Remédios — lista",
+      "w": 824,
+      "x": 2208,
+      "y": 0
+    },
+    "RemediosAdesao.dc.html": {
+      "h": 976,
+      "page": "saude",
+      "title": "Remédios — adesão",
+      "w": 824,
+      "x": 1808,
+      "y": 2108
+    },
+    "RemediosAgenda.dc.html": {
+      "h": 1928,
+      "page": "saude",
+      "title": "Remédios — agenda",
+      "w": 824,
+      "x": 0,
+      "y": 2108
+    },
+    "RemediosEstados.dc.html": {
+      "h": 1928,
+      "page": "saude",
+      "title": "Remédios — estados",
+      "w": 1624,
+      "x": 3112,
+      "y": 0
+    },
+    "Saude.dc.html": {
+      "h": 976,
+      "page": "saude",
+      "title": "Saúde — início",
+      "w": 824,
+      "x": 0,
+      "y": 0
+    },
+    "SaudeEstados.dc.html": {
+      "h": 1928,
+      "page": "saude",
+      "title": "Saúde — estados",
+      "w": 1224,
+      "x": 904,
+      "y": 0
+    },
+    "SintomaForm.dc.html": {
+      "h": 976,
+      "page": "saude",
+      "title": "Sintoma — registrar",
+      "w": 824,
+      "x": 3008,
+      "y": 4936
+    },
+    "Sono.dc.html": {
+      "h": 996,
+      "page": "saude",
+      "title": "Sono",
+      "w": 824,
+      "x": 3912,
+      "y": 9232
+    },
+    "SonoEstados.dc.html": {
+      "h": 1928,
+      "page": "saude",
+      "title": "Sono — estados",
+      "w": 2024,
+      "x": 0,
+      "y": 11340
+    },
+    "Tokens.dc.html": {
+      "h": 1360,
+      "page": "componentes",
+      "title": "Tokens de design",
+      "w": 1648,
+      "x": 1728,
+      "y": 0
+    },
+    "TreinoAoVivo.dc.html": {
+      "h": 1768,
+      "page": "exercicios",
+      "title": "Treino ao vivo",
+      "w": 824,
+      "x": 2208,
+      "y": 2188
+    },
+    "Vitais.dc.html": {
+      "h": 1928,
+      "page": "saude",
+      "title": "Sinais vitais",
+      "w": 1224,
+      "x": 3112,
+      "y": 7044
+    },
+    "VitaisEstados.dc.html": {
+      "h": 1928,
+      "page": "saude",
+      "title": "Sinais vitais — estados",
+      "w": 1624,
+      "x": 0,
+      "y": 9232
+    }
+  },
+  "createdOnFiles": {
+    "at": "2026-10-02T13:20:50Z",
+    "v": 1
+  },
+  "designSystems": [],
+  "launch": {
+    "page": "onboarding",
+    "view": "canvas"
+  },
+  "notes": {
+    "n_cerebro": {
+      "kind": "title1",
+      "maxW": 5200,
+      "page": "cerebro",
+      "text": "3 · Cérebro",
+      "w": 240,
+      "x": 0,
+      "y": -300
+    },
+    "n_componentes": {
+      "kind": "title1",
+      "maxW": 5200,
+      "page": "componentes",
+      "text": "7 · Componentes e tokens",
+      "w": 240,
+      "x": 0,
+      "y": -300
+    },
+    "n_conta": {
+      "kind": "title1",
+      "maxW": 5200,
+      "page": "conta",
+      "text": "6 · Conta e Configurações",
+      "w": 240,
+      "x": 0,
+      "y": -300
+    },
+    "n_exercicios": {
+      "kind": "title1",
+      "maxW": 5200,
+      "page": "exercicios",
+      "text": "5 · Exercícios",
+      "w": 240,
+      "x": 0,
+      "y": -300
+    },
+    "n_inicio": {
+      "kind": "title1",
+      "maxW": 5200,
+      "page": "inicio",
+      "text": "1 · Início",
+      "w": 240,
+      "x": 0,
+      "y": -300
+    },
+    "n_nutricao": {
+      "kind": "title1",
+      "maxW": 5200,
+      "page": "nutricao",
+      "text": "4 · Nutrição",
+      "w": 240,
+      "x": 0,
+      "y": -300
+    },
+    "n_onboarding": {
+      "kind": "title1",
+      "maxW": 5200,
+      "page": "onboarding",
+      "text": "0 · Primeiro uso",
+      "w": 240,
+      "x": 0,
+      "y": -300
+    },
+    "n_saude": {
+      "kind": "title1",
+      "maxW": 5200,
+      "page": "saude",
+      "text": "2 · Saúde",
+      "w": 240,
+      "x": 0,
+      "y": -300
+    }
+  },
+  "order": [
+    "Main.dc.html",
+    "Login.dc.html",
+    "OnbPrivacidade.dc.html",
+    "OnbPerfil.dc.html",
+    "OnbMetas.dc.html",
+    "OnbPermissoes.dc.html",
+    "OnbIA.dc.html",
+    "Inicio.dc.html",
+    "InicioEstados.dc.html",
+    "InicioCalendario.dc.html",
+    "Lembretes.dc.html",
+    "InicioFonteGrande.dc.html",
+    "Saude.dc.html",
+    "SaudeEstados.dc.html",
+    "Remedios.dc.html",
+    "RemediosEstados.dc.html",
+    "RemediosAgenda.dc.html",
+    "RemedioForm.dc.html",
+    "RemediosAdesao.dc.html",
+    "Receitas.dc.html",
+    "ReceitasEstados.dc.html",
+    "Historico.dc.html",
+    "SintomaForm.dc.html",
+    "HistoricoEstados.dc.html",
+    "Exames.dc.html",
+    "ExameMarcador.dc.html",
+    "ExamesEstados.dc.html",
+    "Vitais.dc.html",
+    "VitaisEstados.dc.html",
+    "Corpo.dc.html",
+    "CorpoEstados.dc.html",
+    "Sono.dc.html",
+    "SonoEstados.dc.html",
+    "CerebroConversas.dc.html",
+    "CerebroChat.dc.html",
+    "CerebroCartoesEstados.dc.html",
+    "CerebroFotoPrato.dc.html",
+    "CerebroReceita.dc.html",
+    "CerebroEntradas.dc.html",
+    "CerebroConsentimento.dc.html",
+    "CerebroEstados.dc.html",
+    "NutricaoHoje.dc.html",
+    "NutricaoEstados.dc.html",
+    "AdicionarAlimento.dc.html",
+    "CodigoBarras.dc.html",
+    "AdicaoRapida.dc.html",
+    "DetalheAlimento.dc.html",
+    "NutricaoDiario.dc.html",
+    "NutricaoTendencias.dc.html",
+    "GaleriaPratos.dc.html",
+    "DietaMetas.dc.html",
+    "ReceitasProprias.dc.html",
+    "ExerciciosHoje.dc.html",
+    "ExerciciosEstados.dc.html",
+    "Passos.dc.html",
+    "Academia.dc.html",
+    "PlanoTreino.dc.html",
+    "AcademiaEstados.dc.html",
+    "TreinoAoVivo.dc.html",
+    "CorridaIniciar.dc.html",
+    "CorridaAoVivo.dc.html",
+    "CorridaResumo.dc.html",
+    "CorridaHistorico.dc.html",
+    "CorridaEstados.dc.html",
+    "OutrasAtividades.dc.html",
+    "Compartilhar.dc.html",
+    "Conta.dc.html",
+    "ContaExcluir.dc.html",
+    "ContaPerfil.dc.html",
+    "ContaMetas.dc.html",
+    "ContaCerebro.dc.html",
+    "ContaAssinatura.dc.html",
+    "ContaPermissoes.dc.html",
+    "ContaDispositivos.dc.html",
+    "ContaLembretes.dc.html",
+    "ContaPrivacidade.dc.html",
+    "ContaPreferencias.dc.html",
+    "ContaSobre.dc.html",
+    "ContaEstados.dc.html",
+    "Componentes.dc.html",
+    "Tokens.dc.html"
+  ],
+  "pages": [
+    {
+      "id": "onboarding",
+      "name": "0 · Primeiro uso"
+    },
+    {
+      "id": "inicio",
+      "name": "1 · Início"
+    },
+    {
+      "id": "saude",
+      "name": "2 · Saúde"
+    },
+    {
+      "id": "cerebro",
+      "name": "3 · Cérebro"
+    },
+    {
+      "id": "nutricao",
+      "name": "4 · Nutrição"
+    },
+    {
+      "id": "exercicios",
+      "name": "5 · Exercícios"
+    },
+    {
+      "id": "conta",
+      "name": "6 · Conta e Configurações"
+    },
+    {
+      "id": "componentes",
+      "name": "7 · Componentes e tokens"
+    }
+  ],
+  "title": "RLT — Real Life Track"
+}

@@ -23,7 +23,17 @@ branco: navegação Resumo/Chat de verdade, ligada aos pacotes reais, com
 compartilhamento de treino/corrida funcionando de ponta a ponta. Detalhe
 completo em `docs/HISTORICO.md`.
 
-**Ciclo mais recente (2026-10-02): camada de dados da aba Saúde.** Pacote
+**Ciclo mais recente (2026-10-02): revisão do layout do Claude Design.**
+Sem código. Layout salvo em `docs/design/rlt-layout/` (81 pranchetas +
+`canvas.json`), revisão em `docs/design/REVISAO-LAYOUT.md`: todas as seções
+do prompt cobertas; nenhuma violação de regra (preço, anúncio, login extra,
+diagnóstico, publicação automática, iOS). Uma divergência de monetização:
+"Relatórios para levar à consulta" e "Mais espaço para fotos e exames"
+aparecem como Premium sem estar em `docs/MONETIZACAO.md`. **Aguardando:**
+decisão sobre essa divergência, aprovação das fórmulas, como entrar no APK de
+teste antes do servidor existir (login é obrigatório, ADR-13).
+
+**Ciclo anterior (2026-10-02): camada de dados da aba Saúde.** Pacote
 novo `packages/health_records`: remédios (catálogo editável + agenda
 calculada por dia + doses tomadas/puladas como eventos `medication_dose`,
 inclusive dose avulsa sem cadastro), sintomas, sinais vitais (pressão,
@@ -37,7 +47,7 @@ entender ADR substituída. Sem tela ainda — aguarda o layout do Claude
 Design. Sem regra de chat ainda pra essas ferramentas (a IA em nuvem é que
 vai chamá-las). `make lint` 13/13, `make test` 13/13 suítes, 214 testes.
 
-**Ciclo anterior (2026-10-02): decisões de produto + prompt de design.**
+**Ciclo anterior a esse (2026-10-02): decisões de produto + prompt de design.**
 Sem código. ADR-11 (IA em nuvem com chave do usuário, substitui ADR-2),
 ADR-12 (Android apenas, nome RLT), `.claude/rules/brain.md` reescrita pra
 ADR-11, `docs/PRODUTO.md`/`docs/OFFLINE-IA.md`/`docs/MONETIZACAO.md`
