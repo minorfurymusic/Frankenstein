@@ -85,9 +85,13 @@ class _Item extends StatelessWidget {
               child: Icon(selected ? tab.selectedIcon : tab.icon, color: selected ? c.onSecondaryContainer : c.onSurfaceVariant),
             ),
             const SizedBox(height: 4),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(tab.label, style: t.labelMedium?.copyWith(fontWeight: FontWeight.w700, color: selected ? c.onSurface : c.onSurfaceVariant)),
+            // Flexible + FittedBox: com fonte grande do sistema o rótulo
+            // encolhe em vez de estourar a barra.
+            Flexible(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(tab.label, style: t.labelMedium?.copyWith(fontWeight: FontWeight.w700, color: selected ? c.onSurface : c.onSurfaceVariant)),
+              ),
             ),
           ],
         ),
@@ -118,8 +122,8 @@ class _CenterItem extends StatelessWidget {
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
             Container(
-              width: 52,
-              height: 52,
+              width: 48,
+              height: 48,
               decoration: BoxDecoration(
                 color: selected ? c.primary : c.primaryContainer,
                 borderRadius: BorderRadius.circular(RltRadius.navigation),
@@ -128,7 +132,12 @@ class _CenterItem extends StatelessWidget {
               child: Icon(RltTab.cerebro.icon, size: 28, color: selected ? c.onPrimary : c.onPrimaryContainer),
             ),
             const SizedBox(height: 2),
-            Text(RltTab.cerebro.label, style: t.labelMedium?.copyWith(fontWeight: FontWeight.w800, color: c.onSurface)),
+            Flexible(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(RltTab.cerebro.label, style: t.labelMedium?.copyWith(fontWeight: FontWeight.w800, color: c.onSurface)),
+              ),
+            ),
           ],
         ),
       ),

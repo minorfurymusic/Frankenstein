@@ -23,7 +23,20 @@ branco: navegação Resumo/Chat de verdade, ligada aos pacotes reais, com
 compartilhamento de treino/corrida funcionando de ponta a ponta. Detalhe
 completo em `docs/HISTORICO.md`.
 
-**Ciclo mais recente (2026-10-02): base visual do RLT.** Tema claro/escuro
+**Ciclo mais recente (2026-10-02): aba Saúde.** Tela inicial (resumos +
+seções + aviso fixo), Remédios (agenda de hoje com tomei/pulei gravando
+`medication_dose`, adesão de 30 dias, ativos/encerrados, cadastro/edição,
+encerrar tratamento), Histórico médico (diário de sintomas + formulário),
+Sinais vitais (5 tipos, gráfico 7/30/90 dias, registro manual), Corpo (peso,
+% gordura, 7 medidas, gráfico), Sono (noites da pulseira). Formulários
+gravam direto pelos loggers no toque em "Salvar" (o toque é a confirmação;
+o cartão do pipeline é para o que a IA propõe). Leitura em
+`app/lib/data/health_read_model.dart` (SI → unidade clínica). Ainda em
+construção: Receitas e Exames (precisam de câmera/arquivo), condições/
+consultas (dado novo), IMC e cintura/altura (precisam da altura do Perfil),
+lembrete de remédio (notificação local). `make test`: app 57 testes.
+
+**Ciclo anterior (2026-10-02): base visual do RLT.** Tema claro/escuro
 com os tokens do layout (`app/lib/theme/`), Figtree embutida (OFL 1.1,
 instâncias estáticas 400–800 geradas por `tool/fonts/make_figtree_instances.sh`,
 licença em Conta > Sobre), componentes da prancheta Componentes

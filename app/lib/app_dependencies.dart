@@ -6,7 +6,10 @@ import 'package:frankstein_nutrition/nutrition.dart';
 import 'package:frankstein_summary/summary.dart';
 import 'package:frankstein_tool_registry/tool_registry.dart';
 
+import 'package:flutter/foundation.dart';
+
 import 'card_image_capturer.dart';
+import 'data/health_read_model.dart';
 import 'chat_router.dart';
 import 'share_sheet.dart';
 import 'step_tracking_controller.dart';
@@ -43,6 +46,22 @@ class AppDependencies {
   final StepsRepository stepsRepository;
   final StepTrackingController stepTracking;
 
+  // Aba Saúde: telas gravam direto pelos loggers depois do toque em
+  // "Salvar" (o toque é a confirmação humana; o cartão de confirmação do
+  // pipeline é para o que a IA propõe — `.claude/rules/brain.md`).
+  final MedicationDoseLogger doseLogger;
+  final SymptomLogger symptomLogger;
+  final VitalSignLogger vitalSignLogger;
+  final BodyLogger bodyLogger;
+  final HealthReadModel healthRead;
+
+  /// Sobe a cada gravação feita pelas telas; quem mostra dado escuta e
+  /// recarrega.
+  final ValueNotifier<int> dataVersion = ValueNotifier(0);
+  void notifyDataChanged() => dataVersion.value++;
+
+  int tzOffsetMinutesNow() => DateTime.now().timeZoneOffset.inMinutes;
+
   AppDependencies._({
     required this.core,
     required this.foodRepository,
@@ -54,9 +73,15 @@ class AppDependencies {
     required this.imageCapturer,
     required this.stepsRepository,
     required this.stepTracking,
+    required this.doseLogger,
+    required this.symptomLogger,
+    required this.vitalSignLogger,
+    required this.bodyLogger,
+    required this.healthRead,
   });
 
   void close() {
+    dataVersion.dispose();
     stepTracking.dispose();
     core.close();
     foodRepository.close();
@@ -118,6 +143,11 @@ class AppDependencies {
     final mealLogger = MealLogger(foodRepository: foodRepository, core: core);
     final workoutLogger = WorkoutLogger(core: core);
     final waterLogger = WaterLogger(core: core);
+    final doseLogger = MedicationDoseLogger(core: core);
+    final symptomLogger = SymptomLogger(core: core);
+    final vitalSignLogger = VitalSignLogger(core: core);
+    final bodyLogger = BodyLogger(core: core);
+    final agenda = MedicationAgenda(repository: medicationRepository, core: core);
 
     // DateTime.now() (sem .toUtc()) é hora local de verdade no Dart —
     // diferente do bug já corrigido em StepsRepository.flush()
@@ -159,26 +189,26 @@ class AppDependencies {
       ..register(
         logMedicationDoseSpec(),
         logMedicationDoseHandler(
-          MedicationDoseLogger(core: core),
+          doseLogger,
           medicationRepository,
           tzOffsetMinutesProvider: tzOffsetMinutesProvider,
         ),
       )
       ..register(
         getMedicationAgendaSpec(),
-        getMedicationAgendaHandler(MedicationAgenda(repository: medicationRepository, core: core)),
+        getMedicationAgendaHandler(agenda),
       )
       ..register(
         logSymptomSpec(),
-        logSymptomHandler(SymptomLogger(core: core), tzOffsetMinutesProvider: tzOffsetMinutesProvider),
+        logSymptomHandler(symptomLogger, tzOffsetMinutesProvider: tzOffsetMinutesProvider),
       )
       ..register(
         logVitalSignSpec(),
-        logVitalSignHandler(VitalSignLogger(core: core), tzOffsetMinutesProvider: tzOffsetMinutesProvider),
+        logVitalSignHandler(vitalSignLogger, tzOffsetMinutesProvider: tzOffsetMinutesProvider),
       )
       ..register(
         logBodyMeasurementSpec(),
-        logBodyMeasurementHandler(BodyLogger(core: core), tzOffsetMinutesProvider: tzOffsetMinutesProvider),
+        logBodyMeasurementHandler(bodyLogger, tzOffsetMinutesProvider: tzOffsetMinutesProvider),
       );
 
     final pipeline = BrainPipeline(
@@ -198,6 +228,11 @@ class AppDependencies {
       imageCapturer: imageCapturer,
       stepsRepository: stepsRepository,
       stepTracking: stepTracking,
+      doseLogger: doseLogger,
+      symptomLogger: symptomLogger,
+      vitalSignLogger: vitalSignLogger,
+      bodyLogger: bodyLogger,
+      healthRead: HealthReadModel(core: core, medications: medicationRepository, agenda: agenda),
     );
   }
 }

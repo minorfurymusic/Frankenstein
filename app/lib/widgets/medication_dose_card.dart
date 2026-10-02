@@ -18,7 +18,11 @@ class MedicationDoseCard extends StatelessWidget {
   final VoidCallback? onSkipped;
   final VoidCallback? onUndo;
 
+  /// Dose marcada como pulada: mostra "Pulado" no lugar dos botões.
+  final bool skipped;
+
   const MedicationDoseCard({
+    this.skipped = false,
     super.key,
     required this.name,
     required this.dose,
@@ -34,21 +38,23 @@ class MedicationDoseCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = RltColors.of(context);
     final t = Theme.of(context).textTheme;
-    final overdue = status == DoseCardStatus.overdue;
     final taken = status == DoseCardStatus.taken;
-    final statusLabel = switch (status) {
-      DoseCardStatus.upcoming => 'PRÓXIMO',
-      DoseCardStatus.overdue => 'ATRASADO',
-      DoseCardStatus.taken => 'TOMADO',
-    };
+    final overdue = status == DoseCardStatus.overdue && !skipped;
+    final statusLabel = skipped
+        ? 'PULADO'
+        : switch (status) {
+            DoseCardStatus.upcoming => 'PRÓXIMO',
+            DoseCardStatus.overdue => 'ATRASADO',
+            DoseCardStatus.taken => 'TOMADO',
+          };
     final onColor = overdue ? c.onErrorContainer : c.onSurface;
 
     return Container(
       padding: const EdgeInsets.all(RltSpace.l),
       decoration: BoxDecoration(
-        color: overdue ? c.errorContainer : (taken ? c.surfaceContainerLow : c.surface),
+        color: overdue ? c.errorContainer : (taken || skipped ? c.surfaceContainerLow : c.surface),
         borderRadius: BorderRadius.circular(RltRadius.card),
-        border: overdue || taken ? null : Border.all(color: c.outlineVariant),
+        border: overdue || taken || skipped ? null : Border.all(color: c.outlineVariant),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -77,11 +83,16 @@ class MedicationDoseCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: RltSpace.m),
-          if (taken)
+          if (taken || skipped)
             Row(
               children: [
-                Expanded(child: Text('Tomado às ${takenAt ?? time}', style: t.bodySmall)),
-                TextButton(onPressed: onUndo, child: const Text('Desfazer')),
+                Expanded(
+                  child: Text(
+                    skipped ? 'Pulado' : (takenAt == null ? 'Tomado' : 'Tomado às $takenAt'),
+                    style: t.bodySmall,
+                  ),
+                ),
+                if (onUndo != null) TextButton(onPressed: onUndo, child: const Text('Desfazer')),
               ],
             )
           else

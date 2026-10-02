@@ -4,6 +4,7 @@ import 'app_dependencies.dart';
 import 'screens/account_screen.dart';
 import 'screens/chat_screen.dart';
 import 'screens/dashboard_screen.dart';
+import 'screens/health/health_tab.dart';
 import 'screens/tab_under_construction.dart';
 import 'theme/rlt_colors.dart';
 import 'widgets/rlt_navigation_bar.dart';
@@ -28,7 +29,9 @@ class _HomeShellState extends State<HomeShell> {
     Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const AccountScreen()));
   }
 
-  PreferredSizeWidget _appBar() {
+  PreferredSizeWidget? _appBar() {
+    // Abas com título grande próprio no corpo (prancheta Saude).
+    if (_tab == RltTab.saude) return null;
     if (_tab != RltTab.inicio) return AppBar(title: Text(_tab.label));
     final c = RltColors.of(context);
     return AppBar(
@@ -74,23 +77,27 @@ class _HomeShellState extends State<HomeShell> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: _appBar(),
-      body: IndexedStack(
+      body: SafeArea(bottom: false, top: _tab == RltTab.saude, child: IndexedStack(
         index: _tab.index,
         children: [
           DashboardScreen(dependencies: widget.dependencies),
-          // TODO(frankstein): aba Saúde (pranchetas Saude*, Remedios*, Vitais*, Corpo*…) — dados já existem em packages/health_records.
-          const TabUnderConstruction(tab: RltTab.saude),
+          HealthTab(deps: widget.dependencies),
           ChatScreen(pipeline: widget.dependencies.pipeline),
           // TODO(frankstein): aba Nutrição (pranchetas Nutricao*, AdicionarAlimento, DetalheAlimento…).
           const TabUnderConstruction(tab: RltTab.nutricao),
           // TODO(frankstein): aba Exercícios (pranchetas Exercicios*, Passos, Academia, Corrida*…).
           const TabUnderConstruction(tab: RltTab.exercicios),
         ],
-      ),
+      )),
       bottomNavigationBar: RltNavigationBar(
         key: const Key('bottom_nav'),
         selected: _tab,
-        onSelected: (tab) => setState(() => _tab = tab),
+        onSelected: (tab) {
+          setState(() => _tab = tab);
+          // O chat grava por fora das telas; ao trocar de aba, quem mostra
+          // dado recarrega.
+          widget.dependencies.notifyDataChanged();
+        },
       ),
     );
   }

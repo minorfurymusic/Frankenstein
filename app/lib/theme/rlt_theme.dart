@@ -160,6 +160,22 @@ abstract final class RltTheme {
           textStyle: text.labelLarge,
         ),
       ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: c.primaryContainer,
+        foregroundColor: c.onPrimaryContainer,
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(RltRadius.card)),
+        extendedTextStyle: text.labelLarge?.copyWith(fontSize: 16),
+      ),
+      segmentedButtonTheme: SegmentedButtonThemeData(
+        style: SegmentedButton.styleFrom(
+          selectedBackgroundColor: c.secondaryContainer,
+          selectedForegroundColor: c.onSecondaryContainer,
+          side: BorderSide(color: c.outline),
+          textStyle: text.labelLarge?.copyWith(fontSize: 14),
+          minimumSize: const Size(kRltMinTouch, kRltMinTouch),
+        ),
+      ),
       iconButtonTheme: IconButtonThemeData(
         style: IconButton.styleFrom(minimumSize: buttonMinSize),
       ),
