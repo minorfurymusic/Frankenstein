@@ -36,10 +36,9 @@ nome "RLT" no Android. Saúde/Nutrição/Exercícios ainda dizem "em construçã
 EFSA por sexo, o modelo de meta de calorias descrito pelo usuário e a
 proposta de divisão de macros (números aguardam aprovação). CI do commit
 `98a3af1` (runs `37037454729`/`37037452301`): `conclusion: success`, APK no
-artefato `frankstein-debug-apk`. **Pendente do usuário:** ícone do app (vai
-mandar depois); domínio `.com.br` para o `applicationId` (hoje
-`br.com.frankstein.frankstein`; vira `br.com.<domínio>` — não deu para
-conferir disponibilidade daqui, registro.br bloqueado pela rede).
+artefato `frankstein-debug-apk`. Fórmulas da ADR-15 aprovadas (sem teto de
+ritmo de perda). `applicationId` = `br.com.rlt.app` (site rlt.com.br).
+**Pendente do usuário:** ícone do app (vai mandar depois).
 
 **Ciclo anterior (2026-10-02): revisão do layout do Claude Design.**
 Sem código. Layout salvo em `docs/design/rlt-layout/` (81 pranchetas +

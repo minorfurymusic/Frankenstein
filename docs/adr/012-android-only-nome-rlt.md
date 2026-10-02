@@ -41,7 +41,11 @@ trabalho do repositório.
 - **Fica mais difícil:** fora do iPhone — mercado perdido, por escolha.
 - **Passa a ser proibido:** gastar esforço em código específico de iOS sem
   nova decisão revertendo esta.
-- **Pendente (não feito nesta ADR):** renomear o app de verdade — nome
+- **Atualização (2026-10-02):** nome exibido "RLT" e `applicationId`
+  `br.com.rlt.app` (domínio rlt.com.br, escolhido pelo usuário) aplicados;
+  ícone pendente (usuário envia). `namespace` e pacote Kotlin continuam
+  `br.com.frankstein.frankstein` — interno, não aparece para ninguém.
+- **Pendente (original):** renomear o app de verdade — nome
   exibido (`android:label`), `applicationId` (`br.com.frankstein.frankstein`
   em `app/android/app/build.gradle.kts`), ícone. Trocar o `applicationId`
   antes do lançamento é barato; depois do lançamento quebra a atualização

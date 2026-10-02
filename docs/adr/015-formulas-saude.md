@@ -48,7 +48,7 @@ Fontes (pesquisa de 2026-10-02):
 - 30–35 ml/kg/dia é a regra clínica usada para necessidade hídrica de
   adultos (fonte primária não aberta — citada em material secundário).
 
-Proposta de cálculo (aguarda aprovação dos números):
+Cálculo (**aprovado pelo usuário em 2026-10-02**):
 `água total = max(peso_kg × 35 ml, 2,0 L mulher | 2,5 L homem)` e
 **meta de bebida no app = 80% da água total** (o app registra o que se bebe,
 não a água da comida). Ex.: homem 70 kg → 2,5 L total → 2,0 L para beber;
@@ -63,7 +63,7 @@ mulher 60 kg → 2,1 L total → 1,68 L para beber.
   toca em "fechar dia"; mostra se bateu a meta. O painel mostra o andamento
   o tempo todo.
 
-Proposta técnica (aguarda aprovação):
+Cálculo (**aprovado pelo usuário em 2026-10-02**):
 - `meta do dia = basal × 1,2 − ajuste do objetivo + passos + exercícios`.
   1,2 é o fator "sedentário": o dia a dia sem caminhada nem treino. Caminhada
   entra pelos **passos** contados e treino/corrida pelos **METs** — assim não
@@ -74,13 +74,15 @@ Proposta técnica (aguarda aprovação):
   regra clássica; os modelos dinâmicos (Hall, 2008) mostram que ela
   superestima a perda no longo prazo, por isso a meta é **recalculada a cada
   novo peso registrado**.
-- Limites de segurança (dado de saúde, portão): meta nunca abaixo do basal;
-  perder no máximo ~1% do peso por semana.
+- Limite de segurança: meta nunca abaixo do basal. **Sem teto de ritmo de
+  perda** (decisão do usuário, 2026-10-02): quem usa medicação pode perder
+  mais rápido, e meta não é garantia de perda — o app não trava nem alerta
+  pela velocidade.
 - "Bateu a meta": perder → consumo ≤ meta; ganhar → consumo ≥ meta; manter →
   dentro de ±10% da meta.
 - Dia fechado que recebe registro atrasado é recalculado.
 
-## Divisão de macronutrientes da meta diária (proposta, aguarda aprovação)
+## Divisão de macronutrientes da meta diária (aprovada pelo usuário em 2026-10-02)
 
 Isto é a meta do dia, não a análise do prato (o prato usa os gramas da tabela
 TACO ou a estimativa da IA).
