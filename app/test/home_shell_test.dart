@@ -31,7 +31,7 @@ void main() {
     expect(material.darkTheme!.colorScheme.primary, RltTheme.dark().colorScheme.primary);
   });
 
-  testWidgets('as 5 abas abrem; Nutrição e Exercícios dizem que estão em construção', (tester) async {
+  testWidgets('as 5 abas abrem; Exercícios diz que está em construção', (tester) async {
     await tester.pumpWidget(app);
     await tester.pumpAndSettle();
 
@@ -41,7 +41,7 @@ void main() {
 
     await tester.tap(find.byKey(const Key('nav_nutricao')));
     await tester.pumpAndSettle();
-    expect(find.text('Nutrição: em construção'), findsOneWidget);
+    expect(find.byKey(const Key('nutrition_today')), findsOneWidget);
 
     await tester.tap(find.byKey(const Key('nav_exercicios')));
     await tester.pumpAndSettle();

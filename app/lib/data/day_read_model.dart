@@ -15,6 +15,7 @@ class DayTotals {
   final double proteinGrams;
   final double carbsGrams;
   final double fatGrams;
+  final double fiberGrams;
   final double waterMl;
   final int mealCount;
   final int workoutCount;
@@ -28,6 +29,7 @@ class DayTotals {
     required this.proteinGrams,
     required this.carbsGrams,
     required this.fatGrams,
+    required this.fiberGrams,
     required this.waterMl,
     required this.mealCount,
     required this.workoutCount,
@@ -66,6 +68,7 @@ class DayReadModel {
       proteinGrams: sum('protein_g'),
       carbsGrams: sum('carbohydrates_g'),
       fatGrams: sum('fat_g'),
+      fiberGrams: sum('fiber_g'),
       waterMl: eventsOnLocalDay(HealthEventType.water, day).fold(0.0, (s, e) => s + (e.payload['amount_ml'] as num).toDouble()),
       mealCount: meals.length,
       workoutCount: eventsOnLocalDay(HealthEventType.workoutSession, day).length,

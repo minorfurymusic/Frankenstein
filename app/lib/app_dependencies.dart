@@ -12,6 +12,7 @@ import 'package:flutter/material.dart' show ThemeMode, ValueNotifier;
 import 'card_image_capturer.dart';
 import 'data/day_read_model.dart';
 import 'data/health_read_model.dart';
+import 'data/nutrition_store.dart';
 import 'chat_router.dart';
 import 'share_sheet.dart';
 import 'step_tracking_controller.dart';
@@ -58,6 +59,9 @@ class AppDependencies {
   final HealthReadModel healthRead;
 
   final ProfileRepository profileRepository;
+  final MealLogger mealLogger;
+  final WaterLogger waterLogger;
+  final NutritionStore nutrition;
   final DayReadModel dayRead;
   final GoalsService goals;
 
@@ -93,6 +97,9 @@ class AppDependencies {
     required this.bodyLogger,
     required this.healthRead,
     required this.profileRepository,
+    required this.mealLogger,
+    required this.waterLogger,
+    required this.nutrition,
     required this.dayRead,
     required this.goals,
     required this.themeMode,
@@ -260,6 +267,9 @@ class AppDependencies {
       bodyLogger: bodyLogger,
       healthRead: healthRead,
       profileRepository: profileRepository,
+      mealLogger: mealLogger,
+      waterLogger: waterLogger,
+      nutrition: NutritionStore(foods: foodRepository, settings: profileRepository, core: core),
       dayRead: dayRead,
       goals: GoalsService(profiles: profileRepository, health: healthRead, days: dayRead),
       themeMode: ValueNotifier(

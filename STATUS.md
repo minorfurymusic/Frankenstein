@@ -23,7 +23,19 @@ branco: navegação Resumo/Chat de verdade, ligada aos pacotes reais, com
 compartilhamento de treino/corrida funcionando de ponta a ponta. Detalhe
 completo em `docs/HISTORICO.md`.
 
-**Ciclo mais recente (2026-10-02): perfil e metas.** Pacote novo
+**Ciclo mais recente (2026-10-03): aba Nutrição + metas revistas.** Metas:
+proteína por objetivo e treino (RDA 0,8 / Leidy 1,2 / ISSN 1,6–2,0; +0,4
+"quero mais proteína"), fibra 14 g/1.000 kcal (mín. 25 g), **sem trava**
+abaixo do gasto em repouso (decisão do usuário). Nutrição: Hoje (anel,
+macros, fibra, água +200/+300/+500, refeições do dia, fechar o dia),
+Adicionar alimento (busca TACO, código de barras digitado, adição rápida,
+recentes/favoritos/meus itens), Detalhe com tabela nutricional, Diário
+(calendário dentro/fora da meta), Tendências (sequência, médias, gráficos),
+Dieta e metas (restrições), Receitas próprias. Em construção: câmera do
+código de barras, foto do prato, galeria (câmera/IA), plano de refeições,
+peso desejado. App: 73 testes.
+
+**Ciclo anterior (2026-10-02): perfil e metas.** Pacote novo
 `packages/profile` (perfil, ajustes manuais, preferências; calculadora da
 ADR-15 com coeficientes conferidos, 18 testes com valores calculados à
 mão). Telas Conta › Perfil, Metas (meta do dia + "de onde veio o número" +
