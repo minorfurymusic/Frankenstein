@@ -6,8 +6,9 @@ import 'run_point.dart';
 /// (`.claude/rules/activity.md:19`: "Exportação/importação GPX
 /// obrigatória", LGPD art. 18 via `.claude/rules/00-inviolaveis.md`:
 /// "Exportação de dados nunca é paga nem limitada"). GPX 1.1
-/// (`http://www.topografix.com/GPX/1/1`), um `<trk>`/`<trkseg>` por
-/// rota — sem extensões proprietárias.
+/// (`http://www.topografix.com/GPX/1/1`), um `<trk>` por rota e um
+/// `<trkseg>` por trecho (cada pausa abre um trecho novo, como no próprio
+/// padrão GPX) — sem extensões proprietárias.
 ///
 /// Usa `package:xml` (MIT) — só pra montar/ler XML bem formado, não
 /// interpreta semântica de GPX além de `trkpt`/`lat`/`lon`/`ele`/`time`.
@@ -20,18 +21,28 @@ String exportGpx(List<RunPointInput> points, {String creator = 'Frankstein'}) {
     builder.attribute('creator', creator);
     builder.attribute('xmlns', 'http://www.topografix.com/GPX/1/1');
     builder.element('trk', nest: () {
-      builder.element('trkseg', nest: () {
-        for (final p in points) {
-          builder.element('trkpt', nest: () {
-            builder.attribute('lat', p.latitude.toString());
-            builder.attribute('lon', p.longitude.toString());
-            if (p.elevationMeters != null) {
-              builder.element('ele', nest: p.elevationMeters!.toString());
-            }
-            builder.element('time', nest: p.recordedAt.toIso8601String());
-          });
+      var start = 0;
+      while (start < points.length) {
+        var end = start + 1;
+        while (end < points.length && points[end].segment == points[start].segment) {
+          end++;
         }
-      });
+        final segmentPoints = points.sublist(start, end);
+        builder.element('trkseg', nest: () {
+          for (final p in segmentPoints) {
+            builder.element('trkpt', nest: () {
+              builder.attribute('lat', p.latitude.toString());
+              builder.attribute('lon', p.longitude.toString());
+              if (p.elevationMeters != null) {
+                builder.element('ele', nest: p.elevationMeters!.toString());
+              }
+              builder.element('time', nest: p.recordedAt.toIso8601String());
+            });
+          }
+        });
+        start = end;
+      }
+      if (points.isEmpty) builder.element('trkseg');
     });
   });
   return builder.buildDocument().toXmlString(pretty: true);
@@ -56,23 +67,36 @@ List<RunPointInput> importGpx(String gpxXml) {
     throw InvalidGpxException('GPX malformado: ${e.message}');
   }
 
-  return document.findAllElements('trkpt').map((el) {
-    final latRaw = el.getAttribute('lat');
-    final lonRaw = el.getAttribute('lon');
-    if (latRaw == null || lonRaw == null) {
-      throw InvalidGpxException('trkpt sem atributo lat/lon');
-    }
-    final timeEl = el.getElement('time');
-    if (timeEl == null) {
-      throw InvalidGpxException('trkpt sem <time> — obrigatório para reconstruir occurredAt');
-    }
-    final eleEl = el.getElement('ele');
+  final out = <RunPointInput>[];
+  var segment = 0;
+  for (final seg in document.findAllElements('trkseg')) {
+    final pts = seg.findElements('trkpt').toList();
+    if (pts.isEmpty) continue;
+    out.addAll(pts.map((el) => _point(el, segment)));
+    segment++;
+  }
+  // GPX sem <trkseg> (fora do padrão, mas existe): lê os pontos soltos.
+  if (out.isEmpty) out.addAll(document.findAllElements('trkpt').map((el) => _point(el, 0)));
+  return out;
+}
 
-    return RunPointInput(
-      latitude: double.parse(latRaw),
-      longitude: double.parse(lonRaw),
-      elevationMeters: eleEl != null ? double.parse(eleEl.innerText) : null,
-      recordedAt: DateTime.parse(timeEl.innerText).toUtc(),
-    );
-  }).toList();
+RunPointInput _point(XmlElement el, int segment) {
+  final latRaw = el.getAttribute('lat');
+  final lonRaw = el.getAttribute('lon');
+  if (latRaw == null || lonRaw == null) {
+    throw InvalidGpxException('trkpt sem atributo lat/lon');
+  }
+  final timeEl = el.getElement('time');
+  if (timeEl == null) {
+    throw InvalidGpxException('trkpt sem <time> — obrigatório para reconstruir occurredAt');
+  }
+  final eleEl = el.getElement('ele');
+
+  return RunPointInput(
+    latitude: double.parse(latRaw),
+    longitude: double.parse(lonRaw),
+    elevationMeters: eleEl != null ? double.parse(eleEl.innerText) : null,
+    recordedAt: DateTime.parse(timeEl.innerText).toUtc(),
+    segment: segment,
+  );
 }

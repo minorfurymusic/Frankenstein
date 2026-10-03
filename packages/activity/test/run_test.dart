@@ -239,6 +239,21 @@ void main() {
       expect(imported[1].elevationMeters, isNull);
     });
 
+    test('GPX: cada trecho (pausa) vira um <trkseg> e volta como trecho na importação', () {
+      final t0 = DateTime.utc(2026, 8, 10, 6);
+      final points = [
+        _pointAt(metersNorthOfOrigin: 0, recordedAt: t0),
+        _pointAt(metersNorthOfOrigin: 100, recordedAt: t0.add(const Duration(seconds: 30))),
+        _pointAt(metersNorthOfOrigin: 150, recordedAt: t0.add(const Duration(seconds: 300)), segment: 1),
+        _pointAt(metersNorthOfOrigin: 250, recordedAt: t0.add(const Duration(seconds: 330)), segment: 1),
+      ];
+      final xml = exportGpx(points);
+      expect('<trkseg>'.allMatches(xml).length, 2);
+      final back = importGpx(xml);
+      expect(back.map((p) => p.segment), [0, 0, 1, 1]);
+      expect(RunCalculator.totalDistanceMeters(back), closeTo(200, 1));
+    });
+
     test('importGpx rejeita trkpt sem <time>', () {
       const xmlSemTime = '''
 <?xml version="1.0" encoding="UTF-8"?>
