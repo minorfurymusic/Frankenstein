@@ -23,7 +23,20 @@ branco: navegação Resumo/Chat de verdade, ligada aos pacotes reais, com
 compartilhamento de treino/corrida funcionando de ponta a ponta. Detalhe
 completo em `docs/HISTORICO.md`.
 
-**Ciclo mais recente (2026-10-03): meta de sono e foto da receita própria.**
+**Ciclo mais recente (2026-10-03): valores de exame.** Decisão do usuário
+registrada na ADR-16 (valor e faixa de referência na unidade do próprio
+laudo — exceção à regra de SI só para exames) e revisão 1 da ADR-9
+(gravador de GPS próprio, sem OpenTracks). Exame ganhou "Valores do exame"
+(nome, valor, unidade do laudo, faixa do laboratório; `ExamMarker`, coluna
+`markers` com migração testada de banco antigo), "Marcadores acompanhados"
+na lista (último valor e direção desde o anterior) e a tela do marcador
+(última/anterior, gráfico por 6 meses/1 ano/tudo, faixa do laboratório,
+medições, aviso de que fora da faixa não é diagnóstico; nunca rotula
+alto/baixo/normal). Valores entram na exportação. A leitura automática da
+foto/PDF preenche este mesmo formulário quando a IA (ADR-11) tiver
+provedor.
+
+**Ciclo anterior (2026-10-03): meta de sono e foto da receita própria.**
 Meta de sono editável em Conta › Metas (`GoalOverrides.sleepMinutes`,
 padrão 8 h da prancheta Sono), usada no gráfico da semana. Receita própria
 ganhou "Adicionar foto" (câmera ou galeria, pasta privada do app),

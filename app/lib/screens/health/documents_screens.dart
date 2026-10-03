@@ -11,6 +11,7 @@ import '../../theme/rlt_colors.dart';
 import '../../theme/rlt_theme.dart';
 import '../../widgets/badges.dart';
 import '../../widgets/common.dart';
+import '../../widgets/line_chart.dart';
 import '../../widgets/state_views.dart';
 import '../account/account_more_screens.dart';
 
@@ -120,6 +121,7 @@ class _DocumentListScreenState extends State<_DocumentListScreen> {
               else if (docs.isEmpty)
                 const Padding(padding: EdgeInsets.all(RltSpace.l), child: Text('Nada nesta categoria.'))
               else ...[
+                if (!_isPrescription && _category == null) ..._trackedMarkers(context),
                 if (!_isPrescription) const RltSectionHeader('Exames'),
                 for (final d in docs) _DocumentTile(deps: widget.deps, doc: d, medNames: meds),
               ],
@@ -152,6 +154,171 @@ class _DocumentListScreenState extends State<_DocumentListScreen> {
         },
       ),
     );
+  }
+}
+
+extension on _DocumentListScreenState {
+  List<Widget> _trackedMarkers(BuildContext context) {
+    final history = widget.deps.documents.markerHistory();
+    if (history.isEmpty) return const [];
+    final t = Theme.of(context).textTheme;
+    final c = RltColors.of(context);
+    final keys = history.keys.toList()
+      ..sort((a, b) => history[a]!.first.marker.name.compareTo(history[b]!.first.marker.name));
+    return [
+      const RltSectionHeader('Marcadores acompanhados'),
+      for (final k in keys)
+        Builder(builder: (context) {
+          final readings = history[k]!;
+          final last = readings.first.marker;
+          final prev = readings.skip(1).where((r) => r.marker.unit == last.unit).firstOrNull?.marker;
+          return ListTile(
+            key: Key('marker_${k.replaceAll(' ', '_')}'),
+            contentPadding: EdgeInsets.zero,
+            title: Text(last.name, style: t.bodyLarge),
+            subtitle: prev == null ? Text('1 medição', style: t.bodySmall) : Text(trendLabel(prev.value, last.value), style: t.bodySmall),
+            trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+              Text('${formatMarkerValue(last.value)} ${last.unit}', style: RltTheme.tabular(t.titleSmall!)),
+              Icon(Icons.chevron_right, color: c.onSurfaceVariant),
+            ]),
+            onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(
+              builder: (_) => MarkerScreen(deps: widget.deps, markerKey: k),
+            )),
+          );
+        }),
+    ];
+  }
+}
+
+/// "↑ desde o último" (prancheta Exames). Só direção, sem julgamento.
+String trendLabel(double previous, double last) {
+  final tolerance = previous.abs() * 0.005;
+  if ((last - previous).abs() <= tolerance) return '→ igual ao anterior';
+  return last > previous ? '↑ desde o último' : '↓ desde o último';
+}
+
+/// Evolução de um marcador (prancheta ExameMarcador): última e anterior,
+/// gráfico por período, faixa de referência do laboratório e as medições.
+/// Mostra; não diz se está alto ou baixo (ADR-16).
+class MarkerScreen extends StatefulWidget {
+  final AppDependencies deps;
+  final String markerKey;
+  const MarkerScreen({super.key, required this.deps, required this.markerKey});
+
+  @override
+  State<MarkerScreen> createState() => _MarkerScreenState();
+}
+
+class _MarkerScreenState extends State<MarkerScreen> {
+  int? _months = 6; // null = tudo
+
+  @override
+  Widget build(BuildContext context) {
+    final c = RltColors.of(context);
+    final t = Theme.of(context).textTheme;
+    final readings = widget.deps.documents.markerHistory()[widget.markerKey] ?? const <MarkerReading>[];
+    if (readings.isEmpty) {
+      return Scaffold(appBar: AppBar(title: const Text('Marcador')), body: const SizedBox.shrink());
+    }
+    final last = readings.first.marker;
+    final sameUnit = [for (final r in readings) if (r.marker.unit == last.unit) r];
+    final otherUnits = readings.length - sameUnit.length;
+    final prev = sameUnit.length > 1 ? sameUnit[1].marker : null;
+    final now = DateTime.now();
+    final since = _months == null ? null : DateTime(now.year, now.month - _months!, now.day);
+    final points = [
+      for (final r in sameUnit.reversed)
+        if (r.date != null && (since == null || !DateTime(r.date!.year, r.date!.month, r.date!.day).isBefore(since)))
+          ChartPoint(DateTime(r.date!.year, r.date!.month, r.date!.day), r.marker.value),
+    ];
+    final ref = readings.map((r) => r.marker).firstWhere(
+          (m) => m.unit == last.unit && (m.referenceLow != null || m.referenceHigh != null),
+          orElse: () => last,
+        );
+    return Scaffold(
+      appBar: AppBar(
+        title: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text(last.name),
+          Text('${last.unit.isEmpty ? 'sem unidade' : last.unit} · ${readings.length} ${readings.length == 1 ? 'medição' : 'medições'}',
+              style: t.bodySmall),
+        ]),
+      ),
+      body: ListView(padding: const EdgeInsets.all(RltSpace.l), children: [
+        SegmentedButton<int?>(
+          segments: const [
+            ButtonSegment(value: 6, label: Text('6 meses')),
+            ButtonSegment(value: 12, label: Text('1 ano')),
+            ButtonSegment(value: null, label: Text('Tudo')),
+          ],
+          selected: {_months},
+          onSelectionChanged: (v) => setState(() => _months = v.first),
+        ),
+        const SizedBox(height: RltSpace.l),
+        Row(children: [
+          Expanded(child: _MarkerFact(label: 'Última', value: formatMarkerValue(last.value), unit: last.unit)),
+          if (prev != null) Expanded(child: _MarkerFact(label: 'Anterior', value: formatMarkerValue(prev.value), unit: prev.unit)),
+        ]),
+        const SizedBox(height: RltSpace.l),
+        if (points.length >= 2)
+          RltLineChart(
+            series: [ChartSeries(label: last.name, color: c.primary, points: points)],
+            semanticsLabel: 'Evolução de ${last.name}',
+          )
+        else
+          Text('O gráfico aparece com duas medições datadas no período.', style: t.bodySmall),
+        if (ref.referenceLow != null || ref.referenceHigh != null) ...[
+          const SizedBox(height: RltSpace.m),
+          Text('Faixa de referência do laboratório: ${referenceLabel(ref)}', key: const Key('marker_reference'), style: t.bodyMedium),
+        ],
+        if (otherUnits > 0)
+          Padding(
+            padding: const EdgeInsets.only(top: RltSpace.s),
+            child: Text(
+              '$otherUnits ${otherUnits == 1 ? 'medição está' : 'medições estão'} em outra unidade e ficam fora do gráfico.',
+              style: t.bodySmall,
+            ),
+          ),
+        const RltSectionHeader('Medições'),
+        for (final r in readings)
+          ListTile(
+            contentPadding: EdgeInsets.zero,
+            title: Text('${formatMarkerValue(r.marker.value)} ${r.marker.unit}', style: RltTheme.tabular(t.titleSmall!)),
+            subtitle: Text([if (r.date != null) _fmtDate(r.date!), r.documentTitle].join(' · ')),
+            onTap: () {
+              final doc = widget.deps.documents.byId(r.documentId);
+              if (doc == null) return;
+              Navigator.of(context).push(MaterialPageRoute<void>(
+                builder: (_) => doc.files.isEmpty
+                    ? DocumentFormScreen(deps: widget.deps, kind: doc.kind, existing: doc)
+                    : DocumentViewerScreen(deps: widget.deps, doc: doc),
+              ));
+            },
+          ),
+        const SizedBox(height: RltSpace.l),
+        Text('Valores fora da faixa de referência não são diagnóstico. Leve o resultado ao seu médico.', style: t.bodySmall),
+        const SizedBox(height: RltSpace.m),
+        const HealthDisclaimer(),
+      ]),
+    );
+  }
+}
+
+class _MarkerFact extends StatelessWidget {
+  final String label;
+  final String value;
+  final String unit;
+  const _MarkerFact({required this.label, required this.value, required this.unit});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Text(label, style: t.labelMedium?.copyWith(color: RltColors.of(context).onSurfaceVariant)),
+      Text.rich(TextSpan(children: [
+        TextSpan(text: value, style: RltTheme.tabular(t.headlineSmall!)),
+        TextSpan(text: ' $unit', style: t.bodyMedium),
+      ])),
+    ]);
   }
 }
 
@@ -247,6 +414,7 @@ class _DocumentFormScreenState extends State<DocumentFormScreen> {
   late final Set<String> _linked = {...?widget.existing?.linkedMedicationIds};
   late final List<HealthDocumentFile> _kept = [...?widget.existing?.files];
   late final List<PickedDocument> _added = [?widget.initialFile];
+  late final List<ExamMarker> _markers = [...?widget.existing?.markers];
   bool _saving = false;
 
   bool get _isPrescription => widget.kind == HealthDocumentKind.prescription;
@@ -288,6 +456,7 @@ class _DocumentFormScreenState extends State<DocumentFormScreen> {
         linkedMedicationIds: _isPrescription ? _linked.toList() : const [],
         files: [..._kept, ...stored],
         notes: _notes.text,
+        markers: _isPrescription ? const [] : _markers,
       );
       deps.documents.save(doc);
       final keptNames = {for (final f in _kept) f.storedName};
@@ -455,6 +624,45 @@ class _DocumentFormScreenState extends State<DocumentFormScreen> {
           ]),
           const SizedBox(height: RltSpace.m),
           _dateField('Data do exame', _date, (v) => _date = v),
+          RltSectionHeader(
+            'Valores do exame',
+            action: TextButton.icon(
+              key: const Key('marker_add'),
+              onPressed: () async {
+                final m = await showDialog<ExamMarker>(context: context, builder: (_) => const MarkerDialog());
+                if (m != null) setState(() => _markers.add(m));
+              },
+              icon: const Icon(Icons.add),
+              label: const Text('Adicionar valor'),
+            ),
+          ),
+          if (_markers.isEmpty)
+            Text('Opcional. Digite os valores como estão no laudo, com a unidade dele, para acompanhar cada um ao longo do tempo.',
+                style: t.bodySmall)
+          else ...[
+            Text('Confira cada valor com o papel antes de salvar.', style: t.bodySmall),
+            for (var i = 0; i < _markers.length; i++)
+              ListTile(
+                key: Key('marker_row_$i'),
+                contentPadding: EdgeInsets.zero,
+                title: Text(_markers[i].name),
+                subtitle: _markers[i].referenceLow == null && _markers[i].referenceHigh == null
+                    ? null
+                    : Text('Referência do laboratório: ${referenceLabel(_markers[i])}'),
+                trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+                  Text('${formatMarkerValue(_markers[i].value)} ${_markers[i].unit}', style: RltTheme.tabular(t.titleSmall!)),
+                  IconButton(
+                    tooltip: 'Tirar valor',
+                    onPressed: () => setState(() => _markers.removeAt(i)),
+                    icon: const Icon(Icons.close),
+                  ),
+                ]),
+                onTap: () async {
+                  final m = await showDialog<ExamMarker>(context: context, builder: (_) => MarkerDialog(initial: _markers[i]));
+                  if (m != null) setState(() => _markers[i] = m);
+                },
+              ),
+          ],
         ],
         const SizedBox(height: RltSpace.m),
         TextField(controller: _notes, minLines: 2, maxLines: 5, decoration: const InputDecoration(labelText: 'Anotações')),
@@ -631,6 +839,138 @@ class _DocumentViewerScreenState extends State<DocumentViewerScreen> {
           ]),
         ),
       ]),
+    );
+  }
+}
+
+/// Valor do exame com até 2 casas, como costuma vir no laudo.
+String formatMarkerValue(double v) {
+  final rounded = (v * 100).round() / 100;
+  final decimals = rounded == rounded.roundToDouble() ? 0 : ((rounded * 10).round() / 10 == rounded ? 1 : 2);
+  return formatNumber(rounded, decimals: decimals);
+}
+
+String referenceLabel(ExamMarker m) {
+  final lo = m.referenceLow;
+  final hi = m.referenceHigh;
+  final u = m.unit.isEmpty ? '' : ' ${m.unit}';
+  if (lo != null && hi != null) return '${formatMarkerValue(lo)} a ${formatMarkerValue(hi)}$u';
+  if (lo != null) return 'a partir de ${formatMarkerValue(lo)}$u';
+  if (hi != null) return 'até ${formatMarkerValue(hi)}$u';
+  return '';
+}
+
+/// Digitar/corrigir um valor do exame (nome, valor, unidade do laudo e,
+/// se houver, a faixa de referência do laboratório).
+class MarkerDialog extends StatefulWidget {
+  final ExamMarker? initial;
+  const MarkerDialog({super.key, this.initial});
+
+  @override
+  State<MarkerDialog> createState() => _MarkerDialogState();
+}
+
+class _MarkerDialogState extends State<MarkerDialog> {
+  late final _name = TextEditingController(text: widget.initial?.name ?? '');
+  late final _value = TextEditingController(text: widget.initial == null ? '' : formatMarkerValue(widget.initial!.value));
+  late final _unit = TextEditingController(text: widget.initial?.unit ?? '');
+  late final _low = TextEditingController(
+      text: widget.initial?.referenceLow == null ? '' : formatMarkerValue(widget.initial!.referenceLow!));
+  late final _high = TextEditingController(
+      text: widget.initial?.referenceHigh == null ? '' : formatMarkerValue(widget.initial!.referenceHigh!));
+  String? _error;
+
+  @override
+  void dispose() {
+    for (final c in [_name, _value, _unit, _low, _high]) {
+      c.dispose();
+    }
+    super.dispose();
+  }
+
+  void _ok() {
+    final v = parseNumber(_value.text);
+    if (v == null) {
+      setState(() => _error = 'Digite o valor (ex.: 102 ou 5,9).');
+      return;
+    }
+    try {
+      Navigator.pop(
+        context,
+        ExamMarker(
+          name: _name.text,
+          value: v,
+          unit: _unit.text,
+          referenceLow: _low.text.trim().isEmpty ? null : parseNumber(_low.text),
+          referenceHigh: _high.text.trim().isEmpty ? null : parseNumber(_high.text),
+        ),
+      );
+    } on ArgumentError catch (e) {
+      setState(() => _error = '${e.message}');
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    const number = TextInputType.numberWithOptions(decimal: true);
+    return AlertDialog(
+      title: Text(widget.initial == null ? 'Adicionar valor' : 'Corrigir valor'),
+      content: SingleChildScrollView(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          TextField(
+            key: const Key('marker_name'),
+            controller: _name,
+            textCapitalization: TextCapitalization.sentences,
+            decoration: const InputDecoration(labelText: 'Nome (ex.: Glicemia de jejum)'),
+          ),
+          Row(children: [
+            Expanded(
+              child: TextField(
+                key: const Key('marker_value'),
+                controller: _value,
+                keyboardType: number,
+                decoration: const InputDecoration(labelText: 'Valor'),
+              ),
+            ),
+            const SizedBox(width: RltSpace.s),
+            Expanded(
+              child: TextField(
+                key: const Key('marker_unit'),
+                controller: _unit,
+                decoration: const InputDecoration(labelText: 'Unidade do laudo'),
+              ),
+            ),
+          ]),
+          Row(children: [
+            Expanded(
+              child: TextField(
+                key: const Key('marker_low'),
+                controller: _low,
+                keyboardType: number,
+                decoration: const InputDecoration(labelText: 'Referência de'),
+              ),
+            ),
+            const SizedBox(width: RltSpace.s),
+            Expanded(
+              child: TextField(
+                key: const Key('marker_high'),
+                controller: _high,
+                keyboardType: number,
+                decoration: const InputDecoration(labelText: 'até'),
+              ),
+            ),
+          ]),
+          if (_error != null)
+            Padding(
+              padding: const EdgeInsets.only(top: RltSpace.s),
+              child: Text(_error!, style: TextStyle(color: RltColors.of(context).error)),
+            ),
+        ]),
+      ),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+        FilledButton(key: const Key('marker_ok'), onPressed: _ok, child: const Text('OK')),
+      ],
     );
   }
 }

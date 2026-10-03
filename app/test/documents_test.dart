@@ -175,4 +175,66 @@ void main() {
     expect(store().files, isEmpty);
     expect(find.text('Novo exame'), findsOneWidget);
   });
+
+  testWidgets('valores do exame: digitar com a unidade do laudo, marcador acompanhado e gráfico', (tester) async {
+    deps.documents.save(HealthDocument(
+      id: 'old',
+      kind: HealthDocumentKind.exam,
+      title: 'Glicemia',
+      category: ExamCategory.blood,
+      date: LocalDate.fromDateTime(DateTime.now().subtract(const Duration(days: 60))),
+      markers: [ExamMarker(name: 'Glicemia de jejum', value: 97, unit: 'mg/dL', referenceLow: 70, referenceHigh: 99)],
+    ));
+    await pump(tester, ExamsScreen(deps: deps));
+    await tester.tap(find.byKey(const Key('document_add')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('document_title')), 'Hemograma completo');
+    await tester.scrollUntilVisible(find.byKey(const Key('marker_add')), 200, scrollable: find.byType(Scrollable).first);
+    await tester.tap(find.byKey(const Key('marker_add')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('marker_name')), 'glicemia de jejum');
+    await tester.enterText(find.byKey(const Key('marker_value')), '102');
+    await tester.enterText(find.byKey(const Key('marker_unit')), 'mg/dL');
+    await tester.tap(find.byKey(const Key('marker_ok')));
+    await tester.pumpAndSettle();
+    expect(find.text('102 mg/dL'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('marker_add')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('marker_name')), 'HbA1c');
+    await tester.enterText(find.byKey(const Key('marker_value')), '5,9');
+    await tester.enterText(find.byKey(const Key('marker_unit')), '%');
+    await tester.tap(find.byKey(const Key('marker_ok')));
+    await tester.pumpAndSettle();
+    await tester.runAsync(() async {
+      await tester.tap(find.byKey(const Key('document_save')));
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    });
+    await tester.pumpAndSettle();
+
+    final exam = deps.documents.list(HealthDocumentKind.exam).first;
+    expect(exam.markers.map((m) => '${m.value} ${m.unit}'), ['102.0 mg/dL', '5.9 %']);
+    expect(find.text('Marcadores acompanhados'), findsOneWidget);
+    expect(find.text('↑ desde o último'), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('marker_glicemia_de_jejum')));
+    await tester.pumpAndSettle();
+    expect(find.text('Última'), findsOneWidget);
+    expect(find.text('Anterior'), findsOneWidget);
+    expect(find.byKey(const Key('marker_reference')), findsOneWidget);
+    expect(find.textContaining('70 a 99 mg/dL'), findsOneWidget);
+    expect(find.textContaining('não são diagnóstico'), findsOneWidget);
+    // Nunca rotula o valor.
+    for (final word in ['alto', 'baixo', 'normal', 'alterado']) {
+      expect(find.textContaining(RegExp('\\b$word\\b', caseSensitive: false)), findsNothing, reason: word);
+    }
+  });
+
+  test('valor do exame com as casas do laudo, sem zeros sobrando', () {
+    expect(formatMarkerValue(5.8 + 0.1), '5,9');
+    expect(formatMarkerValue(102), '102');
+    expect(formatMarkerValue(0.456), '0,46');
+    expect(formatMarkerValue(4500), '4.500');
+    expect(trendLabel(97, 102), '↑ desde o último');
+    expect(trendLabel(102, 102.2), '→ igual ao anterior');
+  });
 }

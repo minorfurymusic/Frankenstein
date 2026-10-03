@@ -69,6 +69,56 @@ class HealthDocumentFile {
       );
 }
 
+/// Um valor do exame, como está no laudo (ADR-16: unidade e faixa de
+/// referência do próprio laboratório — exceção à regra de SI). O app
+/// mostra; não classifica como alto, baixo ou normal.
+class ExamMarker {
+  final String name;
+  final double value;
+  final String unit;
+  final double? referenceLow;
+  final double? referenceHigh;
+
+  ExamMarker({required this.name, required this.value, required this.unit, this.referenceLow, this.referenceHigh}) {
+    if (name.trim().isEmpty) throw ArgumentError('dê o nome do valor (ex.: Glicemia)');
+    if (!value.isFinite) throw ArgumentError('valor inválido');
+    if (referenceLow != null && referenceHigh != null && referenceHigh! < referenceLow!) {
+      throw ArgumentError('faixa de referência invertida');
+    }
+  }
+
+  /// Chave para juntar o mesmo marcador entre exames: sem diferença de
+  /// maiúscula ou espaço.
+  String get key => normalizeMarkerName(name);
+
+  Map<String, Object> toJson() => {
+        'name': name.trim(),
+        'value': value,
+        'unit': unit.trim(),
+        if (referenceLow != null) 'reference_low': referenceLow!,
+        if (referenceHigh != null) 'reference_high': referenceHigh!,
+      };
+
+  factory ExamMarker.fromJson(Map<String, dynamic> m) => ExamMarker(
+        name: m['name'] as String,
+        value: (m['value'] as num).toDouble(),
+        unit: m['unit'] as String? ?? '',
+        referenceLow: (m['reference_low'] as num?)?.toDouble(),
+        referenceHigh: (m['reference_high'] as num?)?.toDouble(),
+      );
+}
+
+String normalizeMarkerName(String name) => name.trim().toLowerCase().replaceAll(RegExp(r'\s+'), ' ');
+
+/// Uma medição de um marcador ao longo do tempo (para o gráfico).
+class MarkerReading {
+  final ExamMarker marker;
+  final LocalDate? date;
+  final String documentId;
+  final String documentTitle;
+  const MarkerReading({required this.marker, required this.date, required this.documentId, required this.documentTitle});
+}
+
 class HealthDocument {
   final String id;
   final HealthDocumentKind kind;
@@ -94,6 +144,9 @@ class HealthDocument {
   final List<HealthDocumentFile> files;
   final String? notes;
 
+  /// Exame: valores transcritos do laudo.
+  final List<ExamMarker> markers;
+
   HealthDocument({
     required this.id,
     required this.kind,
@@ -105,6 +158,7 @@ class HealthDocument {
     this.linkedMedicationIds = const [],
     this.files = const [],
     this.notes,
+    this.markers = const [],
   }) {
     if (title.trim().isEmpty) {
       throw ArgumentError(kind == HealthDocumentKind.prescription ? 'informe quem receitou' : 'dê um nome ao exame');
@@ -129,9 +183,24 @@ CREATE TABLE IF NOT EXISTS health_documents (
   category TEXT,
   linked_medication_ids TEXT NOT NULL DEFAULT '[]',
   files TEXT NOT NULL DEFAULT '[]',
-  notes TEXT
+  notes TEXT,
+  markers TEXT NOT NULL DEFAULT '[]'
 );
 ''';
+
+/// Bancos criados antes dos valores de exame não têm a coluna `markers`.
+void _migrate(Database db) {
+  final cols = {for (final r in db.select('PRAGMA table_info(health_documents)')) r['name'] as String};
+  if (!cols.contains('markers')) {
+    db.execute("ALTER TABLE health_documents ADD COLUMN markers TEXT NOT NULL DEFAULT '[]'");
+  }
+}
+
+Database _prepare(Database db) {
+  db.execute(_schemaSql);
+  _migrate(db);
+  return db;
+}
 
 /// Receitas e exames guardados pela pessoa. Cadastro com arquivo anexado —
 /// tabela própria no banco de remédios, como o histórico médico, não
@@ -141,16 +210,16 @@ class HealthDocumentRepository {
   final Database _db;
   HealthDocumentRepository._(this._db);
 
-  factory HealthDocumentRepository.open(String path) => HealthDocumentRepository._(sqlite3.open(path)..execute(_schemaSql));
-  factory HealthDocumentRepository.openInMemory() => HealthDocumentRepository._(sqlite3.openInMemory()..execute(_schemaSql));
+  factory HealthDocumentRepository.open(String path) => HealthDocumentRepository._(_prepare(sqlite3.open(path)));
+  factory HealthDocumentRepository.openInMemory() => HealthDocumentRepository._(_prepare(sqlite3.openInMemory()));
 
   void close() => _db.dispose();
 
   void save(HealthDocument d) {
     _db.execute(
       'INSERT OR REPLACE INTO health_documents '
-      '(id, kind, title, date, specialty, valid_until, category, linked_medication_ids, files, notes) '
-      'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+      '(id, kind, title, date, specialty, valid_until, category, linked_medication_ids, files, notes, markers) '
+      'VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [
         d.id,
         d.kind.wireValue,
@@ -162,8 +231,21 @@ class HealthDocumentRepository {
         jsonEncode(d.linkedMedicationIds),
         jsonEncode([for (final f in d.files) f.toJson()]),
         _blankToNull(d.notes),
+        jsonEncode([for (final m in d.markers) m.toJson()]),
       ],
     );
+  }
+
+  /// Todas as medições de cada marcador (chave normalizada), da mais
+  /// recente para a mais antiga; sem data no fim.
+  Map<String, List<MarkerReading>> markerHistory() {
+    final out = <String, List<MarkerReading>>{};
+    for (final d in list(HealthDocumentKind.exam)) {
+      for (final m in d.markers) {
+        out.putIfAbsent(m.key, () => []).add(MarkerReading(marker: m, date: d.date, documentId: d.id, documentTitle: d.title));
+      }
+    }
+    return out;
   }
 
   void delete(String id) => _db.execute('DELETE FROM health_documents WHERE id = ?', [id]);
@@ -210,5 +292,8 @@ class HealthDocumentRepository {
           for (final f in jsonDecode(r['files'] as String) as List) HealthDocumentFile.fromJson(f as Map<String, dynamic>),
         ],
         notes: r['notes'] as String?,
+        markers: [
+          for (final m in jsonDecode(r['markers'] as String) as List) ExamMarker.fromJson(m as Map<String, dynamic>),
+        ],
       );
 }

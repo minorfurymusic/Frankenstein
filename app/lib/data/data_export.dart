@@ -97,6 +97,8 @@ Map<String, dynamic> buildFullExport(AppDependencies deps, {DateTime? now}) {
             'category': d.category?.wireValue,
             'linked_medication_ids': d.linkedMedicationIds,
             'notes': d.notes,
+            // Valores como no laudo, com a unidade do laboratório (ADR-16).
+            'markers': [for (final m in d.markers) m.toJson()],
             'files': [
               for (final f in d.files)
                 {

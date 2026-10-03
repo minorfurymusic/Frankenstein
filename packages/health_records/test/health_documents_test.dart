@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:frankstein_health_records/health_records.dart';
+import 'package:sqlite3/sqlite3.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -81,5 +82,63 @@ void main() {
     final reopened = HealthDocumentRepository.open(path);
     addTearDown(reopened.close);
     expect(reopened.list(HealthDocumentKind.exam).single.title, 'Glicemia');
+  });
+
+  test('valores do exame: unidade do laudo, histórico por marcador (nome sem diferença de maiúscula)', () {
+    final repo = HealthDocumentRepository.openInMemory();
+    addTearDown(repo.close);
+    repo.save(HealthDocument(
+      id: 'e1',
+      kind: HealthDocumentKind.exam,
+      title: 'Glicemia',
+      date: LocalDate(2026, 5, 12),
+      markers: [ExamMarker(name: 'Glicemia de jejum', value: 99, unit: 'mg/dL', referenceLow: 70, referenceHigh: 99)],
+    ));
+    repo.save(HealthDocument(
+      id: 'e2',
+      kind: HealthDocumentKind.exam,
+      title: 'Hemograma completo',
+      date: LocalDate(2026, 9, 25),
+      markers: [
+        ExamMarker(name: 'glicemia  de JEJUM', value: 102, unit: 'mg/dL'),
+        ExamMarker(name: 'HbA1c', value: 5.9, unit: '%'),
+      ],
+    ));
+    final h = repo.markerHistory();
+    expect(h.keys, containsAll(['glicemia de jejum', 'hba1c']));
+    final glic = h['glicemia de jejum']!;
+    expect([for (final r in glic) r.marker.value], [102, 99]);
+    expect(glic.first.documentTitle, 'Hemograma completo');
+    expect(glic.last.marker.referenceHigh, 99);
+    expect(repo.byId('e2')!.markers[1].unit, '%');
+    expect(() => ExamMarker(name: ' ', value: 1, unit: 'x'), throwsArgumentError);
+    expect(() => ExamMarker(name: 'a', value: 1, unit: 'x', referenceLow: 5, referenceHigh: 1), throwsArgumentError);
+  });
+
+  test('migração: banco de antes dos valores de exame ganha a coluna e mantém os dados', () {
+    final dir = Directory.systemTemp.createTempSync('rlt_docs_mig');
+    addTearDown(() => dir.deleteSync(recursive: true));
+    final path = '${dir.path}/meds.sqlite3';
+    final old = sqlite3.open(path);
+    old.execute('''
+CREATE TABLE health_documents (
+  id TEXT PRIMARY KEY, kind TEXT NOT NULL, title TEXT NOT NULL, date TEXT, specialty TEXT, valid_until TEXT,
+  category TEXT, linked_medication_ids TEXT NOT NULL DEFAULT '[]', files TEXT NOT NULL DEFAULT '[]', notes TEXT
+);''');
+    old.execute("INSERT INTO health_documents (id, kind, title, category) VALUES ('e0', 'exam', 'Perfil lipídico', 'blood')");
+    old.dispose();
+    final repo = HealthDocumentRepository.open(path);
+    addTearDown(repo.close);
+    final e0 = repo.byId('e0')!;
+    expect(e0.title, 'Perfil lipídico');
+    expect(e0.markers, isEmpty);
+    repo.save(HealthDocument(
+      id: 'e0',
+      kind: HealthDocumentKind.exam,
+      title: 'Perfil lipídico',
+      category: ExamCategory.blood,
+      markers: [ExamMarker(name: 'Colesterol total', value: 189, unit: 'mg/dL')],
+    ));
+    expect(repo.byId('e0')!.markers.single.value, 189);
   });
 }
