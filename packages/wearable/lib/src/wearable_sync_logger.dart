@@ -74,6 +74,17 @@ class WearableSyncLogger {
           'started_at': sample.startedAt.toIso8601String(),
           'ended_at': sample.endedAt.toIso8601String(),
           'duration_minutes': sample.duration.inMinutes,
+          if (sample.stages.isNotEmpty)
+            'stages': [
+              for (final st in sample.stages)
+                {
+                  'stage': st.stage.wireValue,
+                  'started_at': st.startedAt.toIso8601String(),
+                  'ended_at': st.endedAt.toIso8601String(),
+                },
+            ],
+          if (sample.stages.isNotEmpty)
+            'stage_minutes': {for (final e in sample.stageMinutes.entries) e.key.wireValue: e.value},
         },
         confidence: 1.0,
         externalId: sample.externalId,

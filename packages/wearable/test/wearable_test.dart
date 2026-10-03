@@ -108,6 +108,34 @@ void main() {
       expect(sleepEvents.single.payload['duration_minutes'], 450);
     });
 
+    test('fases do sono vão para o payload: lista e minutos por fase', () async {
+      DateTime t(int d, int h, int m) => DateTime.utc(2026, 8, d, h, m);
+      final dataSource = FixtureWearableDataSource(sleepSessionSamples: [
+        SleepSessionSample(
+          externalId: 'hc-sleep-2',
+          startedAt: t(14, 23, 0),
+          endedAt: t(15, 6, 0),
+          tzOffsetMinutes: -180,
+          stages: [
+            SleepStageSample(stage: SleepStage.light, startedAt: t(14, 23, 0), endedAt: t(15, 1, 0)),
+            SleepStageSample(stage: SleepStage.deep, startedAt: t(15, 1, 0), endedAt: t(15, 2, 30)),
+            SleepStageSample(stage: SleepStage.rem, startedAt: t(15, 2, 30), endedAt: t(15, 3, 20)),
+            SleepStageSample(stage: SleepStage.light, startedAt: t(15, 3, 20), endedAt: t(15, 5, 50)),
+            SleepStageSample(stage: SleepStage.awake, startedAt: t(15, 5, 50), endedAt: t(15, 6, 0)),
+          ],
+        ),
+      ]);
+      await WearableSyncLogger(core: core, dataSource: dataSource).sync(from: t(14, 0, 0), to: t(16, 0, 0));
+      final p = core.queryByType(HealthEventType.sleep).single.payload;
+      expect(p['stage_minutes'], {'light': 270, 'deep': 90, 'rem': 50, 'awake': 10});
+      expect((p['stages'] as List).first, {
+        'stage': 'light',
+        'started_at': '2026-08-14T23:00:00.000Z',
+        'ended_at': '2026-08-15T01:00:00.000Z',
+      });
+      expect(SleepStage.fromWireValue('xyz'), SleepStage.unknown);
+    });
+
     test('sincronizar a mesma janela de novo não duplica — dedup por (source, external_id)', () async {
       final dataSource = FixtureWearableDataSource(
         heartRateSamples: [

@@ -25,6 +25,15 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" tools:node="remove"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" tools:node="remove"/>
     <uses-feature android:name="android.hardware.camera" android:required="false"/>
+    <!-- Health Connect (ADR-4a, HealthConnectBridge.kt): só LEITURA de sono e
+         frequência cardíaca que a pulseira/relógio gravou lá. Pedidas em
+         runtime, só quando a pessoa toca em "Conectar" em Conta › Dispositivos. -->
+    <uses-permission android:name="android.permission.health.READ_SLEEP"/>
+    <uses-permission android:name="android.permission.health.READ_HEART_RATE"/>
+    <!-- A biblioteca do Health Connect pede API 26; o app segue instalando
+         da API 24 e só usa o Health Connect da API 28 em diante (onde ele
+         existe). -->
+    <uses-sdk tools:overrideLibrary="androidx.health.connect.client"/>
     <!-- required="false": aparelho sem sensor de passos ainda instala o
          app, só não conta passos — degradação gradual, não trava nada. -->
     <uses-feature android:name="android.hardware.sensor.stepcounter" android:required="false"/>
@@ -59,7 +68,23 @@
                 <action android:name="android.intent.action.MAIN"/>
                 <category android:name="android.intent.category.LAUNCHER"/>
             </intent-filter>
+            <!-- Health Connect (Android 13 ou anterior) abre o app para mostrar
+                 como os dados são usados: o app abre em Conta › Privacidade. -->
+            <intent-filter>
+                <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE"/>
+            </intent-filter>
         </activity>
+        <!-- Mesmo papel no Android 14+. -->
+        <activity-alias
+            android:name="ViewPermissionUsageActivity"
+            android:exported="true"
+            android:targetActivity=".MainActivity"
+            android:permission="android.permission.START_VIEW_PERMISSION_USAGE">
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW_PERMISSION_USAGE"/>
+                <category android:name="android.intent.category.HEALTH_PERMISSIONS"/>
+            </intent-filter>
+        </activity-alias>
         <!-- Don't delete the meta-data below.
              This is used by the Flutter tool to generate GeneratedPluginRegistrant.java -->
         <meta-data
@@ -89,5 +114,7 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+        <!-- Saber se o Health Connect está instalado (Android 9 a 13). -->
+        <package android:name="com.google.android.apps.healthdata"/>
     </queries>
 </manifest>

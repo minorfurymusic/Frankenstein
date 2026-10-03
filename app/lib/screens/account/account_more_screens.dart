@@ -8,6 +8,8 @@ import '../../theme/rlt_colors.dart';
 import '../../theme/rlt_theme.dart';
 import '../../widgets/badges.dart';
 import '../../widgets/common.dart';
+import '../../wearables/health_connect.dart';
+import 'devices_screen.dart';
 
 /// Conta › Privacidade e dados (prancheta ContaPrivacidade): exportar tudo
 /// (grátis, sem limite) e apagar tudo (confirmação forte).
@@ -33,6 +35,15 @@ class PrivacyScreen extends StatelessWidget {
           'Seus dados de saúde ficam só neste celular. Nada vai para a internet sem uma ação sua. '
           'Sem anúncios, sem telemetria, sem rastreador.',
           style: t.bodyLarge,
+        ),
+        const RltSectionHeader('Pulseira e Health Connect'),
+        Text(
+          'Com a sua permissão, o RLT só LÊ do Health Connect o sono (com as fases) e a frequência cardíaca que a '
+          'pulseira ou o relógio gravou lá. Não escreve nada no Health Connect, não envia esses dados para a internet '
+          'e usa só para mostrar o seu sono e os seus batimentos aqui. A permissão pode ser tirada a qualquer hora no '
+          'próprio Health Connect; o que já foi lido sai com "Apagar todos os dados".',
+          key: const Key('privacy_health_connect'),
+          style: t.bodyMedium,
         ),
         const RltSectionHeader('Exportar'),
         Text('Todos os seus registros num arquivo .zip (dados em JSON, mais as fotos e PDFs de receitas e exames), '
@@ -170,6 +181,22 @@ class PermissionsScreen extends StatelessWidget {
   final AppDependencies deps;
   const PermissionsScreen({super.key, required this.deps});
 
+  Future<String> _healthConnectState() async {
+    final bridge = deps.wearables.bridge;
+    switch (await bridge.status()) {
+      case HealthConnectStatus.unsupported:
+        return 'Indisponível neste aparelho (precisa do Android 9 ou mais novo)';
+      case HealthConnectStatus.notInstalled:
+      case HealthConnectStatus.updateRequired:
+        return 'Health Connect não encontrado';
+      case HealthConnectStatus.available:
+        final granted = await bridge.grantedPermissions();
+        if (granted.length == HealthConnectData.values.length) return 'Permitida';
+        if (granted.isEmpty) return 'Não permitida';
+        return 'Permitida em parte';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
@@ -209,38 +236,29 @@ class PermissionsScreen extends StatelessWidget {
               onTap: snap.data == false ? () => deps.reminders.scheduler.requestPermission() : null,
             ),
           ),
-          // TODO(frankstein): pedir e mostrar o estado real destas permissões quando cada recurso entrar (integrações).
-          row(Icons.photo_camera_outlined, 'Câmera', 'Código de barras, foto do prato e da receita.', 'Ainda não usada pelo app'),
+          row(
+            Icons.photo_camera_outlined,
+            'Câmera',
+            'Código de barras e fotos de receitas e exames. Nada é gravado sem você salvar.',
+            'O Android pergunta na primeira vez que você abre a câmera',
+          ),
+          FutureBuilder<String>(
+            future: _healthConnectState(),
+            builder: (context, snap) => row(
+              Icons.watch_outlined,
+              'Dados de saúde da pulseira',
+              'Sono e batimentos via Health Connect (só leitura).',
+              snap.data ?? 'Verificando…',
+              onTap: snap.data == null || snap.data!.startsWith('Permitida')
+                  ? null
+                  : () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => DevicesScreen(deps: deps))),
+            ),
+          ),
+          // TODO(frankstein): microfone (voz no Cérebro, depende da IA — ADR-11) e localização (corrida com GPS — ADR-9).
           row(Icons.mic_none, 'Microfone', 'Falar com o Cérebro.', 'Ainda não usada pelo app'),
           row(Icons.location_on_outlined, 'Localização', 'Gravar a rota da corrida e da caminhada.', 'Ainda não usada pelo app'),
-          row(Icons.watch_outlined, 'Dados de saúde da pulseira', 'Sono e batimentos via Health Connect.', 'Ainda não usada pelo app'),
         ]),
       ),
-    );
-  }
-}
-
-/// Conta › Dispositivos (prancheta ContaDispositivos).
-class DevicesScreen extends StatelessWidget {
-  const DevicesScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final t = Theme.of(context).textTheme;
-    return Scaffold(
-      appBar: AppBar(title: const Text('Dispositivos')),
-      body: ListView(padding: const EdgeInsets.all(RltSpace.l), children: [
-        Text('Pulseira ou relógio', style: t.titleMedium),
-        const SizedBox(height: RltSpace.s),
-        Text(
-          'O RLT lê sono e batimentos pelo Health Connect, o hub de saúde do próprio Android — sem aplicativo de '
-          'fabricante no meio e sem enviar nada para a internet.',
-          style: t.bodyMedium,
-        ),
-        const SizedBox(height: RltSpace.l),
-        // TODO(frankstein): conexão real com o Health Connect (leitura de sono e FC) na etapa de integrações.
-        const FilledButton(onPressed: null, child: Text('Conectar via Health Connect (em breve)')),
-      ]),
     );
   }
 }

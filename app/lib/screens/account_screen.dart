@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../app_dependencies.dart';
 import '../theme/rlt_colors.dart';
 import 'account/account_more_screens.dart';
+import 'account/devices_screen.dart';
 import 'account/goals_screen.dart';
 import 'account/preferences_screen.dart';
 import 'account/profile_screen.dart';
@@ -23,7 +24,7 @@ class AccountScreen extends StatelessWidget {
         'Cérebro (IA)' => const BrainSettingsScreen(),
         'Assinatura' => const SubscriptionScreen(),
         'Permissões' => PermissionsScreen(deps: deps),
-        'Dispositivos' => const DevicesScreen(),
+        'Dispositivos' => DevicesScreen(deps: deps),
         'Privacidade e dados' => PrivacyScreen(deps: deps),
         _ => PreferencesScreen(deps: deps),
       };

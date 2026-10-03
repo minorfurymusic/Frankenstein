@@ -165,6 +165,18 @@ class HealthReadModel {
             startLocal: localOf(DateTime.parse(e.payload['started_at'] as String), e.occurredAtTzOffsetMinutes),
             endLocal: localOf(DateTime.parse(e.payload['ended_at'] as String), e.occurredAtTzOffsetMinutes),
             minutes: (e.payload['duration_minutes'] as num).toInt(),
+            stageMinutes: {
+              for (final st in ((e.payload['stage_minutes'] as Map?) ?? const {}).entries)
+                st.key as String: (st.value as num).toInt(),
+            },
+            stages: [
+              for (final st in (e.payload['stages'] as List?) ?? const [])
+                SleepStageView(
+                  stage: (st as Map)['stage'] as String,
+                  startLocal: localOf(DateTime.parse(st['started_at'] as String), e.occurredAtTzOffsetMinutes),
+                  endLocal: localOf(DateTime.parse(st['ended_at'] as String), e.occurredAtTzOffsetMinutes),
+                ),
+            ],
           ),
       ];
 }
@@ -243,7 +255,28 @@ class SleepView {
   final DateTime startLocal;
   final DateTime endLocal;
   final int minutes;
-  SleepView({required this.startLocal, required this.endLocal, required this.minutes});
+
+  /// Minutos por fase ('awake', 'light', 'deep', 'rem', 'sleeping'), quando
+  /// a pulseira informa.
+  final Map<String, int> stageMinutes;
+  final List<SleepStageView> stages;
+  SleepView({
+    required this.startLocal,
+    required this.endLocal,
+    required this.minutes,
+    this.stageMinutes = const {},
+    this.stages = const [],
+  });
+
+  /// Tempo dormindo: total menos acordado (quando há fases).
+  int get asleepMinutes => minutes - (stageMinutes['awake'] ?? 0);
 
   String get durationLabel => '${minutes ~/ 60} h ${two(minutes % 60)} min';
+}
+
+class SleepStageView {
+  final String stage;
+  final DateTime startLocal;
+  final DateTime endLocal;
+  SleepStageView({required this.stage, required this.startLocal, required this.endLocal});
 }

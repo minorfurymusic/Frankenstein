@@ -23,7 +23,26 @@ branco: navegação Resumo/Chat de verdade, ligada aos pacotes reais, com
 compartilhamento de treino/corrida funcionando de ponta a ponta. Detalhe
 completo em `docs/HISTORICO.md`.
 
-**Ciclo mais recente (2026-10-03): receitas médicas e exames.**
+**Ciclo mais recente (2026-10-03): pulseira pelo Health Connect.** ADR-4a
+(FEDERATE) virou código: `HealthConnectBridge.kt` só **lê** sono (com
+fases) e frequência cardíaca, canal `rlt/health_connect`; Dart
+`HealthConnectDataSource` + `WearableSync` (`app/lib/wearables/`)
+gravam via `WearableSyncLogger` (dedup por `external_id`; 30 dias na
+primeira leitura, depois desde a última com 2 dias de sobreposição).
+Conta › Dispositivos (conectar, dados lidos, sincronizar, abrir o Health
+Connect, desconectar; "instalar" quando falta), Sono no layout (última
+noite com fases, semana contra "Meta 8 h" da prancheta), Permissões com o
+estado real, Privacidade explica a leitura (o Health Connect abre essa tela
+pelo `VIEW_PERMISSION_USAGE`/rationale). Lê ao abrir o app se conectado.
+Bibliotecas Android: `androidx.health.connect:connect-client` 1.1.0
+(Apache-2.0; AndroidX, coroutines, Guava, protobuf-lite — sem Play
+Services; pede API 26, então `tools:overrideLibrary` e nada roda abaixo
+da API 28, onde o Health Connect existe) e `kotlinx-coroutines-android`
+1.8.1 (Apache-2.0). Passos continuam do sensor do celular (não lê passos do
+Health Connect, para não contar em dobro). Não verificado no aparelho; o
+Kotlin só compila na CI.
+
+**Ciclo anterior (2026-10-03): receitas médicas e exames.**
 Foto (câmera ou galeria) ou PDF guardados na pasta privada do app
 (`rlt_documentos/`), com cadastro em `HealthDocumentRepository`
 (`packages/health_records`, tabela própria no banco de remédios, como o

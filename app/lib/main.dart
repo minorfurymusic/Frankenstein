@@ -9,6 +9,7 @@ import 'app_dependencies.dart';
 import 'card_image_capturer.dart';
 import 'confirmation_gate.dart';
 import 'home_shell.dart';
+import 'screens/account/account_more_screens.dart';
 import 'screens/onboarding/onboarding_screen.dart';
 import 'share_sheet.dart';
 import 'theme/rlt_theme.dart';
@@ -37,6 +38,16 @@ Future<void> main() async {
   // Replaneja os lembretes dos próximos 7 dias a cada abertura (as
   // janelas andam com o tempo).
   unawaited(dependencies.reminders.syncNow());
+  // Pulseira via Health Connect: se a pessoa conectou, lê o que há de novo
+  // (local, sem internet).
+  unawaited(dependencies.wearables.syncNow());
+  // O Health Connect pode abrir o app só para mostrar como os dados são
+  // usados (exigência dele): abre direto em Privacidade.
+  unawaited(() async {
+    if (await dependencies.wearables.bridge.consumeRationaleLaunch()) {
+      navigatorKey.currentState?.push(MaterialPageRoute<void>(builder: (_) => PrivacyScreen(deps: dependencies)));
+    }
+  }());
 }
 
 /// A OFL exige que a licença acompanhe a fonte: aparece em Conta > Sobre.

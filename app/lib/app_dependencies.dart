@@ -17,6 +17,7 @@ import 'data/day_read_model.dart';
 import 'data/health_read_model.dart';
 import 'data/nutrition_store.dart';
 import 'documents/document_files.dart';
+import 'wearables/health_connect.dart';
 import 'reminders/reminders.dart';
 import 'chat_router.dart';
 import 'share_sheet.dart';
@@ -38,9 +39,11 @@ import 'step_tracking_controller.dart';
 /// **Não registradas aqui, por decisão, não por esquecimento:**
 /// `start_run` (escrita — só faz sentido com captura de GPS real, WRAP
 /// nativo do Android ainda não implementado, `docs/adr/009-gps.md`),
-/// `sync_wearable`/`sync_wger`/`sync_fasten_records` (nenhuma tem fonte
-/// real conectada ainda — `WearableDataSource`/`WgerClient`/`FastenClient`
-/// concretos não existem, ligar o Fixture em produção seria desonesto) e
+/// `sync_wger`/`sync_fasten_records` (nenhuma tem fonte real conectada
+/// ainda — `WgerClient`/`FastenClient` concretos não existem, ligar o
+/// Fixture em produção seria desonesto), `sync_wearable` (a leitura do
+/// Health Connect é feita pelo app — [wearables] — ao abrir, em Sono e em
+/// Conta › Dispositivos, sempre por escolha da pessoa) e
 /// `query_health_record` (fora do escopo deste ciclo).
 class AppDependencies {
   final HealthDataCore core;
@@ -83,6 +86,9 @@ class AppDependencies {
 
   /// Lembretes locais do Android, replanejados quando os dados mudam.
   late final ReminderSync reminders;
+
+  /// Pulseira/relógio via Health Connect (ADR-4a): só leitura, local.
+  late final WearableSync wearables;
 
   /// Tema escolhido em Conta › Preferências (claro, escuro ou sistema).
   final ValueNotifier<ThemeMode> themeMode;
@@ -173,9 +179,11 @@ class AppDependencies {
     ReminderScheduler? reminderScheduler,
     DocumentPicker? documentPicker,
     PdfPageRenderer? pdfRenderer,
+    HealthConnectBridge? healthConnect,
   }) {
     return _build(
       reminderScheduler: reminderScheduler ?? defaultReminderScheduler(),
+      healthConnect: healthConnect ?? defaultHealthConnectBridge(),
       documentFiles: DiskDocumentFileStore('$dbDirectoryPath/$documentsDirName'),
       documentPicker: documentPicker ?? NativeDocumentPicker(),
       pdfRenderer: pdfRenderer ?? defaultPdfPageRenderer(),
@@ -201,9 +209,11 @@ class AppDependencies {
     ReminderScheduler? reminderScheduler,
     DocumentPicker? documentPicker,
     PdfPageRenderer? pdfRenderer,
+    HealthConnectBridge? healthConnect,
   }) {
     return _build(
       reminderScheduler: reminderScheduler ?? NoopReminderScheduler(),
+      healthConnect: healthConnect ?? FakeHealthConnectBridge(),
       documentFiles: MemoryDocumentFileStore(),
       documentPicker: documentPicker ?? FakeDocumentPicker(),
       pdfRenderer: pdfRenderer ?? NoopPdfPageRenderer(),
@@ -250,6 +260,7 @@ class AppDependencies {
 
   static AppDependencies _build({
     required ReminderScheduler reminderScheduler,
+    required HealthConnectBridge healthConnect,
     String? dbDirectoryPath,
     required HealthDataCore core,
     required FoodRepository foodRepository,
@@ -346,7 +357,7 @@ class AppDependencies {
       confirmationGate: confirmationGate,
     );
 
-    return AppDependencies._(
+    final deps = AppDependencies._(
       core: core,
       foodRepository: foodRepository,
       workoutRepository: workoutRepository,
@@ -394,6 +405,13 @@ class AppDependencies {
         scheduler: reminderScheduler,
         medications: medicationRepository.listAll,
         prefs: () => ReminderPrefs.fromSettings(profileRepository),
+      );
+    return deps
+      ..wearables = WearableSync(
+        bridge: healthConnect,
+        core: core,
+        settings: profileRepository,
+        onDataChanged: deps.notifyDataChanged,
       );
   }
 }

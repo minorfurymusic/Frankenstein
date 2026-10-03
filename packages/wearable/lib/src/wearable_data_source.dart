@@ -5,17 +5,12 @@ import 'sleep_session_sample.dart';
 /// embute o Gadgetbridge (`docs/adr/004a-gadgetbridge.md`, aceita:
 /// FEDERATE via Android Health Connect, não fork/WRAP). Esta interface
 /// abstrai "de onde vêm as leituras" pra [WearableSyncLogger] não
-/// precisar saber — mesmo padrão de honestidade de hardware já usado em
-/// `StepSensor` (F4) e `BarcodeDecoder` (F6): a implementação real fica
-/// pra quando houver Android SDK/device com Health Connect e Gadgetbridge
-/// de verdade instalados, o que este ambiente não tem.
+/// precisar saber.
 ///
-/// **Implementação real, não feita neste ciclo:** um
-/// `HealthConnectWearableDataSource` sobre o plugin Flutter que envolve a
-/// API nativa do Health Connect — exige Android SDK, permissões em
-/// runtime e um Health Connect de verdade com o Gadgetbridge escrevendo
-/// nele pra validar. Registrar isso aqui sem poder provar seria "feito"
-/// sem prova (`CLAUDE.md`, regra 1).
+/// Implementação real: `HealthConnectDataSource` em
+/// `app/lib/wearables/health_connect.dart`, sobre o canal
+/// `rlt/health_connect` (`HealthConnectBridge.kt`). Validação com Health
+/// Connect e pulseira de verdade só no aparelho.
 abstract class WearableDataSource {
   Future<List<HeartRateSample>> readHeartRate({required DateTime from, required DateTime to});
   Future<List<SleepSessionSample>> readSleepSessions({required DateTime from, required DateTime to});

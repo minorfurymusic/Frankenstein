@@ -53,6 +53,8 @@ dependencies:
     path: ../packages/summary
   frankstein_tool_registry:
     path: ../packages/tool_registry
+  frankstein_wearable:
+    path: ../packages/wearable
   path_provider: ^2.1.4
   share_plus: ^10.1.4
   sqlite3_flutter_libs: ^0.5.42

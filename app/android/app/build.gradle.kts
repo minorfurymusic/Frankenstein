@@ -51,4 +51,10 @@ dependencies {
     // ACTIVITY_RECOGNITION e startForegroundService. Explícito em vez de
     // confiar em resolução transitiva do plugin do Flutter.
     implementation("androidx.core:core-ktx:1.13.1")
+    // Health Connect client (AndroidX, Apache-2.0; depende só de AndroidX,
+    // Kotlin coroutines, Guava e protobuf-javalite — nada do Google Play
+    // Services). Leitura de sono e FC, ADR-4a. HealthConnectBridge.kt.
+    implementation("androidx.health.connect:connect-client:1.1.0")
+    // Coroutines (Apache-2.0) para chamar a API suspensa do Health Connect.
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.8.1")
 }

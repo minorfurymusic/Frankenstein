@@ -4,9 +4,9 @@
 /// Connect).
 ///
 /// `HeartRateSample`/`SleepSessionSample` (leituras, com `externalId`
-/// obrigatório pra dedup), `WearableDataSource` (interface — implementação
-/// real sobre Health Connect fica para quando houver Android SDK/device
-/// com Gadgetbridge de verdade instalado, que este ambiente não tem),
+/// obrigatório pra dedup; sono com fases), `WearableDataSource` (interface —
+/// implementação real sobre o Health Connect no app,
+/// `app/lib/wearables/health_connect.dart`),
 /// `WearableSyncLogger` (grava no Health Data Core, deduplicando
 /// reimportação da mesma janela) e `sync_wearable` (ferramenta do
 /// cérebro).

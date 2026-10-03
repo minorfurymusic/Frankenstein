@@ -118,6 +118,11 @@ class MainActivity : FlutterActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "rlt/pdf")
             .setMethodCallHandler { call, result -> PdfPages.handle(call, result) }
 
+        // Health Connect: só leitura de sono e batimentos (HealthConnectBridge.kt).
+        HealthConnectBridge.noteLaunchIntent(intent)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "rlt/health_connect")
+            .setMethodCallHandler { call, result -> HealthConnectBridge.handle(this, call, result) }
+
         EventChannel(flutterEngine.dartExecutor.binaryMessenger, eventChannelName)
             .setStreamHandler(object : EventChannel.StreamHandler {
                 override fun onListen(arguments: Any?, sink: EventChannel.EventSink) {
@@ -180,6 +185,16 @@ class MainActivity : FlutterActivity() {
         }
         pendingNotificationResult = result
         ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), notificationRequestCode)
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (HealthConnectBridge.onActivityResult(this, requestCode)) return
+        super.onActivityResult(requestCode, resultCode, data)
+    }
+
+    override fun onNewIntent(intent: Intent) {
+        super.onNewIntent(intent)
+        HealthConnectBridge.noteLaunchIntent(intent)
     }
 
     override fun onRequestPermissionsResult(
