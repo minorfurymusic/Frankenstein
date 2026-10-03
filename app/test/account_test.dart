@@ -6,7 +6,6 @@ import 'package:frankstein/confirmation_gate.dart';
 import 'package:frankstein/format.dart';
 import 'package:frankstein/main.dart';
 import 'package:frankstein/share_sheet.dart';
-import 'package:frankstein/widgets/progress.dart';
 import 'package:frankstein_health_core/health_core.dart';
 import 'package:frankstein_profile/profile.dart';
 

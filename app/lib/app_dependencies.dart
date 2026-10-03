@@ -10,6 +10,7 @@ import 'package:frankstein_tool_registry/tool_registry.dart';
 import 'package:flutter/material.dart' show ThemeMode, ValueNotifier;
 
 import 'card_image_capturer.dart';
+import 'data/activity_read_model.dart';
 import 'data/day_read_model.dart';
 import 'data/health_read_model.dart';
 import 'data/nutrition_store.dart';
@@ -62,6 +63,9 @@ class AppDependencies {
   final MealLogger mealLogger;
   final WaterLogger waterLogger;
   final NutritionStore nutrition;
+  final WorkoutLogger workoutLogger;
+  final ActivityLogger activityLogger;
+  final ActivityReadModel activityRead;
   final DayReadModel dayRead;
   final GoalsService goals;
 
@@ -100,6 +104,9 @@ class AppDependencies {
     required this.mealLogger,
     required this.waterLogger,
     required this.nutrition,
+    required this.workoutLogger,
+    required this.activityLogger,
+    required this.activityRead,
     required this.dayRead,
     required this.goals,
     required this.themeMode,
@@ -243,6 +250,7 @@ class AppDependencies {
 
     final healthRead = HealthReadModel(core: core, medications: medicationRepository, agenda: agenda);
     final dayRead = DayReadModel(core: core);
+    final activityRead = ActivityReadModel(days: dayRead, health: healthRead);
 
     final pipeline = BrainPipeline(
       registry: registry,
@@ -271,7 +279,15 @@ class AppDependencies {
       waterLogger: waterLogger,
       nutrition: NutritionStore(foods: foodRepository, settings: profileRepository, core: core),
       dayRead: dayRead,
-      goals: GoalsService(profiles: profileRepository, health: healthRead, days: dayRead),
+      goals: GoalsService(
+        profiles: profileRepository,
+        health: healthRead,
+        days: dayRead,
+        exerciseKcalFor: activityRead.exerciseKcal,
+      ),
+      workoutLogger: workoutLogger,
+      activityLogger: ActivityLogger(core: core),
+      activityRead: activityRead,
       themeMode: ValueNotifier(
         ThemeMode.values.firstWhere(
           (m) => m.name == profileRepository.getSetting('theme_mode'),

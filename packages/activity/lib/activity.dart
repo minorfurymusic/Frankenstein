@@ -26,7 +26,10 @@
 /// não fingida.
 library;
 
+export 'src/activity_logger.dart';
+export 'src/activity_mets.dart';
 export 'src/activity_tools.dart';
+export 'src/exercise_catalog.dart';
 export 'src/gpx.dart';
 export 'src/route_privacy.dart';
 export 'src/run_calculator.dart';

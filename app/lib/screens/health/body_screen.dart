@@ -10,7 +10,6 @@ import '../../theme/rlt_theme.dart';
 import '../../widgets/badges.dart';
 import '../../widgets/common.dart';
 import '../../widgets/line_chart.dart';
-import '../../widgets/progress.dart';
 
 /// O que dá para registrar em Corpo, com rótulo e unidade da tela.
 enum BodyField {

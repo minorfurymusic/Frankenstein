@@ -90,7 +90,10 @@ class GoalsService {
   final HealthReadModel health;
   final DayReadModel days;
 
-  GoalsService({required this.profiles, required this.health, required this.days});
+  /// Gasto dos treinos/corridas/atividades do dia (acima do repouso).
+  final double Function(DateTime day) exerciseKcalFor;
+
+  GoalsService({required this.profiles, required this.health, required this.days, required this.exerciseKcalFor});
 
   GoalsMissing? missing() {
     if (profiles.load() == null) return GoalsMissing.profile;
@@ -110,8 +113,7 @@ class GoalsService {
         weightKg: weights.first.value,
         bodyFatFraction: fat.isEmpty ? null : fat.first.value / 100,
         steps: totals.steps,
-        // TODO(frankstein): somar o gasto dos treinos/corridas por MET (Compêndio 2024) no ciclo da aba Exercícios.
-        exerciseKcal: 0,
+        exerciseKcal: exerciseKcalFor(day),
         date: day,
       ),
       overrides: profiles.loadOverrides(),

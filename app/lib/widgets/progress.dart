@@ -3,7 +3,10 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../theme/rlt_colors.dart';
+import '../format.dart';
 import '../theme/rlt_theme.dart';
+
+export '../format.dart' show formatNumber;
 
 /// Anel de progresso (prancheta Componentes, "Anel de progresso"). `value`
 /// pode passar de 1 (meta estourada): o anel fica cheio e o centro mostra o
@@ -125,20 +128,4 @@ class MacroBar extends StatelessWidget {
       ],
     );
   }
-}
-
-/// Número no formato brasileiro do layout: milhar com ponto ("1.120"),
-/// decimal com vírgula ("68,0"). Sem `intl` — evita dependência só para isso.
-String formatNumber(num value, {int decimals = 0}) {
-  final fixed = value.toStringAsFixed(decimals);
-  final parts = fixed.split('.');
-  final negative = parts[0].startsWith('-');
-  final digits = negative ? parts[0].substring(1) : parts[0];
-  final buffer = StringBuffer();
-  for (var i = 0; i < digits.length; i++) {
-    if (i > 0 && (digits.length - i) % 3 == 0) buffer.write('.');
-    buffer.write(digits[i]);
-  }
-  final integer = '${negative ? '-' : ''}$buffer';
-  return parts.length > 1 ? '$integer,${parts[1]}' : integer;
 }

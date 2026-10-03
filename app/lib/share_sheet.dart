@@ -12,6 +12,10 @@ import 'package:share_plus/share_plus.dart';
 /// menu do sistema.
 abstract class ShareSheet {
   Future<void> shareImage(Uint8List pngBytes, {required String suggestedFileName, String? text});
+
+  /// Arquivo qualquer (ex.: GPX da corrida) pelo compartilhamento do
+  /// Android — a pessoa escolhe para onde vai; nada sai sozinho.
+  Future<void> shareFile(Uint8List bytes, {required String fileName, required String mimeType});
 }
 
 /// Implementação real — platform channel, **não verificável em
@@ -23,6 +27,11 @@ class NativeShareSheet implements ShareSheet {
       [XFile.fromData(pngBytes, name: suggestedFileName, mimeType: 'image/png')],
       text: text,
     );
+  }
+
+  @override
+  Future<void> shareFile(Uint8List bytes, {required String fileName, required String mimeType}) async {
+    await Share.shareXFiles([XFile.fromData(bytes, name: fileName, mimeType: mimeType)]);
   }
 }
 
@@ -40,5 +49,15 @@ class FakeShareSheet implements ShareSheet {
     lastBytes = pngBytes;
     lastFileName = suggestedFileName;
     lastText = text;
+  }
+
+  String? lastFileMimeType;
+
+  @override
+  Future<void> shareFile(Uint8List bytes, {required String fileName, required String mimeType}) async {
+    called = true;
+    lastBytes = bytes;
+    lastFileName = fileName;
+    lastFileMimeType = mimeType;
   }
 }

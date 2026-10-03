@@ -9,7 +9,6 @@ import '../../format.dart';
 import '../../theme/rlt_colors.dart';
 import '../../theme/rlt_theme.dart';
 import '../../widgets/common.dart';
-import '../../widgets/progress.dart';
 import 'food_detail_screen.dart';
 import 'meal_labels.dart';
 

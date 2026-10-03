@@ -106,6 +106,22 @@ Proteína em g/kg (`HealthFormulas.proteinPerKg`):
 - AMDR (proteína 10–35%, gordura 20–35%, carboidrato 45–65%) aparece na
   tela como referência; não gera aviso nem trava.
 
+## Gasto dos exercícios (implementado em 2026-10-03)
+
+- Musculação: MET 3,5 (Compêndio 2024, "resistance training, multiple
+  exercises, 8–15 reps") × duração do treino (do iniciar ao finalizar).
+- Outras atividades: MET por tipo e intensidade
+  (`packages/activity/lib/src/activity_mets.dart`) — valores do Compêndio
+  2024/2011 **conferidos só em fonte secundária** (pacompendium.com
+  bloqueado pela rede): natação 5,8/8,3/9,8; bicicleta 4,0/8,0/10,0;
+  futebol 7,0/7,0/10,0; caminhada 3,0/3,8/4,8; corrida 7,0/9,8/11,5;
+  dança 3,5/5,0/7,3; yoga 2,5/3,0/4,0; funcional 4,3/6,0/8,0.
+- Corrida/caminhada com GPS: MET pela velocidade média com as equações
+  metabólicas do ACSM (caminhada `VO2 = 0,1·v + 3,5`, corrida
+  `VO2 = 0,2·v + 3,5`, v em m/min; abaixo de 100 m/min usa caminhada).
+  O ACSM avisa que a de corrida tende a superestimar.
+- Tudo entra na meta como `(MET − 1) × kg × horas`, com o peso mais recente.
+
 ## Divisão de macronutrientes da meta diária (aprovada pelo usuário em 2026-10-02; proteína revista em 2026-10-03)
 
 Isto é a meta do dia, não a análise do prato (o prato usa os gramas da tabela

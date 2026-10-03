@@ -5,7 +5,6 @@ import '../../app_dependencies.dart';
 import '../../format.dart';
 import '../../theme/rlt_theme.dart';
 import '../../widgets/common.dart';
-import '../../widgets/progress.dart';
 
 /// Conta › Perfil (prancheta ContaPerfil): os dados que entram nas fórmulas
 /// (ADR-15). Peso e % de gordura viram registros em Saúde › Corpo — a

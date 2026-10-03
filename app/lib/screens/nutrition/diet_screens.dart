@@ -9,7 +9,6 @@ import '../../data/nutrition_store.dart';
 import '../../format.dart';
 import '../../theme/rlt_theme.dart';
 import '../../widgets/common.dart';
-import '../../widgets/progress.dart';
 import '../../widgets/state_views.dart';
 import '../account/goals_screen.dart';
 import 'food_detail_screen.dart';

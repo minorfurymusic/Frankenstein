@@ -38,13 +38,21 @@ class WorkoutSessionInput {
   final List<SetEntry> sets;
   final String? notes;
 
+  /// Duração do treino (do "iniciar" ao "finalizar"). Opcional por
+  /// compatibilidade; sem ela o gasto do treino não entra na meta do dia.
+  final Duration? duration;
+
   WorkoutSessionInput({
     this.planId,
     required this.sets,
     this.notes,
+    this.duration,
   }) {
     if (sets.isEmpty) {
       throw ArgumentError('WorkoutSessionInput precisa de ao menos uma série');
+    }
+    if (duration != null && duration!.inSeconds <= 0) {
+      throw ArgumentError('duração do treino precisa ser positiva');
     }
   }
 }

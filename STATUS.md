@@ -23,7 +23,18 @@ branco: navegação Resumo/Chat de verdade, ligada aos pacotes reais, com
 compartilhamento de treino/corrida funcionando de ponta a ponta. Detalhe
 completo em `docs/HISTORICO.md`.
 
-**Ciclo mais recente (2026-10-03): aba Nutrição + metas revistas.** Metas:
+**Ciclo mais recente (2026-10-03): aba Exercícios.** Hoje (anel de
+passos, minutos ativos, calorias gastas, distância, próximo treino em
+rodízio, atividades do dia), Passos (estado do sensor, semana/mês),
+Academia (planos criar/editar/apagar, biblioteca com 35 exercícios e
+filtro por grupo, histórico, recordes, progressão por exercício), Treino ao
+vivo (séries com carga/reps/RPE, descanso de 90 s, finalizar grava com
+duração), Corrida e caminhada (histórico, resumo, parciais, exportar GPX,
+compartilhar), Outras atividades (10 tipos × 3 intensidades). O gasto dos
+exercícios agora entra na meta do dia (ADR-15). Em construção: gravação ao
+vivo pelo GPS e mapa (integrações). App: 77 testes; activity: 52.
+
+**Ciclo anterior (2026-10-03): aba Nutrição + metas revistas.** Metas:
 proteína por objetivo e treino (RDA 0,8 / Leidy 1,2 / ISSN 1,6–2,0; +0,4
 "quero mais proteína"), fibra 14 g/1.000 kcal (mín. 25 g), **sem trava**
 abaixo do gasto em repouso (decisão do usuário). Nutrição: Hoje (anel,

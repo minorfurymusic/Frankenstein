@@ -7,7 +7,6 @@ import '../../format.dart';
 import '../../theme/rlt_colors.dart';
 import '../../theme/rlt_theme.dart';
 import '../../widgets/common.dart';
-import '../../widgets/progress.dart';
 import '../../widgets/state_views.dart';
 import 'profile_screen.dart';
 

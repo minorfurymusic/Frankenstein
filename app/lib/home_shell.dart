@@ -4,9 +4,9 @@ import 'app_dependencies.dart';
 import 'screens/account_screen.dart';
 import 'screens/chat_screen.dart';
 import 'screens/dashboard_screen.dart';
+import 'screens/exercise/exercise_tab.dart';
 import 'screens/health/health_tab.dart';
 import 'screens/nutrition/nutrition_tab.dart';
-import 'screens/tab_under_construction.dart';
 import 'theme/rlt_colors.dart';
 import 'widgets/rlt_navigation_bar.dart';
 
@@ -32,7 +32,7 @@ class _HomeShellState extends State<HomeShell> {
 
   PreferredSizeWidget? _appBar() {
     // Abas com título grande próprio no corpo (prancheta Saude).
-    if (_tab == RltTab.saude || _tab == RltTab.nutricao) return null;
+    if (_tab == RltTab.saude || _tab == RltTab.nutricao || _tab == RltTab.exercicios) return null;
     if (_tab != RltTab.inicio) return AppBar(title: Text(_tab.label));
     final c = RltColors.of(context);
     return AppBar(
@@ -78,15 +78,14 @@ class _HomeShellState extends State<HomeShell> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: _appBar(),
-      body: SafeArea(bottom: false, top: _tab == RltTab.saude || _tab == RltTab.nutricao, child: IndexedStack(
+      body: SafeArea(bottom: false, top: _tab == RltTab.saude || _tab == RltTab.nutricao || _tab == RltTab.exercicios, child: IndexedStack(
         index: _tab.index,
         children: [
           DashboardScreen(dependencies: widget.dependencies),
           HealthTab(deps: widget.dependencies),
           ChatScreen(pipeline: widget.dependencies.pipeline),
           NutritionTab(deps: widget.dependencies),
-          // TODO(frankstein): aba Exercícios (pranchetas Exercicios*, Passos, Academia, Corrida*…).
-          const TabUnderConstruction(tab: RltTab.exercicios),
+          ExerciseTab(deps: widget.dependencies),
         ],
       )),
       bottomNavigationBar: RltNavigationBar(

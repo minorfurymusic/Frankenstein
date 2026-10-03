@@ -80,6 +80,30 @@ class WorkoutRepository {
     }
   }
 
+  /// Todos os planos, em ordem de nome.
+  List<WorkoutPlan> listPlans() => [
+        for (final r in _db.select('SELECT id FROM workout_plans ORDER BY name COLLATE NOCASE ASC'))
+          findPlanById(r['id'] as String)!,
+      ];
+
+  void deletePlan(String id) {
+    _db.execute('DELETE FROM workout_plan_exercises WHERE plan_id = ?', [id]);
+    _db.execute('DELETE FROM workout_plans WHERE id = ?', [id]);
+  }
+
+  /// Grava o plano substituindo o de mesmo id (editar = salvar de novo).
+  void savePlan(WorkoutPlan plan) {
+    _db.execute('BEGIN');
+    try {
+      deletePlan(plan.id);
+      insertPlan(plan);
+      _db.execute('COMMIT');
+    } catch (_) {
+      _db.execute('ROLLBACK');
+      rethrow;
+    }
+  }
+
   WorkoutPlan? findPlanById(String id) {
     final planRows = _db.select('SELECT * FROM workout_plans WHERE id = ?', [id]);
     if (planRows.isEmpty) return null;

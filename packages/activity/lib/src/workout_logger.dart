@@ -58,6 +58,7 @@ class WorkoutLogger {
       payload: {
         if (input.planId != null) 'plan_id': input.planId,
         if (input.notes != null) 'notes': input.notes,
+        if (input.duration != null) 'duration_seconds': input.duration!.inSeconds,
         'sets_count': input.sets.length,
         'exercise_ids': input.sets.map((s) => s.exerciseId).toSet().toList(),
       },

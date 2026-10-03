@@ -7,7 +7,6 @@ import '../../theme/rlt_colors.dart';
 import '../../theme/rlt_theme.dart';
 import '../../widgets/badges.dart';
 import '../../widgets/common.dart';
-import '../../widgets/progress.dart';
 import 'body_screen.dart';
 import 'medications_screen.dart';
 import 'sleep_screen.dart';
