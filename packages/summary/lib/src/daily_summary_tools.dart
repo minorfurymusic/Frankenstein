@@ -35,28 +35,41 @@ ToolSpec getDailySummarySpec() => ToolSpec(
 ToolHandler getDailySummaryHandler(HealthDataCore core) {
   return (params) async {
     final date = DateTime.parse(params['date'] as String);
-    final from = DateTime.utc(date.year, date.month, date.day);
-    final to = from.add(const Duration(days: 1)).subtract(const Duration(milliseconds: 1));
+    // Dia **local** de quem usa: cada evento conta no dia da hora local
+    // gravada com ele (UTC + fuso à parte). Antes somava o dia UTC — no
+    // Brasil, o que acontecia depois das 21:00 caía no dia seguinte.
+    final dayStart = DateTime.utc(date.year, date.month, date.day);
+    List<HealthEvent> eventsOf(HealthEventType type) => core
+        .queryByType(
+          type,
+          from: dayStart.subtract(const Duration(days: 1)),
+          to: dayStart.add(const Duration(days: 2)),
+        )
+        .where((e) {
+          final local = e.occurredAt.add(Duration(minutes: e.occurredAtTzOffsetMinutes));
+          return local.year == date.year && local.month == date.month && local.day == date.day;
+        })
+        .toList();
 
-    final stepsEvents = core.queryByType(HealthEventType.steps, from: from, to: to);
+    final stepsEvents = eventsOf(HealthEventType.steps);
     final totalSteps = stepsEvents.fold<int>(0, (sum, e) => sum + (e.payload['count'] as int));
 
-    final mealEvents = core.queryByType(HealthEventType.meal, from: from, to: to);
+    final mealEvents = eventsOf(HealthEventType.meal);
     final totalEnergyKcal = mealEvents.fold<double>(
       0,
       (sum, e) => sum + ((e.payload['totals'] as Map<String, dynamic>)['energy_kcal'] as num),
     );
 
-    final waterEvents = core.queryByType(HealthEventType.water, from: from, to: to);
+    final waterEvents = eventsOf(HealthEventType.water);
     final totalWaterMl = waterEvents.fold<double>(
       0,
       (sum, e) => sum + (e.payload['amount_ml'] as num),
     );
 
-    final workoutEvents = core.queryByType(HealthEventType.workoutSession, from: from, to: to);
+    final workoutEvents = eventsOf(HealthEventType.workoutSession);
     final totalSets = workoutEvents.fold<int>(0, (sum, e) => sum + (e.payload['sets_count'] as int));
 
-    final runEvents = core.queryByType(HealthEventType.gpsTrack, from: from, to: to);
+    final runEvents = eventsOf(HealthEventType.gpsTrack);
     final totalRunDistanceMeters = runEvents.fold<double>(
       0,
       (sum, e) => sum + (e.payload['distance_meters'] as num),

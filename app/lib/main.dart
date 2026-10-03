@@ -29,7 +29,7 @@ Future<void> main() async {
   // sqlite3_flutter_libs (docs/HISTORICO.md): nada bloqueante/assíncrono
   // longo pode atrasar o primeiro frame. Fire-and-forget: pede permissão,
   // liga o foreground service, atualiza `dependencies.stepTracking.status`
-  // quando resolver — `DashboardScreen` escuta esse `ValueNotifier`.
+  // quando resolver — o Início e Exercícios › Passos escutam esse `ValueNotifier`.
   unawaited(dependencies.stepTracking.start());
 }
 

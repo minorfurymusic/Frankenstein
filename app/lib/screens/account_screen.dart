@@ -5,6 +5,7 @@ import '../theme/rlt_colors.dart';
 import 'account/goals_screen.dart';
 import 'account/preferences_screen.dart';
 import 'account/profile_screen.dart';
+import 'home/reminders_screen.dart';
 import '../theme/rlt_theme.dart';
 
 /// Conta e Configurações, aberta pelo avatar do Início (prancheta Conta).
@@ -17,6 +18,7 @@ class AccountScreen extends StatelessWidget {
         'Perfil' => ProfileScreen(deps: deps),
         'Metas' => GoalsScreen(deps: deps),
         'Preferências' => PreferencesScreen(deps: deps),
+        'Lembretes' => RemindersScreen(deps: deps),
         _ => null,
       };
 

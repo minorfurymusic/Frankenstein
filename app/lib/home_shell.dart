@@ -3,11 +3,10 @@ import 'package:flutter/material.dart';
 import 'app_dependencies.dart';
 import 'screens/account_screen.dart';
 import 'screens/chat_screen.dart';
-import 'screens/dashboard_screen.dart';
+import 'screens/home/home_screen.dart';
 import 'screens/exercise/exercise_tab.dart';
 import 'screens/health/health_tab.dart';
 import 'screens/nutrition/nutrition_tab.dart';
-import 'theme/rlt_colors.dart';
 import 'widgets/rlt_navigation_bar.dart';
 
 /// Navegação do RLT: 5 abas (Início, Saúde, Cérebro, Nutrição, Exercícios —
@@ -31,57 +30,24 @@ class _HomeShellState extends State<HomeShell> {
   }
 
   PreferredSizeWidget? _appBar() {
-    // Abas com título grande próprio no corpo (prancheta Saude).
-    if (_tab == RltTab.saude || _tab == RltTab.nutricao || _tab == RltTab.exercicios) return null;
-    if (_tab != RltTab.inicio) return AppBar(title: Text(_tab.label));
-    final c = RltColors.of(context);
-    return AppBar(
-      leadingWidth: 64,
-      leading: Padding(
-        padding: const EdgeInsets.only(left: 12),
-        child: Center(
-          child: Semantics(
-            button: true,
-            label: 'Conta e configurações',
-            excludeSemantics: true,
-            child: InkWell(
-              key: const Key('account_avatar'),
-              customBorder: const CircleBorder(),
-              onTap: _openAccount,
-              child: CircleAvatar(
-                radius: 22,
-                backgroundColor: c.primaryContainer,
-                foregroundColor: c.onPrimaryContainer,
-                // TODO(frankstein): iniciais e foto da conta Google quando o login existir (ADR-13).
-                child: const Icon(Icons.person_outline),
-              ),
-            ),
-          ),
-        ),
-      ),
-      title: const Text('Início'),
-      actions: [
-        IconButton(
-          key: const Key('reminders_button'),
-          tooltip: 'Lembretes',
-          // TODO(frankstein): abrir a tela Lembretes (prancheta Lembretes) no ciclo das telas do Início.
-          onPressed: () => ScaffoldMessenger.of(context)
-              .showSnackBar(const SnackBar(content: Text('Lembretes: tela em construção.'))),
-          icon: const Icon(Icons.notifications_none),
-        ),
-        const SizedBox(width: 4),
-      ],
-    );
+    // Início, Saúde, Nutrição e Exercícios têm cabeçalho próprio no corpo
+    // (pranchetas Inicio, Saude, NutricaoHoje, ExerciciosHoje).
+    if (_tab != RltTab.cerebro) return null;
+    return AppBar(title: Text(_tab.label));
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: _appBar(),
-      body: SafeArea(bottom: false, top: _tab == RltTab.saude || _tab == RltTab.nutricao || _tab == RltTab.exercicios, child: IndexedStack(
+      body: SafeArea(bottom: false, top: _tab != RltTab.cerebro, child: IndexedStack(
         index: _tab.index,
         children: [
-          DashboardScreen(dependencies: widget.dependencies),
+          HomeScreen(
+            deps: widget.dependencies,
+            onOpenAccount: _openAccount,
+            onOpenTab: (tab) => setState(() => _tab = tab),
+          ),
           HealthTab(deps: widget.dependencies),
           ChatScreen(pipeline: widget.dependencies.pipeline),
           NutritionTab(deps: widget.dependencies),

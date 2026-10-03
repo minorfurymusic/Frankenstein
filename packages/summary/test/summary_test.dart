@@ -107,4 +107,24 @@ void main() {
       expect((result.data!['water'] as Map)['count'], 0);
     });
   });
+
+  test('conta o dia local: 22:00 em Brasília (01:00 UTC do dia seguinte) fica no dia certo', () async {
+    final core = HealthDataCore.openInMemory();
+    addTearDown(core.close);
+    core.insertEvent(HealthEvent(
+      id: HealthDataCore.newId(),
+      type: HealthEventType.water,
+      source: HealthEventSource.manual,
+      occurredAt: DateTime.utc(2026, 10, 2, 1),
+      occurredAtTzOffsetMinutes: -180,
+      recordedAt: DateTime.utc(2026, 10, 2, 1),
+      payload: const {'amount_ml': 250},
+      confidence: 1.0,
+    ));
+    final handler = getDailySummaryHandler(core);
+    final day1 = await handler({'date': '2026-10-01'});
+    final day2 = await handler({'date': '2026-10-02'});
+    expect((day1.data!['water'] as Map)['total_amount_ml'], 250);
+    expect((day2.data!['water'] as Map)['total_amount_ml'], 0);
+  });
 }

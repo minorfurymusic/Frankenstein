@@ -23,7 +23,18 @@ branco: navegação Resumo/Chat de verdade, ligada aos pacotes reais, com
 compartilhamento de treino/corrida funcionando de ponta a ponta. Detalhe
 completo em `docs/HISTORICO.md`.
 
-**Ciclo mais recente (2026-10-03): aba Exercícios.** Hoje (anel de
+**Ciclo mais recente (2026-10-03): Início no layout novo + resumo no dia
+local.** Início: saudação, dia anterior/calendário, sequência de dias
+registrando, metas do dia (anel, macros, água, passos, exercício —
+referência OMS de 30 min/dia), remédios de hoje com tomei/pulei, sono da
+última noite, linha do tempo de tudo do dia, 6 atalhos rápidos, estados de
+dia vazio e passos sem permissão. Lembretes (remédio/água/treino, escolhas
+salvas; o aviso no celular entra nas integrações). `get_daily_summary`
+corrigido para o dia local (teste de regressão das 22:00). Painel antigo e
+telas de registro antigas removidos; testes de compartilhar migrados para
+Exercícios. App: 79 testes.
+
+**Ciclo anterior (2026-10-03): aba Exercícios.** Hoje (anel de
 passos, minutos ativos, calorias gastas, distância, próximo treino em
 rodízio, atividades do dia), Passos (estado do sensor, semana/mês),
 Academia (planos criar/editar/apagar, biblioteca com 35 exercícios e

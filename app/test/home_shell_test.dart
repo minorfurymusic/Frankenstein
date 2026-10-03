@@ -53,7 +53,7 @@ void main() {
 
     await tester.tap(find.byKey(const Key('nav_inicio')));
     await tester.pumpAndSettle();
-    expect(find.byKey(const Key('dashboard_list')), findsOneWidget);
+    expect(find.byKey(const Key('home_list')), findsOneWidget);
   });
 
   testWidgets('avatar do Início abre Conta, com Sobre e as seções do layout', (tester) async {

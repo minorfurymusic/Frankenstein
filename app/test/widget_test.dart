@@ -83,7 +83,7 @@ HealthEvent _insertGpsTrackEvent(HealthDataCore core) {
 }
 
 void main() {
-  testWidgets('app sobe na aba Início, com o dashboard carregado (zerado, sem eventos)',
+  testWidgets('app sobe no Início com as metas do dia e a linha do tempo vazia',
       (WidgetTester tester) async {
     final app = _buildTestApp();
     addTearDown(app.dependencies.close);
@@ -92,8 +92,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('bottom_nav')), findsOneWidget);
-    expect(find.byKey(const Key('dashboard_list')), findsOneWidget);
-    expect(find.text('0'), findsOneWidget); // passos
+    expect(find.byKey(const Key('home_list')), findsOneWidget);
+    expect(find.text('Metas do dia'), findsOneWidget);
+    expect(find.text('Nada registrado hoje'), findsOneWidget);
   });
 
   testWidgets('alterna para a aba Cérebro pela barra de navegação', (WidgetTester tester) async {
@@ -201,15 +202,22 @@ void main() {
 
   testWidgets('compartilhar treino: preview obrigatório aparece, share só acontece no toque',
       (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(400, 2000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     final app = _buildTestApp();
     addTearDown(app.dependencies.close);
     _insertWorkoutSessionEvent(app.dependencies.core);
 
     await tester.pumpWidget(app.widget);
     await tester.pumpAndSettle();
-
-    expect(find.byKey(const Key('share_latest_workout')), findsOneWidget);
-    await tester.tap(find.byKey(const Key('share_latest_workout')));
+    await tester.tap(find.byKey(const Key('nav_exercicios')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('section_academia')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Histórico'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byTooltip('Compartilhar').first);
     await tester.pumpAndSettle();
 
     // Preview obrigatório: o card aparece antes de qualquer compartilhamento,
@@ -231,39 +239,35 @@ void main() {
 
   testWidgets('compartilhar corrida: rota chega ofuscada no card (não crua)',
       (WidgetTester tester) async {
+    tester.view.physicalSize = const Size(400, 2000);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
     final app = _buildTestApp();
     addTearDown(app.dependencies.close);
     _insertGpsTrackEvent(app.dependencies.core);
 
     await tester.pumpWidget(app.widget);
     await tester.pumpAndSettle();
-
-    expect(find.byKey(const Key('share_latest_run')), findsOneWidget);
-    await tester.tap(find.byKey(const Key('share_latest_run')));
+    await tester.tap(find.byKey(const Key('nav_exercicios')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Corrida e caminhada'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.textContaining('5,00 km'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('run_share')));
     await tester.pumpAndSettle();
 
     expect(find.byKey(const Key('run_card_visual')), findsOneWidget);
     // Rota de 1000 m — obfuscateRouteEnds corta os 300 m iniciais/finais,
     // então o card mostra menos pontos que a rota original de 11.
     expect(find.textContaining('pontos de rota (ofuscada)'), findsOneWidget);
+    expect(app.shareSheet.called, isFalse);
 
     await tester.tap(find.byKey(const Key('share_button')));
     await tester.pumpAndSettle();
 
     expect(app.shareSheet.called, isTrue);
     expect(app.shareSheet.lastFileName, 'corrida.png');
-  });
-
-  testWidgets('sem treino/corrida gravados, botões de compartilhar não aparecem',
-      (WidgetTester tester) async {
-    final app = _buildTestApp();
-    addTearDown(app.dependencies.close);
-
-    await tester.pumpWidget(app.widget);
-    await tester.pumpAndSettle();
-
-    expect(find.byKey(const Key('share_latest_workout')), findsNothing);
-    expect(find.byKey(const Key('share_latest_run')), findsNothing);
   });
 
   Future<void> sendChat(WidgetTester tester, String text) async {
@@ -351,100 +355,4 @@ void main() {
     expect(setLogs[1].payload['load_kg'], 75.0);
   });
 
-  testWidgets('dashboard: "+" da água registra de verdade via diálogo rápido',
-      (WidgetTester tester) async {
-    final app = _buildTestApp();
-    addTearDown(app.dependencies.close);
-    expect(app.dependencies.core.queryByType(HealthEventType.water), isEmpty);
-
-    await tester.pumpWidget(app.widget);
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byKey(const Key('dashboard_add_water')));
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byKey(const Key('quick_water_300ml')));
-    await tester.pumpAndSettle();
-
-    // Escrita — mesmo diálogo de confirmação de qualquer outra ferramenta.
-    expect(find.byKey(const Key('confirmation_confirm')), findsOneWidget);
-    expect(app.dependencies.core.queryByType(HealthEventType.water), isEmpty);
-
-    await tester.tap(find.byKey(const Key('confirmation_confirm')));
-    await tester.pumpAndSettle();
-
-    final events = app.dependencies.core.queryByType(HealthEventType.water);
-    expect(events, hasLength(1));
-    expect(events.single.payload['amount_ml'], 300.0);
-    expect(find.text('300.0 ml'), findsOneWidget);
-  });
-
-  testWidgets('dashboard: "+" da refeição abre busca real, registra via LogMealScreen',
-      (WidgetTester tester) async {
-    final app = _buildTestApp();
-    addTearDown(app.dependencies.close);
-    expect(app.dependencies.core.queryByType(HealthEventType.meal), isEmpty);
-
-    await tester.pumpWidget(app.widget);
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byKey(const Key('dashboard_add_meal')));
-    await tester.pumpAndSettle();
-
-    await tester.enterText(find.byKey(const Key('log_meal_search_field')), 'arroz');
-    await tester.pumpAndSettle();
-
-    // "arroz" bate em vários itens reais do catálogo TACO — pega o primeiro.
-    expect(find.byType(ListTile), findsWidgets);
-    await tester.tap(find.byType(ListTile).first);
-    await tester.pumpAndSettle();
-
-    await tester.enterText(find.byKey(const Key('log_meal_grams_field')), '150');
-    await tester.tap(find.byKey(const Key('log_meal_confirm_button')));
-    await tester.pumpAndSettle();
-
-    expect(find.byKey(const Key('confirmation_confirm')), findsOneWidget);
-    expect(app.dependencies.core.queryByType(HealthEventType.meal), isEmpty);
-
-    await tester.tap(find.byKey(const Key('confirmation_confirm')));
-    await tester.pumpAndSettle();
-
-    final events = app.dependencies.core.queryByType(HealthEventType.meal);
-    expect(events, hasLength(1));
-    expect(events.single.payload['items'], hasLength(1));
-    expect((events.single.payload['items'] as List).single['grams'], 150.0);
-  });
-
-  testWidgets('dashboard: "+" do treino abre formulário real, registra via LogWorkoutScreen',
-      (WidgetTester tester) async {
-    final app = _buildTestApp();
-    addTearDown(app.dependencies.close);
-    expect(app.dependencies.core.queryByType(HealthEventType.workoutSession), isEmpty);
-
-    await tester.pumpWidget(app.widget);
-    await tester.pumpAndSettle();
-
-    await tester.tap(find.byKey(const Key('dashboard_add_workout')));
-    await tester.pumpAndSettle();
-
-    await tester.enterText(find.byKey(const Key('log_workout_exercise_field')), 'supino-reto');
-    await tester.enterText(find.byKey(const Key('log_workout_sets_field')), '2');
-    await tester.enterText(find.byKey(const Key('log_workout_reps_field')), '8');
-    await tester.enterText(find.byKey(const Key('log_workout_load_field')), '60');
-    await tester.tap(find.byKey(const Key('log_workout_submit_button')));
-    await tester.pumpAndSettle();
-
-    expect(find.byKey(const Key('confirmation_confirm')), findsOneWidget);
-    expect(app.dependencies.core.queryByType(HealthEventType.workoutSession), isEmpty);
-
-    await tester.tap(find.byKey(const Key('confirmation_confirm')));
-    await tester.pumpAndSettle();
-
-    final events = app.dependencies.core.queryByType(HealthEventType.workoutSession);
-    expect(events, hasLength(1));
-    expect(events.single.payload['sets_count'], 2);
-    final setLogs = app.dependencies.core.queryByType(HealthEventType.setLog);
-    expect(setLogs, hasLength(2));
-    expect(setLogs.every((s) => s.payload['load_kg'] == 60.0), isTrue);
-  });
 }
