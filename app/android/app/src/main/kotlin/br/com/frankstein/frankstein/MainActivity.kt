@@ -114,6 +114,10 @@ class MainActivity : FlutterActivity() {
                 }
             }
 
+        // Páginas de PDF de receitas e exames (PdfPages.kt).
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "rlt/pdf")
+            .setMethodCallHandler { call, result -> PdfPages.handle(call, result) }
+
         EventChannel(flutterEngine.dartExecutor.binaryMessenger, eventChannelName)
             .setStreamHandler(object : EventChannel.StreamHandler {
                 override fun onListen(arguments: Any?, sink: EventChannel.EventSink) {

@@ -16,6 +16,7 @@ import 'data/activity_read_model.dart';
 import 'data/day_read_model.dart';
 import 'data/health_read_model.dart';
 import 'data/nutrition_store.dart';
+import 'documents/document_files.dart';
 import 'reminders/reminders.dart';
 import 'chat_router.dart';
 import 'share_sheet.dart';
@@ -47,6 +48,12 @@ class AppDependencies {
   final WorkoutRepository workoutRepository;
   final MedicationRepository medicationRepository;
   final MedicalHistoryRepository medicalHistory;
+
+  /// Receitas e exames (cadastro) e os arquivos deles (pasta privada).
+  final HealthDocumentRepository documents;
+  final DocumentFileStore documentFiles;
+  final DocumentPicker documentPicker;
+  final PdfPageRenderer pdfRenderer;
   final ToolRegistry registry;
   final BrainPipeline pipeline;
   final ConfirmationGate confirmationGate;
@@ -101,6 +108,10 @@ class AppDependencies {
     required this.workoutRepository,
     required this.medicationRepository,
     required this.medicalHistory,
+    required this.documents,
+    required this.documentFiles,
+    required this.documentPicker,
+    required this.pdfRenderer,
     required this.registry,
     required this.pipeline,
     required this.confirmationGate,
@@ -143,6 +154,7 @@ class AppDependencies {
     workoutRepository.close();
     medicationRepository.close();
     medicalHistory.close();
+    documents.close();
   }
 
   /// Produção: bancos reais em arquivo, um por módulo (mesma separação
@@ -159,15 +171,21 @@ class AppDependencies {
     required ShareSheet shareSheet,
     required CardImageCapturer imageCapturer,
     ReminderScheduler? reminderScheduler,
+    DocumentPicker? documentPicker,
+    PdfPageRenderer? pdfRenderer,
   }) {
     return _build(
       reminderScheduler: reminderScheduler ?? defaultReminderScheduler(),
+      documentFiles: DiskDocumentFileStore('$dbDirectoryPath/$documentsDirName'),
+      documentPicker: documentPicker ?? NativeDocumentPicker(),
+      pdfRenderer: pdfRenderer ?? defaultPdfPageRenderer(),
       dbDirectoryPath: dbDirectoryPath,
       core: HealthDataCore.open('$dbDirectoryPath/frankstein_health.sqlite3'),
       foodRepository: FoodRepository.open('$dbDirectoryPath/frankstein_food.sqlite3'),
       workoutRepository: WorkoutRepository.open('$dbDirectoryPath/frankstein_workout.sqlite3'),
       medicationRepository: MedicationRepository.open('$dbDirectoryPath/frankstein_medications.sqlite3'),
       medicalHistory: MedicalHistoryRepository.open('$dbDirectoryPath/frankstein_medications.sqlite3'),
+      documents: HealthDocumentRepository.open('$dbDirectoryPath/frankstein_medications.sqlite3'),
       profileRepository: ProfileRepository.open('$dbDirectoryPath/frankstein_profile.sqlite3'),
       confirmationGate: confirmationGate,
       shareSheet: shareSheet,
@@ -181,20 +199,29 @@ class AppDependencies {
     required ShareSheet shareSheet,
     required CardImageCapturer imageCapturer,
     ReminderScheduler? reminderScheduler,
+    DocumentPicker? documentPicker,
+    PdfPageRenderer? pdfRenderer,
   }) {
     return _build(
       reminderScheduler: reminderScheduler ?? NoopReminderScheduler(),
+      documentFiles: MemoryDocumentFileStore(),
+      documentPicker: documentPicker ?? FakeDocumentPicker(),
+      pdfRenderer: pdfRenderer ?? NoopPdfPageRenderer(),
       core: HealthDataCore.openInMemory(),
       foodRepository: FoodRepository.openInMemory(seedTacoData: true),
       workoutRepository: WorkoutRepository.openInMemory(),
       medicationRepository: MedicationRepository.openInMemory(),
       medicalHistory: MedicalHistoryRepository.openInMemory(),
+      documents: HealthDocumentRepository.openInMemory(),
       profileRepository: ProfileRepository.openInMemory(),
       confirmationGate: confirmationGate,
       shareSheet: shareSheet,
       imageCapturer: imageCapturer,
     );
   }
+
+  /// Pasta das fotos e PDFs de receitas e exames, dentro da pasta dos bancos.
+  static const documentsDirName = 'rlt_documentos';
 
   /// Arquivos de banco do app — apagados juntos em "apagar todos os dados".
   static const dbFileNames = [
@@ -206,11 +233,12 @@ class AppDependencies {
   ];
 
   /// "Apagar todos os dados" (Conta › Privacidade; LGPD): fecha os bancos e
-  /// apaga os arquivos. Não mexe na regra "só acrescenta" do Health Data
+  /// apaga os arquivos (bancos e fotos/PDFs de receitas e exames). Não mexe na regra "só acrescenta" do Health Data
   /// Core — o banco inteiro deixa de existir; o app abre do zero depois.
   Future<void> eraseAllDataAndClose() async {
     final dir = dbDirectoryPath;
     close();
+    await documentFiles.deleteAll();
     if (dir == null) return;
     for (final name in dbFileNames) {
       for (final suffix in const ['', '-wal', '-shm', '-journal']) {
@@ -228,6 +256,10 @@ class AppDependencies {
     required WorkoutRepository workoutRepository,
     required MedicationRepository medicationRepository,
     required MedicalHistoryRepository medicalHistory,
+    required HealthDocumentRepository documents,
+    required DocumentFileStore documentFiles,
+    required DocumentPicker documentPicker,
+    required PdfPageRenderer pdfRenderer,
     required ProfileRepository profileRepository,
     required ConfirmationGate confirmationGate,
     required ShareSheet shareSheet,
@@ -320,6 +352,10 @@ class AppDependencies {
       workoutRepository: workoutRepository,
       medicationRepository: medicationRepository,
       medicalHistory: medicalHistory,
+      documents: documents,
+      documentFiles: documentFiles,
+      documentPicker: documentPicker,
+      pdfRenderer: pdfRenderer,
       registry: registry,
       pipeline: pipeline,
       confirmationGate: confirmationGate,

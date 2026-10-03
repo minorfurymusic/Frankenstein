@@ -1,6 +1,9 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
+import 'package:archive/archive.dart';
 import 'package:frankstein_health_core/health_core.dart';
+import 'package:frankstein_health_records/health_records.dart';
 
 import '../app_dependencies.dart';
 
@@ -81,6 +84,30 @@ Map<String, dynamic> buildFullExport(AppDependencies deps, {DateTime? now}) {
           'notes': i.notes,
         },
     ],
+    'health_documents': [
+      for (final kind in HealthDocumentKind.values)
+        for (final d in deps.documents.list(kind))
+          {
+            'id': d.id,
+            'kind': d.kind.wireValue,
+            'title': d.title,
+            'date': d.date?.toIso(),
+            'specialty': d.specialty,
+            'valid_until': d.validUntil?.toIso(),
+            'category': d.category?.wireValue,
+            'linked_medication_ids': d.linkedMedicationIds,
+            'notes': d.notes,
+            'files': [
+              for (final f in d.files)
+                {
+                  'path_in_export': '$exportFilesDir/${f.storedName}',
+                  'original_name': f.originalName,
+                  'mime_type': f.mimeType,
+                  'size_bytes': f.sizeBytes,
+                },
+            ],
+          },
+    ],
     'workout_plans': [
       for (final p in deps.workoutRepository.listPlans())
         {
@@ -117,3 +144,17 @@ Map<String, dynamic> buildFullExport(AppDependencies deps, {DateTime? now}) {
 }
 
 String buildFullExportJson(AppDependencies deps) => const JsonEncoder.withIndent('  ').convert(buildFullExport(deps));
+
+/// Pasta das fotos e PDFs dentro do .zip exportado.
+const exportFilesDir = 'arquivos';
+
+/// O .zip da exportação: `dados.json` + as fotos e PDFs de receitas e
+/// exames em `arquivos/`. Tudo, sem limite.
+Future<Uint8List> buildFullExportZip(AppDependencies deps) async {
+  final archive = Archive()..addFile(ArchiveFile.string('dados.json', buildFullExportJson(deps)));
+  for (final name in deps.documents.allStoredNames()) {
+    final bytes = await deps.documentFiles.readBytes(name);
+    if (bytes != null) archive.addFile(ArchiveFile.bytes('$exportFilesDir/$name', bytes));
+  }
+  return ZipEncoder().encodeBytes(archive);
+}

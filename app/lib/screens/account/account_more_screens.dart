@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -18,10 +16,10 @@ class PrivacyScreen extends StatelessWidget {
   const PrivacyScreen({super.key, required this.deps});
 
   Future<void> _export(BuildContext context) async {
-    final json = buildFullExportJson(deps);
+    final zip = await buildFullExportZip(deps);
     final now = DateTime.now();
-    final name = 'rlt-dados-${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}.json';
-    await deps.shareSheet.shareFile(Uint8List.fromList(utf8.encode(json)), fileName: name, mimeType: 'application/json');
+    final name = 'rlt-dados-${now.year}${now.month.toString().padLeft(2, '0')}${now.day.toString().padLeft(2, '0')}.zip';
+    await deps.shareSheet.shareFile(zip, fileName: name, mimeType: 'application/zip');
   }
 
   @override
@@ -37,8 +35,8 @@ class PrivacyScreen extends StatelessWidget {
           style: t.bodyLarge,
         ),
         const RltSectionHeader('Exportar'),
-        Text('Todos os seus registros num arquivo JSON, sempre grátis e sem limite (LGPD art. 18). '
-            'Você escolhe para onde mandar.', style: t.bodyMedium),
+        Text('Todos os seus registros num arquivo .zip (dados em JSON, mais as fotos e PDFs de receitas e exames), '
+            'sempre grátis e sem limite (LGPD art. 18). Você escolhe para onde mandar.', style: t.bodyMedium),
         const SizedBox(height: RltSpace.m),
         FilledButton.icon(
           key: const Key('export_all'),

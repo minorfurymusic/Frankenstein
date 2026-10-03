@@ -33,6 +33,11 @@
         android:label="RLT"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
+        <!-- image_picker_android declara um serviço-marcador que pede ao
+             Google Play Services o seletor de fotos "retroportado". Sem
+             serviços do Google (CLAUDE.md, regra 6): sai do APK; em Android
+             antigo o seletor cai no ACTION_OPEN_DOCUMENT padrão. -->
+        <service android:name="com.google.android.gms.metadata.ModuleDependencies" tools:node="remove"/>
         <activity
             android:name=".MainActivity"
             android:exported="true"

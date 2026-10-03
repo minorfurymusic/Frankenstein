@@ -47,27 +47,3 @@ class SleepScreen extends StatelessWidget {
     );
   }
 }
-
-/// Seção que ainda precisa de dado novo (arquivo de foto/PDF, cadastro
-/// próprio). Diz isso em vez de fingir.
-class HealthSectionUnderConstruction extends StatelessWidget {
-  final String title;
-  final IconData icon;
-  final String message;
-  const HealthSectionUnderConstruction({super.key, required this.title, required this.icon, required this.message});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: ListView(
-        padding: const EdgeInsets.all(RltSpace.l),
-        children: [
-          StateCard(icon: icon, title: '$title: em construção', message: message),
-          const SizedBox(height: RltSpace.l),
-          const HealthDisclaimer(),
-        ],
-      ),
-    );
-  }
-}

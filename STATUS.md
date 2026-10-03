@@ -23,7 +23,24 @@ branco: navegação Resumo/Chat de verdade, ligada aos pacotes reais, com
 compartilhamento de treino/corrida funcionando de ponta a ponta. Detalhe
 completo em `docs/HISTORICO.md`.
 
-**Ciclo mais recente (2026-10-03): código de barras pela câmera.**
+**Ciclo mais recente (2026-10-03): receitas médicas e exames.**
+Foto (câmera ou galeria) ou PDF guardados na pasta privada do app
+(`rlt_documentos/`), com cadastro em `HealthDocumentRepository`
+(`packages/health_records`, tabela própria no banco de remédios, como o
+histórico médico): receita com quem receitou, especialidade, data,
+validade (mostra "Válida até"/"Vencida em") e remédios vinculados; exame
+com nome, categoria (sangue, imagem, urina, outros) e data, com filtro.
+Tela cheia com pinça para ampliar; PDF desenhado pelo `PdfRenderer` do
+próprio Android (`PdfPages.kt`, sem biblioteca de PDF). Exportação virou
+`.zip` (`dados.json` + `arquivos/`); "apagar tudo" apaga também a pasta.
+Bibliotecas: `image_picker` 1.2.2 e `file_selector` 1.1.0 (BSD-3, Flutter),
+`archive` 4.3.0 (MIT). O manifesto remove o marcador do Google Play
+Services que o `image_picker_android` declara (seletor de fotos
+retroportado). **Fora deste ciclo, depende de decisão:** valores lidos do
+exame e gráfico por marcador (unidade como está no papel × regra de SI;
+leitura automática depende da IA, ADR-11). Não verificado no aparelho.
+
+**Ciclo anterior (2026-10-03): código de barras pela câmera.**
 `flutter_zxing` 2.2.1 (MIT; leitor zxing-cpp embutido, Apache-2.0/BSD-3,
 compilado no APK — sem serviço do Google), que traz `camera` 0.11.4 /
 `camera_android_camerax` 0.6.30 (BSD-3; AndroidX CameraX e Guava,

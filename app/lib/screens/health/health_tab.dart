@@ -8,6 +8,7 @@ import '../../theme/rlt_theme.dart';
 import '../../widgets/badges.dart';
 import '../../widgets/common.dart';
 import 'body_screen.dart';
+import 'documents_screens.dart';
 import 'medications_screen.dart';
 import 'sleep_screen.dart';
 import 'symptoms_screen.dart';
@@ -95,19 +96,12 @@ class HealthTab extends StatelessWidget {
                         onTap: () => _open(context, MedicationsScreen(deps: deps)),
                       ),
                       RltSectionTile(
+                        key: const Key('section_receitas'),
                         icon: Icons.description_outlined,
                         iconColor: c.protein,
                         title: 'Receitas médicas',
                         subtitle: 'Foto ou PDF da receita',
-                        // TODO(frankstein): receitas (foto/PDF guardados no aparelho + remédios vinculados).
-                        onTap: () => _open(
-                          context,
-                          const HealthSectionUnderConstruction(
-                            title: 'Receitas médicas',
-                            icon: Icons.description_outlined,
-                            message: 'Guardar foto ou PDF da receita entra junto com a câmera e os arquivos. Enquanto isso, cadastre os remédios em Remédios.',
-                          ),
-                        ),
+                        onTap: () => _open(context, PrescriptionsScreen(deps: deps)),
                       ),
                       RltSectionTile(
                         key: const Key('section_historico'),
@@ -118,19 +112,12 @@ class HealthTab extends StatelessWidget {
                         onTap: () => _open(context, SymptomsScreen(deps: deps)),
                       ),
                       RltSectionTile(
+                        key: const Key('section_exames'),
                         icon: Icons.science_outlined,
                         iconColor: c.protein,
                         title: 'Exames e documentos',
                         subtitle: 'Foto ou PDF de exames',
-                        // TODO(frankstein): exames (arquivo + valores lidos + gráfico por marcador).
-                        onTap: () => _open(
-                          context,
-                          const HealthSectionUnderConstruction(
-                            title: 'Exames e documentos',
-                            icon: Icons.science_outlined,
-                            message: 'Enviar foto ou PDF de exame entra junto com a câmera e os arquivos.',
-                          ),
-                        ),
+                        onTap: () => _open(context, ExamsScreen(deps: deps)),
                       ),
                       RltSectionTile(
                         key: const Key('section_vitais'),

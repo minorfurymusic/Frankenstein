@@ -3,6 +3,7 @@
 /// Unidades em SI no banco; conversão para unidade clínica em `units.dart`.
 library;
 
+export 'src/health_documents.dart';
 export 'src/health_loggers.dart';
 export 'src/health_records_tools.dart';
 export 'src/medical_history.dart';
