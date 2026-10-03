@@ -23,7 +23,18 @@ branco: navegação Resumo/Chat de verdade, ligada aos pacotes reais, com
 compartilhamento de treino/corrida funcionando de ponta a ponta. Detalhe
 completo em `docs/HISTORICO.md`.
 
-**Ciclo mais recente (2026-10-03): lembretes no celular.** Kotlin próprio
+**Ciclo mais recente (2026-10-03): código de barras pela câmera.**
+`flutter_zxing` 2.2.1 (MIT; leitor zxing-cpp embutido, Apache-2.0/BSD-3,
+compilado no APK — sem serviço do Google), que traz `camera` 0.11.4 /
+`camera_android_camerax` 0.6.30 (BSD-3; AndroidX CameraX e Guava,
+Apache-2.0), `image_picker` (BSD-3, não usado — galeria desligada),
+`image` 4.10.1, `archive` 4.3.0 e `posix` 6.5.2 (MIT). Só lê EAN/UPC;
+a imagem não é gravada nem enviada; "Digitar o código" continua. O
+manifesto remove microfone e armazenamento que o plugin de câmera
+declararia. Fora do Android (testes) vai direto para a digitação. Não
+verificado no aparelho; o APK só é montado na CI (aqui não há Android SDK).
+
+**Ciclo anterior (2026-10-03): lembretes no celular.** Kotlin próprio
 (`Reminders.kt`: AlarmManager `setAndAllowWhileIdle` + notificação do
 Android, reagenda no boot), sem biblioteca nova — o plugin
 flutter_local_notifications foi descartado porque exige embutir

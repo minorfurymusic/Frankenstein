@@ -9,6 +9,7 @@ import '../../format.dart';
 import '../../theme/rlt_colors.dart';
 import '../../theme/rlt_theme.dart';
 import '../../widgets/common.dart';
+import 'barcode_scanner_screen.dart';
 import 'food_detail_screen.dart';
 import 'meal_labels.dart';
 
@@ -45,9 +46,16 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
     ));
   }
 
+  static Future<String?> _typeBarcode(BuildContext context) =>
+      showDialog<String>(context: context, builder: (_) => const _BarcodeDialog());
+
   Future<void> _barcode() async {
-    // TODO(frankstein): leitura pela câmera com ZXing (ADR-10) na etapa de integrações; hoje só a digitação do código.
-    final code = await showDialog<String>(context: context, builder: (_) => const _BarcodeDialog());
+    final Future<String?> reading = barcodeCameraAvailable
+        ? Navigator.of(context).push<String>(MaterialPageRoute(
+            builder: (_) => const BarcodeScannerScreen(typeManually: _typeBarcode),
+          ))
+        : _typeBarcode(context);
+    final code = await reading;
     if (code == null || !mounted) return;
     final food = widget.deps.foodRepository.findByBarcode(code);
     if (food != null) {
@@ -214,15 +222,15 @@ class _BarcodeDialogState extends State<_BarcodeDialog> {
         controller: _code,
         autofocus: true,
         keyboardType: TextInputType.number,
-        decoration: const InputDecoration(labelText: 'Digite os números do código', helperText: 'A leitura pela câmera entra em breve.'),
+        decoration: const InputDecoration(labelText: 'Digite os números do código', helperText: 'Os números embaixo das barras (8 a 14).'),
       ),
       actions: [
         TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
         FilledButton(
           key: const Key('barcode_ok'),
           onPressed: () {
-            final v = _code.text.replaceAll(RegExp(r'\D'), '');
-            if (v.length >= 8) Navigator.pop(context, v);
+            final v = normalizeBarcode(_code.text);
+            if (v != null) Navigator.pop(context, v);
           },
           child: const Text('Buscar'),
         ),

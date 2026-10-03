@@ -8,6 +8,8 @@ import 'package:frankstein/card_image_capturer.dart';
 import 'package:frankstein/confirmation_gate.dart';
 import 'package:frankstein/data/nutrition_store.dart';
 import 'package:frankstein/main.dart';
+import 'package:flutter_zxing/flutter_zxing.dart' show Format;
+import 'package:frankstein/screens/nutrition/barcode_scanner_screen.dart';
 import 'package:frankstein/share_sheet.dart';
 import 'package:frankstein_health_core/health_core.dart';
 import 'package:frankstein_nutrition/nutrition.dart';
@@ -198,5 +200,15 @@ void main() {
       expect(p.tags, {'vegano'});
       expect(p.allergies, 'amendoim');
     });
+  });
+
+  test('código de barras: só dígitos, 8 a 14; formatos de rótulo (EAN/UPC), sem QR', () {
+    expect(normalizeBarcode(' 789 1000-000075 '), '7891000000075');
+    expect(normalizeBarcode('1234567'), isNull);
+    expect(normalizeBarcode('123456789012345'), isNull);
+    expect(normalizeBarcode(null), isNull);
+    expect(kFoodBarcodeFormats & Format.ean13, isNonZero);
+    expect(kFoodBarcodeFormats & Format.qrCode, 0);
+    expect(barcodeCameraAvailable, isFalse); // teste roda fora do Android → digitação
   });
 }

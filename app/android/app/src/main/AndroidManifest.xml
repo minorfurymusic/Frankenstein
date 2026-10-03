@@ -1,4 +1,5 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     <!-- Contador de passos real (.claude/rules/activity.md: "Foreground
          service no Android. A contagem NÃO pode parar com a tela
          bloqueada"). ACTIVITY_RECOGNITION é obrigatória desde o Android 10
@@ -16,6 +17,14 @@
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <!-- Lembretes (Reminders.kt): reagendar depois de reiniciar o celular. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <!-- Leitor de código de barras (flutter_zxing → camera_android_camerax).
+         A câmera é pedida em runtime só quando a pessoa abre o leitor. O
+         plugin de câmera também declara microfone e armazenamento (para
+         gravar vídeo); o app não grava vídeo, então essas saem do APK. -->
+    <uses-permission android:name="android.permission.CAMERA"/>
+    <uses-permission android:name="android.permission.RECORD_AUDIO" tools:node="remove"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" tools:node="remove"/>
+    <uses-feature android:name="android.hardware.camera" android:required="false"/>
     <!-- required="false": aparelho sem sensor de passos ainda instala o
          app, só não conta passos — degradação gradual, não trava nada. -->
     <uses-feature android:name="android.hardware.sensor.stepcounter" android:required="false"/>
