@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:frankstein_activity/activity.dart';
 import 'package:frankstein_brain/brain.dart';
 import 'package:frankstein_health_core/health_core.dart';
@@ -114,7 +116,14 @@ class AppDependencies {
     required this.themeMode,
   });
 
+  /// Pasta dos bancos em arquivo (`null` em memória/teste).
+  String? dbDirectoryPath;
+
+  bool _closed = false;
+
   void close() {
+    if (_closed) return;
+    _closed = true;
     dataVersion.dispose();
     themeMode.dispose();
     profileRepository.close();
@@ -140,6 +149,7 @@ class AppDependencies {
     required CardImageCapturer imageCapturer,
   }) {
     return _build(
+      dbDirectoryPath: dbDirectoryPath,
       core: HealthDataCore.open('$dbDirectoryPath/frankstein_health.sqlite3'),
       foodRepository: FoodRepository.open('$dbDirectoryPath/frankstein_food.sqlite3'),
       workoutRepository: WorkoutRepository.open('$dbDirectoryPath/frankstein_workout.sqlite3'),
@@ -169,7 +179,32 @@ class AppDependencies {
     );
   }
 
+  /// Arquivos de banco do app — apagados juntos em "apagar todos os dados".
+  static const dbFileNames = [
+    'frankstein_health.sqlite3',
+    'frankstein_food.sqlite3',
+    'frankstein_workout.sqlite3',
+    'frankstein_medications.sqlite3',
+    'frankstein_profile.sqlite3',
+  ];
+
+  /// "Apagar todos os dados" (Conta › Privacidade; LGPD): fecha os bancos e
+  /// apaga os arquivos. Não mexe na regra "só acrescenta" do Health Data
+  /// Core — o banco inteiro deixa de existir; o app abre do zero depois.
+  Future<void> eraseAllDataAndClose() async {
+    final dir = dbDirectoryPath;
+    close();
+    if (dir == null) return;
+    for (final name in dbFileNames) {
+      for (final suffix in const ['', '-wal', '-shm', '-journal']) {
+        final f = File('$dir/$name$suffix');
+        if (f.existsSync()) await f.delete();
+      }
+    }
+  }
+
   static AppDependencies _build({
+    String? dbDirectoryPath,
     required HealthDataCore core,
     required FoodRepository foodRepository,
     required WorkoutRepository workoutRepository,
@@ -297,6 +332,6 @@ class AppDependencies {
           orElse: () => ThemeMode.system,
         ),
       ),
-    );
+    )..dbDirectoryPath = dbDirectoryPath;
   }
 }

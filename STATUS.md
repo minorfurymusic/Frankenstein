@@ -23,7 +23,16 @@ branco: navegação Resumo/Chat de verdade, ligada aos pacotes reais, com
 compartilhamento de treino/corrida funcionando de ponta a ponta. Detalhe
 completo em `docs/HISTORICO.md`.
 
-**Ciclo mais recente (2026-10-03): Cérebro com cartões de proposta.** O
+**Ciclo mais recente (2026-10-03): telas restantes da Conta.** Privacidade
+e dados (exportar tudo em JSON pelo compartilhamento — grátis, sem limite;
+apagar tudo com "APAGAR" digitado, que apaga os arquivos do banco sem
+mexer na regra "só acrescenta"), Excluir conta (mesmo fluxo; conta Google
+entra com o login), Permissões (estado real dos passos; as outras dizem
+"ainda não usada"), Dispositivos, Assinatura (plano Grátis, lista Premium
+da ADR-14, sem preço) e Cérebro (IA) (modo básico, o que é enviado e o que
+nunca vai). App: 88 testes.
+
+**Ciclo anterior (2026-10-03): Cérebro com cartões de proposta.** O
 chat virou o Cérebro: cada comando de escrita aparece como cartão de
 proposta na conversa (confirmar/descartar; "Salvo em …"), respostas de
 leitura em português legível, exemplos clicáveis, aviso de modo básico,

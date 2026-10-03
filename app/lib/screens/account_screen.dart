@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../app_dependencies.dart';
 import '../theme/rlt_colors.dart';
+import 'account/account_more_screens.dart';
 import 'account/goals_screen.dart';
 import 'account/preferences_screen.dart';
 import 'account/profile_screen.dart';
@@ -9,17 +10,22 @@ import 'home/reminders_screen.dart';
 import '../theme/rlt_theme.dart';
 
 /// Conta e Configurações, aberta pelo avatar do Início (prancheta Conta).
-/// Nesta etapa só a lista de seções existe; "Sobre" já abre as licenças.
+/// Cada seção abre a sua tela; "Sobre" abre versão e licenças.
 class AccountScreen extends StatelessWidget {
   final AppDependencies deps;
   const AccountScreen({super.key, required this.deps});
 
-  Widget? _screenFor(String title) => switch (title) {
+  Widget _screenFor(String title) => switch (title) {
         'Perfil' => ProfileScreen(deps: deps),
         'Metas' => GoalsScreen(deps: deps),
         'Preferências' => PreferencesScreen(deps: deps),
         'Lembretes' => RemindersScreen(deps: deps),
-        _ => null,
+        'Cérebro (IA)' => const BrainSettingsScreen(),
+        'Assinatura' => const SubscriptionScreen(),
+        'Permissões' => PermissionsScreen(deps: deps),
+        'Dispositivos' => const DevicesScreen(),
+        'Privacidade e dados' => PrivacyScreen(deps: deps),
+        _ => PreferencesScreen(deps: deps),
       };
 
   static const _sections = <(String, String, IconData)>[
@@ -62,16 +68,16 @@ class AccountScreen extends StatelessWidget {
               subtitle: Text(subtitle),
               trailing: const Icon(Icons.chevron_right),
               key: Key('account_$title'),
-              onTap: () {
-                final screen = _screenFor(title);
-                if (screen != null) {
-                  Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => screen));
-                  return;
-                }
-                // TODO(frankstein): telas ContaCerebro, ContaAssinatura, ContaPermissoes, ContaDispositivos, ContaLembretes, ContaPrivacidade.
-                ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('$title: tela em construção.')));
-              },
+              onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => _screenFor(title))),
             ),
+          ListTile(
+            key: const Key('account_delete'),
+            leading: Icon(Icons.person_remove_outlined, color: c.error),
+            title: Text('Excluir conta e todos os dados', style: t.titleSmall?.copyWith(color: c.error)),
+            onTap: () => Navigator.of(context).push(
+              MaterialPageRoute<void>(builder: (_) => EraseDataScreen(deps: deps, deleteAccount: true)),
+            ),
+          ),
           ListTile(
             key: const Key('account_about'),
             leading: Icon(Icons.info_outline, color: c.onSurfaceVariant),
