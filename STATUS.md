@@ -23,7 +23,13 @@ branco: navegação Resumo/Chat de verdade, ligada aos pacotes reais, com
 compartilhamento de treino/corrida funcionando de ponta a ponta. Detalhe
 completo em `docs/HISTORICO.md`.
 
-**Ciclo mais recente (2026-10-03): primeiro uso.** Boas-vindas,
+**Ciclo mais recente (2026-10-03): histórico médico.** Condições e
+diagnósticos informados, alergias, cirurgias, vacinas e consultas
+(`MedicalHistoryRepository` em `packages/health_records`, tabela própria —
+cadastro, não `HealthEvent`), com formulário, edição, apagar e exportação.
+App: 92 testes; health_records: 25.
+
+**Ciclo anterior (2026-10-03): primeiro uso.** Boas-vindas,
 privacidade, perfil (ou "depois"), metas sugeridas calculadas, permissão de
 passos explicada antes de pedir (com "agora não"), IA opcional. Aparece só
 sem perfil e sem ter concluído antes (APK antigo com perfil não vê). No

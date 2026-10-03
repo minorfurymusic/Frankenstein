@@ -204,4 +204,26 @@ void main() {
       expect(deps.healthRead.vitals(VitalKind.spo2).single.display, '97');
     });
   });
+
+  testWidgets('histórico médico: cadastrar alergia e consulta aparece nas listas', (tester) async {
+    await openHealthTab(tester);
+    await tester.tap(find.byKey(const Key('section_historico')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('history_add_allergy')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('history_title')), 'Dipirona');
+    await tester.tap(find.byKey(const Key('history_save')));
+    await tester.pumpAndSettle();
+    expect(deps.medicalHistory.list(kind: MedicalHistoryKind.allergy).single.title, 'Dipirona');
+    expect(find.text('Dipirona'), findsOneWidget);
+
+    await tester.scrollUntilVisible(find.byKey(const Key('history_add_appointment')), 200);
+    await tester.tap(find.byKey(const Key('history_add_appointment')));
+    await tester.pumpAndSettle();
+    expect(find.text('Profissional'), findsOneWidget);
+    await tester.enterText(find.byKey(const Key('history_title')), 'Cardiologia');
+    await tester.tap(find.byKey(const Key('history_save')));
+    await tester.pumpAndSettle();
+    expect(deps.medicalHistory.list(kind: MedicalHistoryKind.appointment).single.title, 'Cardiologia');
+  });
 }

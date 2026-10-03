@@ -45,6 +45,7 @@ class AppDependencies {
   final FoodRepository foodRepository;
   final WorkoutRepository workoutRepository;
   final MedicationRepository medicationRepository;
+  final MedicalHistoryRepository medicalHistory;
   final ToolRegistry registry;
   final BrainPipeline pipeline;
   final ConfirmationGate confirmationGate;
@@ -92,6 +93,7 @@ class AppDependencies {
     required this.foodRepository,
     required this.workoutRepository,
     required this.medicationRepository,
+    required this.medicalHistory,
     required this.registry,
     required this.pipeline,
     required this.confirmationGate,
@@ -132,6 +134,7 @@ class AppDependencies {
     foodRepository.close();
     workoutRepository.close();
     medicationRepository.close();
+    medicalHistory.close();
   }
 
   /// Produção: bancos reais em arquivo, um por módulo (mesma separação
@@ -154,6 +157,7 @@ class AppDependencies {
       foodRepository: FoodRepository.open('$dbDirectoryPath/frankstein_food.sqlite3'),
       workoutRepository: WorkoutRepository.open('$dbDirectoryPath/frankstein_workout.sqlite3'),
       medicationRepository: MedicationRepository.open('$dbDirectoryPath/frankstein_medications.sqlite3'),
+      medicalHistory: MedicalHistoryRepository.open('$dbDirectoryPath/frankstein_medications.sqlite3'),
       profileRepository: ProfileRepository.open('$dbDirectoryPath/frankstein_profile.sqlite3'),
       confirmationGate: confirmationGate,
       shareSheet: shareSheet,
@@ -172,6 +176,7 @@ class AppDependencies {
       foodRepository: FoodRepository.openInMemory(seedTacoData: true),
       workoutRepository: WorkoutRepository.openInMemory(),
       medicationRepository: MedicationRepository.openInMemory(),
+      medicalHistory: MedicalHistoryRepository.openInMemory(),
       profileRepository: ProfileRepository.openInMemory(),
       confirmationGate: confirmationGate,
       shareSheet: shareSheet,
@@ -209,6 +214,7 @@ class AppDependencies {
     required FoodRepository foodRepository,
     required WorkoutRepository workoutRepository,
     required MedicationRepository medicationRepository,
+    required MedicalHistoryRepository medicalHistory,
     required ProfileRepository profileRepository,
     required ConfirmationGate confirmationGate,
     required ShareSheet shareSheet,
@@ -300,6 +306,7 @@ class AppDependencies {
       foodRepository: foodRepository,
       workoutRepository: workoutRepository,
       medicationRepository: medicationRepository,
+      medicalHistory: medicalHistory,
       registry: registry,
       pipeline: pipeline,
       confirmationGate: confirmationGate,

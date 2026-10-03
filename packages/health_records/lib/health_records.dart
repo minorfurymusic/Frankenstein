@@ -5,6 +5,7 @@ library;
 
 export 'src/health_loggers.dart';
 export 'src/health_records_tools.dart';
+export 'src/medical_history.dart';
 export 'src/medication.dart';
 export 'src/medication_dose_logger.dart';
 export 'src/medication_repository.dart';

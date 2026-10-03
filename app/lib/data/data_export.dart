@@ -70,6 +70,17 @@ Map<String, dynamic> buildFullExport(AppDependencies deps, {DateTime? now}) {
           'reminders_enabled': m.remindersEnabled,
         },
     ],
+    'medical_history': [
+      for (final i in deps.medicalHistory.list())
+        {
+          'id': i.id,
+          'kind': i.kind.wireValue,
+          'title': i.title,
+          'date': i.date?.toIso(),
+          'professional': i.professional,
+          'notes': i.notes,
+        },
+    ],
     'workout_plans': [
       for (final p in deps.workoutRepository.listPlans())
         {

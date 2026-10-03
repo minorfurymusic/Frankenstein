@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:frankstein_health_core/health_core.dart';
+import 'package:frankstein_health_records/health_records.dart';
 
 import '../../app_dependencies.dart';
 import '../../format.dart';
@@ -10,8 +12,8 @@ import '../../widgets/health_area.dart';
 import '../../widgets/state_views.dart';
 import '../../widgets/timeline_item.dart';
 
-/// Histórico médico — diário de sintomas (prancheta Historico). Condições,
-/// alergias, cirurgias, vacinas e consultas ainda não têm onde ser gravadas.
+/// Histórico médico (prancheta Historico): diário de sintomas e o que a
+/// pessoa informa — condições, alergias, cirurgias, vacinas e consultas.
 class SymptomsScreen extends StatelessWidget {
   final AppDependencies deps;
   const SymptomsScreen({super.key, required this.deps});
@@ -54,9 +56,35 @@ class SymptomsScreen extends StatelessWidget {
                   ].join(' · '),
                   isLast: i == symptoms.length - 1,
                 ),
-              const RltSectionHeader('Condições, alergias, cirurgias, vacinas e consultas'),
-              // TODO(frankstein): cadastro de condições, alergias, cirurgias, vacinas e consultas (dado novo, ainda sem tabela).
-              Text('Em construção: entra no ciclo das telas com dado novo.', style: t.bodyMedium?.copyWith(color: RltColors.of(context).onSurfaceVariant)),
+              for (final kind in MedicalHistoryKind.values) ...[
+                RltSectionHeader(
+                  _plural(kind),
+                  action: TextButton.icon(
+                    key: Key('history_add_${kind.name}'),
+                    onPressed: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(builder: (_) => MedicalHistoryFormScreen(deps: deps, kind: kind)),
+                    ),
+                    icon: const Icon(Icons.add, size: 18),
+                    label: const Text('Adicionar'),
+                  ),
+                ),
+                for (final item in deps.medicalHistory.list(kind: kind))
+                  ListTile(
+                    contentPadding: EdgeInsets.zero,
+                    title: Text(item.title),
+                    subtitle: Text([
+                      if (item.date != null) ddmmyyyy(DateTime(item.date!.year, item.date!.month, item.date!.day)),
+                      ?item.professional,
+                      ?item.notes,
+                    ].join(' · ')),
+                    trailing: const Icon(Icons.chevron_right),
+                    onTap: () => Navigator.of(context).push(
+                      MaterialPageRoute<void>(builder: (_) => MedicalHistoryFormScreen(deps: deps, kind: kind, existing: item)),
+                    ),
+                  ),
+                if (deps.medicalHistory.list(kind: kind).isEmpty)
+                  Text('Nenhum item.', style: t.bodySmall?.copyWith(color: RltColors.of(context).onSurfaceVariant)),
+              ],
               const SizedBox(height: RltSpace.l),
               const HealthDisclaimer(),
             ],
@@ -219,6 +247,114 @@ class _DateTimeField extends StatelessWidget {
         decoration: InputDecoration(labelText: label, suffixIcon: const Icon(Icons.schedule)),
         child: Text(relativeDayTime(value)),
       ),
+    );
+  }
+}
+
+String _plural(MedicalHistoryKind k) => switch (k) {
+      MedicalHistoryKind.condition => 'Condições e diagnósticos informados',
+      MedicalHistoryKind.allergy => 'Alergias',
+      MedicalHistoryKind.surgery => 'Cirurgias',
+      MedicalHistoryKind.vaccine => 'Vacinas',
+      MedicalHistoryKind.appointment => 'Consultas',
+    };
+
+/// Cadastrar/editar item do histórico médico.
+class MedicalHistoryFormScreen extends StatefulWidget {
+  final AppDependencies deps;
+  final MedicalHistoryKind kind;
+  final MedicalHistoryItem? existing;
+  const MedicalHistoryFormScreen({super.key, required this.deps, required this.kind, this.existing});
+
+  @override
+  State<MedicalHistoryFormScreen> createState() => _MedicalHistoryFormScreenState();
+}
+
+class _MedicalHistoryFormScreenState extends State<MedicalHistoryFormScreen> {
+  late final _title = TextEditingController(text: widget.existing?.title ?? '');
+  late final _professional = TextEditingController(text: widget.existing?.professional ?? '');
+  late final _notes = TextEditingController(text: widget.existing?.notes ?? '');
+  late LocalDate? _date = widget.existing?.date;
+
+  @override
+  void dispose() {
+    _title.dispose();
+    _professional.dispose();
+    _notes.dispose();
+    super.dispose();
+  }
+
+  void _save() {
+    try {
+      widget.deps.medicalHistory.save(MedicalHistoryItem(
+        id: widget.existing?.id ?? HealthDataCore.newId(),
+        kind: widget.kind,
+        title: _title.text,
+        date: _date,
+        professional: _professional.text.trim().isEmpty ? null : _professional.text,
+        notes: _notes.text.trim().isEmpty ? null : _notes.text,
+      ));
+      widget.deps.notifyDataChanged();
+      Navigator.of(context).pop();
+      showRltSaved(context, '${widget.kind.label} salvo em Saúde › Histórico médico.');
+    } catch (e) {
+      showRltError(context, e);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final isAppointment = widget.kind == MedicalHistoryKind.appointment;
+    final d = _date;
+    return Scaffold(
+      appBar: AppBar(
+        title: Text(widget.kind.label),
+        actions: [TextButton(key: const Key('history_save'), onPressed: _save, child: const Text('Salvar'))],
+      ),
+      body: ListView(padding: const EdgeInsets.all(RltSpace.l), children: [
+        TextField(
+          key: const Key('history_title'),
+          controller: _title,
+          textCapitalization: TextCapitalization.sentences,
+          decoration: InputDecoration(labelText: isAppointment ? 'Especialidade' : 'Nome'),
+        ),
+        const SizedBox(height: RltSpace.m),
+        InkWell(
+          onTap: () async {
+            final picked = await showDatePicker(
+              context: context,
+              initialDate: d == null ? DateTime.now() : DateTime(d.year, d.month, d.day),
+              firstDate: DateTime(1900),
+              lastDate: DateTime(2100),
+            );
+            if (picked != null) setState(() => _date = LocalDate.fromDateTime(picked));
+          },
+          child: InputDecorator(
+            decoration: const InputDecoration(labelText: 'Data (opcional)', suffixIcon: Icon(Icons.calendar_today_outlined)),
+            child: Text(d == null ? 'Sem data' : ddmmyyyy(DateTime(d.year, d.month, d.day))),
+          ),
+        ),
+        if (isAppointment) ...[
+          const SizedBox(height: RltSpace.m),
+          TextField(controller: _professional, decoration: const InputDecoration(labelText: 'Profissional')),
+        ],
+        const SizedBox(height: RltSpace.m),
+        TextField(controller: _notes, minLines: 2, maxLines: 5, decoration: const InputDecoration(labelText: 'Anotações')),
+        if (widget.existing != null) ...[
+          const SizedBox(height: RltSpace.l),
+          OutlinedButton.icon(
+            onPressed: () {
+              widget.deps.medicalHistory.delete(widget.existing!.id);
+              widget.deps.notifyDataChanged();
+              Navigator.of(context).pop();
+            },
+            icon: const Icon(Icons.delete_outline),
+            label: const Text('Apagar'),
+          ),
+        ],
+        const SizedBox(height: RltSpace.l),
+        const HealthDisclaimer(),
+      ]),
     );
   }
 }
