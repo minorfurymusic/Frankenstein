@@ -118,6 +118,10 @@ class MainActivity : FlutterActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "rlt/pdf")
             .setMethodCallHandler { call, result -> PdfPages.handle(call, result) }
 
+        // Corrida/caminhada: gravador próprio com GPS (RunRecorderService.kt).
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "rlt/run")
+            .setMethodCallHandler { call, result -> RunBridge.handle(this, call, result) }
+
         // Health Connect: só leitura de sono e batimentos (HealthConnectBridge.kt).
         HealthConnectBridge.noteLaunchIntent(intent)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "rlt/health_connect")
@@ -203,6 +207,7 @@ class MainActivity : FlutterActivity() {
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
+        if (RunBridge.onPermissionResult(this, requestCode)) return
         val granted = grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
         when (requestCode) {
             activityRecognitionRequestCode -> {

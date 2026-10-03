@@ -17,6 +17,7 @@ import 'data/day_read_model.dart';
 import 'data/health_read_model.dart';
 import 'data/nutrition_store.dart';
 import 'documents/document_files.dart';
+import 'run/run_recorder.dart';
 import 'wearables/health_connect.dart';
 import 'reminders/reminders.dart';
 import 'chat_router.dart';
@@ -57,6 +58,9 @@ class AppDependencies {
   final DocumentFileStore documentFiles;
   final DocumentPicker documentPicker;
   final PdfPageRenderer pdfRenderer;
+
+  /// Gravador de corrida/caminhada com GPS (ADR-9 revisão 1).
+  final RunRecorder runRecorder;
   final ToolRegistry registry;
   final BrainPipeline pipeline;
   final ConfirmationGate confirmationGate;
@@ -118,6 +122,7 @@ class AppDependencies {
     required this.documentFiles,
     required this.documentPicker,
     required this.pdfRenderer,
+    required this.runRecorder,
     required this.registry,
     required this.pipeline,
     required this.confirmationGate,
@@ -180,10 +185,12 @@ class AppDependencies {
     DocumentPicker? documentPicker,
     PdfPageRenderer? pdfRenderer,
     HealthConnectBridge? healthConnect,
+    RunRecorder? runRecorder,
   }) {
     return _build(
       reminderScheduler: reminderScheduler ?? defaultReminderScheduler(),
       healthConnect: healthConnect ?? defaultHealthConnectBridge(),
+      runRecorder: runRecorder ?? defaultRunRecorder(),
       documentFiles: DiskDocumentFileStore('$dbDirectoryPath/$documentsDirName'),
       documentPicker: documentPicker ?? NativeDocumentPicker(),
       pdfRenderer: pdfRenderer ?? defaultPdfPageRenderer(),
@@ -210,10 +217,12 @@ class AppDependencies {
     DocumentPicker? documentPicker,
     PdfPageRenderer? pdfRenderer,
     HealthConnectBridge? healthConnect,
+    RunRecorder? runRecorder,
   }) {
     return _build(
       reminderScheduler: reminderScheduler ?? NoopReminderScheduler(),
       healthConnect: healthConnect ?? FakeHealthConnectBridge(),
+      runRecorder: runRecorder ?? FakeRunRecorder(),
       documentFiles: MemoryDocumentFileStore(),
       documentPicker: documentPicker ?? FakeDocumentPicker(),
       pdfRenderer: pdfRenderer ?? NoopPdfPageRenderer(),
@@ -261,6 +270,7 @@ class AppDependencies {
   static AppDependencies _build({
     required ReminderScheduler reminderScheduler,
     required HealthConnectBridge healthConnect,
+    required RunRecorder runRecorder,
     String? dbDirectoryPath,
     required HealthDataCore core,
     required FoodRepository foodRepository,
@@ -367,6 +377,7 @@ class AppDependencies {
       documentFiles: documentFiles,
       documentPicker: documentPicker,
       pdfRenderer: pdfRenderer,
+      runRecorder: runRecorder,
       registry: registry,
       pipeline: pipeline,
       confirmationGate: confirmationGate,

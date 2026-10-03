@@ -23,7 +23,26 @@ branco: navegação Resumo/Chat de verdade, ligada aos pacotes reais, com
 compartilhamento de treino/corrida funcionando de ponta a ponta. Detalhe
 completo em `docs/HISTORICO.md`.
 
-**Ciclo mais recente (2026-10-03): valores de exame.** Decisão do usuário
+**Ciclo mais recente (2026-10-03): corrida e caminhada com GPS.** Gravador
+próprio (ADR-9 revisão 1): `RunRecorderService.kt` (serviço em primeiro
+plano, `LocationManager` do Android, sem Play Services) grava cada ponto na
+hora em `run_current.jsonl`; se o app/processo cair, o Android recria o
+serviço e continua num trecho novo, e o histórico oferece salvar a
+gravação interrompida. Pausa manual e automática (parado ~8 s com sinal
+bom) abrem trechos; o caminho pausado não conta. `RunCalculator` agora
+soma distância/tempo/parciais só dentro do trecho e tira saltos
+impossíveis (> 12 m/s) antes do ritmo; `RunLogger` grava o tipo (corrida
+ou caminhada) e o início de cada trecho no payload. Telas: Iniciar (tipo,
+permissão de localização, GPS do celular, pausa automática), Ao vivo
+(tempo ativo, km, ritmo atual dos últimos 30 s, ritmo médio, sinal do
+GPS, pausar/retomar, terminar → salvar/descartar) e o resumo com o traço
+da rota (sem mapa de fundo). Permissões mostra a localização real. Só
+localização "enquanto usa" — nada em segundo plano. A notificação dos
+passos passou a usar `NotificationCompat` (o construtor anterior não existe
+no Android 7, onde o app instala) e diz "RLT". Não verificado no aparelho;
+bateria (< 8%/hora) só se mede lá (`docs/PERF.md` ainda não existe).
+
+**Ciclo anterior (2026-10-03): valores de exame.** Decisão do usuário
 registrada na ADR-16 (valor e faixa de referência na unidade do próprio
 laudo — exceção à regra de SI só para exames) e revisão 1 da ADR-9
 (gravador de GPS próprio, sem OpenTracks). Exame ganhou "Valores do exame"

@@ -19,6 +19,7 @@ RunPointInput _pointAt({
   double? accuracyMeters,
   double baseLat = -23.0,
   double baseLon = -46.0,
+  int segment = 0,
 }) {
   return RunPointInput(
     latitude: baseLat + metersNorthOfOrigin / _metersPerDegreeLat,
@@ -26,6 +27,7 @@ RunPointInput _pointAt({
     recordedAt: recordedAt,
     elevationMeters: elevationMeters,
     accuracyMeters: accuracyMeters,
+    segment: segment,
   );
 }
 
@@ -138,6 +140,56 @@ void main() {
       expect(summary.elevationGainMeters, 5.0);
       expect(summary.splits, hasLength(1));
       expect(summary.averagePaceSecondsPerKm, isNotNull);
+    });
+  });
+
+  group('pausas e ruído', () {
+    final start = DateTime.utc(2026, 8, 10, 6, 0);
+    DateTime at(int s) => start.add(Duration(seconds: s));
+
+    test('pausa: distância e tempo parados não contam; parcial soma só o tempo em movimento', () {
+      final points = [
+        _pointAt(metersNorthOfOrigin: 0, recordedAt: at(0)),
+        _pointAt(metersNorthOfOrigin: 600, recordedAt: at(180)),
+        // pausou 10 min e andou 200 m parado: não conta
+        _pointAt(metersNorthOfOrigin: 800, recordedAt: at(780), segment: 1),
+        _pointAt(metersNorthOfOrigin: 1200, recordedAt: at(900), segment: 1),
+      ];
+      final s = RunCalculator.summarize(points);
+      expect(s.distanceMeters, closeTo(1000, 1));
+      expect(s.duration, const Duration(seconds: 300));
+      expect(s.splits.single.duration, const Duration(seconds: 300));
+      expect(s.averagePaceSecondsPerKm, closeTo(300, 1));
+    });
+
+    test('salto impossível de GPS (> 12 m/s) sai antes do cálculo', () {
+      final points = [
+        _pointAt(metersNorthOfOrigin: 0, recordedAt: at(0)),
+        _pointAt(metersNorthOfOrigin: 3, recordedAt: at(1)),
+        _pointAt(metersNorthOfOrigin: 500, recordedAt: at(2)), // 497 m em 1 s
+        _pointAt(metersNorthOfOrigin: 6, recordedAt: at(3)),
+      ];
+      final kept = RunCalculator.filterSpeedOutliers(points);
+      expect(kept, hasLength(3));
+      expect(RunCalculator.totalDistanceMeters(kept), closeTo(6, 0.01));
+    });
+
+    test('RunLogger grava tipo e início de cada trecho; segmentsFromPayload reconstrói', () {
+      final core = HealthDataCore.openInMemory();
+      addTearDown(core.close);
+      final points = [
+        _pointAt(metersNorthOfOrigin: 0, recordedAt: at(0)),
+        _pointAt(metersNorthOfOrigin: 300, recordedAt: at(90)),
+        _pointAt(metersNorthOfOrigin: 320, recordedAt: at(400), segment: 1),
+        _pointAt(metersNorthOfOrigin: 620, recordedAt: at(490), segment: 1),
+      ];
+      final e = RunLogger(core: core).logRun(points, occurredAtTzOffsetMinutes: -180, kind: RunKind.walk);
+      expect(e.payload['activity'], 'walk');
+      expect(e.payload['segment_start_indices'], [0, 2]);
+      expect(e.payload['duration_seconds'], 180);
+      expect(segmentsFromPayload(e.payload, 4), [0, 0, 1, 1]);
+      expect(segmentsFromPayload(const {}, 3), [0, 0, 0]);
+      expect(RunKind.fromWireValue('run'), RunKind.run);
     });
   });
 

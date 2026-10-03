@@ -86,7 +86,11 @@ class ActivityReadModel {
       out.add(ActivityEntry(
         event: e,
         kind: ActivityKind.gps,
-        title: speed >= 100 ? 'Corrida' : 'Caminhada',
+        title: switch (RunKind.fromWireValue(e.payload['activity'])) {
+          RunKind.walk => 'Caminhada',
+          RunKind.run => 'Corrida',
+          null => speed >= 100 ? 'Corrida' : 'Caminhada',
+        },
         local: localOf(e.occurredAt, e.occurredAtTzOffsetMinutes),
         duration: duration,
         distanceMeters: meters,

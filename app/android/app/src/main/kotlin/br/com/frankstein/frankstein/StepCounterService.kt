@@ -4,6 +4,7 @@ import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
+import androidx.core.app.NotificationCompat
 import android.app.Service
 import android.content.Intent
 import android.hardware.Sensor
@@ -129,8 +130,10 @@ class StepCounterService : Service(), SensorEventListener {
             )
         } else null
 
-        return Notification.Builder(this, NOTIFICATION_CHANNEL_ID)
-            .setContentTitle("Frankstein")
+        // NotificationCompat: Notification.Builder(context, canal) só existe
+        // a partir do Android 8, e o app instala desde o 7.
+        return NotificationCompat.Builder(this, NOTIFICATION_CHANNEL_ID)
+            .setContentTitle("RLT")
             .setContentText("Contando seus passos")
             .setSmallIcon(applicationInfo.icon)
             .setOngoing(true)

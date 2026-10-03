@@ -25,6 +25,14 @@
     <uses-permission android:name="android.permission.RECORD_AUDIO" tools:node="remove"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" tools:node="remove"/>
     <uses-feature android:name="android.hardware.camera" android:required="false"/>
+    <!-- Corrida/caminhada com GPS (ADR-9 revisão 1, RunRecorderService.kt):
+         localização precisa só enquanto a gravação está ligada, por serviço
+         em primeiro plano iniciado pela pessoa. Não pede localização em
+         segundo plano (ACCESS_BACKGROUND_LOCATION). -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
+    <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
+    <uses-feature android:name="android.hardware.location.gps" android:required="false"/>
     <!-- Health Connect (ADR-4a, HealthConnectBridge.kt): só LEITURA de sono e
          frequência cardíaca que a pulseira/relógio gravou lá. Pedidas em
          runtime, só quando a pessoa toca em "Conectar" em Conta › Dispositivos. -->
@@ -99,6 +107,10 @@
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
             </intent-filter>
         </receiver>
+        <service
+            android:name=".RunRecorderService"
+            android:exported="false"
+            android:foregroundServiceType="location"/>
         <service
             android:name=".StepCounterService"
             android:exported="false"

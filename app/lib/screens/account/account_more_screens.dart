@@ -254,9 +254,17 @@ class PermissionsScreen extends StatelessWidget {
                   : () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => DevicesScreen(deps: deps))),
             ),
           ),
-          // TODO(frankstein): microfone (voz no Cérebro, depende da IA — ADR-11) e localização (corrida com GPS — ADR-9).
+          FutureBuilder<bool>(
+            future: deps.runRecorder.hasPermission(),
+            builder: (context, snap) => row(
+              Icons.location_on_outlined,
+              'Localização',
+              'Gravar a rota da corrida e da caminhada, só enquanto grava.',
+              snap.data == null ? 'Verificando…' : (snap.data! ? 'Permitida' : 'O Android pergunta quando você inicia uma corrida'),
+            ),
+          ),
+          // TODO(frankstein): microfone (voz no Cérebro, depende da IA — ADR-11).
           row(Icons.mic_none, 'Microfone', 'Falar com o Cérebro.', 'Ainda não usada pelo app'),
-          row(Icons.location_on_outlined, 'Localização', 'Gravar a rota da corrida e da caminhada.', 'Ainda não usada pelo app'),
         ]),
       ),
     );

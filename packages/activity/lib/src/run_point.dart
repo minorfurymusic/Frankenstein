@@ -14,12 +14,17 @@ class RunPointInput {
 
   final DateTime recordedAt;
 
+  /// Trecho da gravação: sobe a cada pausa. Distância e tempo só contam
+  /// entre pontos do mesmo trecho (o caminho feito pausado não entra).
+  final int segment;
+
   RunPointInput({
     required this.latitude,
     required this.longitude,
     required this.recordedAt,
     this.elevationMeters,
     this.accuracyMeters,
+    this.segment = 0,
   }) {
     if (!recordedAt.isUtc) {
       throw ArgumentError('recordedAt precisa estar em UTC');

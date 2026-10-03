@@ -13,6 +13,7 @@ import '../../theme/rlt_colors.dart';
 import '../../theme/rlt_theme.dart';
 import '../../widgets/common.dart';
 import '../../widgets/state_views.dart';
+import 'run_screens.dart';
 import 'share_helpers.dart';
 
 /// Passos (prancheta Passos): histórico por dia/semana/mês, meta e estado
@@ -115,6 +116,16 @@ class _StepsScreenState extends State<StepsScreen> {
   }
 }
 
+/// "Corrida" ou "Caminhada": o que a pessoa escolheu ao gravar; em rota
+/// antiga/importada, deduz pela velocidade (≥ 100 m/min = corrida).
+String runTitle(HealthEvent run) {
+  final kind = RunKind.fromWireValue(run.payload['activity']);
+  if (kind != null) return kind == RunKind.walk ? 'Caminhada' : 'Corrida';
+  final meters = (run.payload['distance_meters'] as num?)?.toDouble() ?? 0;
+  final seconds = (run.payload['duration_seconds'] as num?)?.toInt() ?? 0;
+  return seconds > 0 && meters / (seconds / 60) >= 100 ? 'Corrida' : 'Caminhada';
+}
+
 /// Corrida e caminhada (pranchetas CorridaHistorico, CorridaResumo):
 /// histórico das rotas gravadas, resumo com parciais e exportar GPX.
 class RunsScreen extends StatelessWidget {
@@ -123,32 +134,35 @@ class RunsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = Theme.of(context).textTheme;
-    final runs = deps.core.queryByType(HealthEventType.gpsTrack).reversed.toList();
     return Scaffold(
       appBar: AppBar(title: const Text('Corrida e caminhada')),
-      body: ListView(padding: const EdgeInsets.all(RltSpace.l), children: [
-        // TODO(frankstein): gravação ao vivo com GPS (serviço nativo com LocationManager, sem Play Services — ADR-9/ADR-10), na etapa de integrações.
-        StateCard(
-          icon: Icons.directions_run_outlined,
-          title: 'Iniciar corrida: em construção',
-          message: 'A gravação pelo GPS entra na etapa de integrações (precisa de teste no aparelho). '
-              'Rotas importadas ou já gravadas aparecem abaixo.',
-        ),
+      body: ValueListenableBuilder<int>(
+        valueListenable: deps.dataVersion,
+        builder: (context, _, _) => _history(context),
+      ),
+    );
+  }
+
+  Widget _history(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    final runs = deps.core.queryByType(HealthEventType.gpsTrack).reversed.toList();
+    return ListView(padding: const EdgeInsets.all(RltSpace.l), children: [
+        RunRecorderCard(deps: deps),
         const RltSectionHeader('Histórico'),
-        if (runs.isEmpty) Text('Nenhuma corrida ou caminhada gravada.', style: t.bodyMedium),
+        if (runs.isEmpty)
+          Text('Nenhuma corrida ainda. Toque em iniciar e saia: o RLT grava a rota, o ritmo e as parciais — mesmo com a tela bloqueada.',
+              style: t.bodyMedium),
         for (final r in runs)
           ListTile(
             contentPadding: EdgeInsets.zero,
-            title: Text('${formatNumber(((r.payload['distance_meters'] as num?) ?? 0) / 1000, decimals: 2)} km'),
+            title: Text('${runTitle(r)} · ${formatNumber(((r.payload['distance_meters'] as num?) ?? 0) / 1000, decimals: 2)} km'),
             subtitle: Text('${relativeDayTime(localOf(r.occurredAt, r.occurredAtTzOffsetMinutes))} · '
                 '${durationLabel(Duration(seconds: ((r.payload['duration_seconds'] as num?) ?? 0).toInt()))} · '
                 '${paceLabel((r.payload['average_pace_seconds_per_km'] as num?)?.toDouble())}'),
             trailing: const Icon(Icons.chevron_right),
             onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => RunSummaryScreen(deps: deps, run: r))),
           ),
-      ]),
-    );
+    ]);
   }
 }
 
@@ -157,15 +171,20 @@ class RunSummaryScreen extends StatelessWidget {
   final HealthEvent run;
   const RunSummaryScreen({super.key, required this.deps, required this.run});
 
-  List<RunPointInput> _points() => [
-        for (final p in deps.core.gpsTrackPoints(run.id))
-          RunPointInput(
-            latitude: p.latitude,
-            longitude: p.longitude,
-            elevationMeters: p.elevationMeters,
-            recordedAt: p.recordedAt,
-          ),
-      ];
+  List<RunPointInput> _points() {
+    final stored = deps.core.gpsTrackPoints(run.id);
+    final segments = segmentsFromPayload(run.payload, stored.length);
+    return [
+      for (var i = 0; i < stored.length; i++)
+        RunPointInput(
+          latitude: stored[i].latitude,
+          longitude: stored[i].longitude,
+          elevationMeters: stored[i].elevationMeters,
+          recordedAt: stored[i].recordedAt,
+          segment: segments[i],
+        ),
+    ];
+  }
 
   Future<void> _exportGpx(BuildContext context) async {
     final points = _points();
@@ -190,7 +209,7 @@ class RunSummaryScreen extends StatelessWidget {
     final day = localOf(run.occurredAt, run.occurredAtTzOffsetMinutes);
     final entry = deps.activityRead.forDay(day).where((a) => a.event.id == run.id).firstOrNull;
     return Scaffold(
-      appBar: AppBar(title: Text(entry?.title ?? 'Corrida')),
+      appBar: AppBar(title: Text(entry?.title ?? runTitle(run))),
       body: ListView(padding: const EdgeInsets.all(RltSpace.l), children: [
         RltTwoColumnGrid(children: [
           RltStatTile(
@@ -221,7 +240,15 @@ class RunSummaryScreen extends StatelessWidget {
             caption: summary == null ? null : 'Subida: ${formatNumber(summary.elevationGainMeters)} m',
           ),
         ]),
-        // TODO(frankstein): mapa da rota (osmdroid/MapLibre com mapa offline, ADR-9) na etapa de integrações.
+        if (points.length >= 2) ...[
+          const SizedBox(height: RltSpace.l),
+          RouteSketch(key: const Key('run_route'), points: points),
+          Padding(
+            padding: const EdgeInsets.only(top: RltSpace.xs),
+            // TODO(frankstein): mapa de fundo offline (MapLibre/osmdroid, ADR-9) — baixar mapa é rede e precisa de decisão de como/onde.
+            child: Text('Rota sem mapa de fundo. Verde: início · vermelho: fim.', style: t.bodySmall),
+          ),
+        ],
         if (summary != null && summary.splits.isNotEmpty) ...[
           const RltSectionHeader('Parciais por km'),
           for (final s in summary.splits)

@@ -41,8 +41,9 @@ class RunSummary {
 ///
 /// Não sabe nada sobre captura de GPS real nem sobre o Health Data Core
 /// — isso é responsabilidade de [RunLogger]. A captura em si (sensor,
-/// foreground service) é WRAP do OpenTracks no Android (`docs/adr/009-gps.md`),
-/// fora do escopo Dart puro testável neste ambiente.
+/// foreground service) é do app Android (`docs/adr/009-gps.md`),
+/// fora do escopo Dart puro. Captura: `RunRecorderService.kt` (gravador
+/// próprio, ADR-9 revisão 1).
 class RunCalculator {
   static const double defaultMaxAccuracyMeters = 20.0;
 
@@ -75,11 +76,37 @@ class RunCalculator {
     return _earthRadiusMeters * c;
   }
 
+  /// Velocidade acima da qual um salto entre dois pontos é ruído de GPS
+  /// para corrida/caminhada (12 m/s ≈ 43 km/h, acima de um velocista).
+  static const double maxPlausibleSpeedMetersPerSecond = 12.0;
+
+  /// Filtro de ruído antes do ritmo (`.claude/rules/activity.md`): tira o
+  /// ponto que "pularia" mais rápido que [maxSpeed] em relação ao último
+  /// ponto aceito do mesmo trecho.
+  static List<RunPointInput> filterSpeedOutliers(
+    List<RunPointInput> points, {
+    double maxSpeed = maxPlausibleSpeedMetersPerSecond,
+  }) {
+    final out = <RunPointInput>[];
+    for (final p in points) {
+      final prev = out.isEmpty ? null : out.last;
+      if (prev != null && prev.segment == p.segment) {
+        final dt = p.recordedAt.difference(prev.recordedAt).inMilliseconds / 1000;
+        if (dt <= 0) continue;
+        if (distanceMeters(prev, p) / dt > maxSpeed) continue;
+      }
+      out.add(p);
+    }
+    return out;
+  }
+
+  static bool _sameSegment(RunPointInput a, RunPointInput b) => a.segment == b.segment;
+
   static double totalDistanceMeters(List<RunPointInput> points) {
     if (points.length < 2) return 0;
     var total = 0.0;
     for (var i = 1; i < points.length; i++) {
-      total += distanceMeters(points[i - 1], points[i]);
+      if (_sameSegment(points[i - 1], points[i])) total += distanceMeters(points[i - 1], points[i]);
     }
     return total;
   }
@@ -92,16 +119,20 @@ class RunCalculator {
     for (var i = 1; i < points.length; i++) {
       final prev = points[i - 1].elevationMeters;
       final curr = points[i].elevationMeters;
-      if (prev != null && curr != null && curr > prev) {
+      if (prev != null && curr != null && curr > prev && _sameSegment(points[i - 1], points[i])) {
         gain += curr - prev;
       }
     }
     return gain;
   }
 
+  /// Tempo em movimento: soma do tempo de cada trecho (pausas não contam).
   static Duration totalDuration(List<RunPointInput> points) {
-    if (points.isEmpty) return Duration.zero;
-    return points.last.recordedAt.difference(points.first.recordedAt);
+    var total = Duration.zero;
+    for (var i = 1; i < points.length; i++) {
+      if (_sameSegment(points[i - 1], points[i])) total += points[i].recordedAt.difference(points[i - 1].recordedAt);
+    }
+    return total;
   }
 
   /// Splits por km (`docs/PRODUTO.md:29`): pra cada km completo (por
@@ -115,17 +146,19 @@ class RunCalculator {
     if (points.length < 2) return const [];
     final splits = <RunSplit>[];
     var distanceSinceLastSplit = 0.0;
-    var splitStart = points.first.recordedAt;
+    var timeSinceLastSplit = Duration.zero;
     var currentKm = 1;
 
     for (var i = 1; i < points.length; i++) {
+      if (!_sameSegment(points[i - 1], points[i])) continue;
       distanceSinceLastSplit += distanceMeters(points[i - 1], points[i]);
+      timeSinceLastSplit += points[i].recordedAt.difference(points[i - 1].recordedAt);
       // Epsilon contra ruído de ponto flutuante do Haversine — GPS real
       // nunca cai exatamente em 1000.000000 m, então isto não afrouxa o
       // limiar na prática, só evita perder um km por causa de erro de
       // arredondamento de fração de milímetro.
       if (distanceSinceLastSplit >= 1000 - 1e-6) {
-        final duration = points[i].recordedAt.difference(splitStart);
+        final duration = timeSinceLastSplit;
         splits.add(RunSplit(
           km: currentKm,
           duration: duration,
@@ -133,7 +166,7 @@ class RunCalculator {
         ));
         currentKm++;
         distanceSinceLastSplit = 0;
-        splitStart = points[i].recordedAt;
+        timeSinceLastSplit = Duration.zero;
       }
     }
     return splits;

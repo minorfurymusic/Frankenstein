@@ -20,13 +20,37 @@ class InsufficientRunDataException implements Exception {
 /// com o resumo no `payload` + os pontos filtrados em `gps_track_points`
 /// (`.claude/rules/datacore.md`: "gps_track.points em tabela própria").
 ///
-/// **Fora do escopo desta classe:** a captura de GPS em si. A decisão já
-/// tomada (`docs/adr/009-gps.md`) é WRAP do OpenTracks no Android via
-/// platform channel — código nativo, foreground service, sem SDK/device
-/// Android neste ambiente pra escrever ou testar. `RunLogger` recebe os
-/// pontos já capturados (de onde vier: WRAP nativo, ou importação GPX via
-/// `gpx.dart`) e só cuida da parte determinística e testável: filtrar,
-/// calcular, gravar.
+/// **Fora do escopo desta classe:** a captura de GPS em si — gravador
+/// próprio do app Android (`RunRecorderService.kt`, `docs/adr/009-gps.md`
+/// revisão 1). `RunLogger` recebe os pontos já capturados (do gravador ou
+/// de um GPX importado) e só cuida da parte determinística e testável:
+/// filtrar, calcular, gravar.
+/// Corrida ou caminhada (escolhida antes de iniciar).
+enum RunKind {
+  run('run'),
+  walk('walk');
+
+  final String wireValue;
+  const RunKind(this.wireValue);
+
+  static RunKind? fromWireValue(Object? v) => RunKind.values.where((k) => k.wireValue == v).firstOrNull;
+}
+
+/// Reconstrói os trechos (pausas) de uma rota gravada a partir de
+/// `payload['segment_start_indices']`.
+List<int> segmentsFromPayload(Map<String, dynamic> payload, int pointCount) {
+  final starts = [for (final i in (payload['segment_start_indices'] as List?) ?? const [0]) (i as num).toInt()];
+  final out = List<int>.filled(pointCount, 0);
+  var seg = 0;
+  for (var i = 0; i < pointCount; i++) {
+    while (seg + 1 < starts.length && i >= starts[seg + 1]) {
+      seg++;
+    }
+    out[i] = seg;
+  }
+  return out;
+}
+
 class RunLogger {
   final HealthDataCore core;
 
@@ -41,8 +65,11 @@ class RunLogger {
     required int occurredAtTzOffsetMinutes,
     double maxAccuracyMeters = RunCalculator.defaultMaxAccuracyMeters,
     DateTime? recordedAt,
+    RunKind? kind,
   }) {
-    final points = RunCalculator.filterByAccuracy(rawPoints, maxAccuracyMeters: maxAccuracyMeters);
+    final points = RunCalculator.filterSpeedOutliers(
+      RunCalculator.filterByAccuracy(rawPoints, maxAccuracyMeters: maxAccuracyMeters),
+    );
     if (points.length < 2) {
       throw InsufficientRunDataException(
           'menos de 2 pontos com precisão aceitável (${points.length}) — não dá pra formar uma rota');
@@ -72,6 +99,11 @@ class RunLogger {
             .toList(),
         'points_count': points.length,
         'points_discarded_by_accuracy': rawPoints.length - points.length,
+        if (kind != null) 'activity': kind.wireValue,
+        'segment_start_indices': [
+          for (var i = 0; i < points.length; i++)
+            if (i == 0 || points[i].segment != points[i - 1].segment) i,
+        ],
       },
       confidence: 1.0,
     );

@@ -19,11 +19,9 @@ final Map<String, dynamic> getRunSummarySchema = {
 /// compartilhamento (`.claude/rules/activity.md:20-21`, ofuscação de
 /// 300 m) violaria a regra de privacidade de rota.
 ///
-/// **`start_run` (escrita, inicia a gravação) não está implementada
-/// neste ciclo** — depende da captura de GPS real, que é WRAP nativo do
-/// OpenTracks no Android (`docs/adr/009-gps.md`), sem SDK/device Android
-/// neste ambiente. Registrar aqui um handler que não faz nada de real
-/// seria fingir "feito" sem prova — `CLAUDE.md`, regra 1.
+/// **`start_run` (escrita, inicia a gravação) não é ferramenta do
+/// cérebro** — ligar o GPS é sempre toque da pessoa na tela de corrida
+/// (gravador próprio, `docs/adr/009-gps.md` revisão 1).
 ToolSpec getRunSummarySpec() => ToolSpec(
       name: 'get_run_summary',
       description: 'Lê o resumo (distância, pace, splits, elevação) de uma corrida/caminhada já gravada',
