@@ -53,10 +53,17 @@ class _GoalsBody extends StatelessWidget {
 
   String _kcal(double v) => '${formatNumber(v)} kcal';
 
-  Future<void> _edit(BuildContext context, String label, String unit, double current, GoalOverrides Function(double?) apply) async {
+  Future<void> _edit(
+    BuildContext context,
+    String label,
+    String unit,
+    double current,
+    GoalOverrides Function(double?) apply, {
+    int decimals = 0,
+  }) async {
     final result = await showDialog<_EditResult>(
       context: context,
-      builder: (_) => _GoalEditDialog(label: label, unit: unit, initial: formatNumber(current)),
+      builder: (_) => _GoalEditDialog(label: label, unit: unit, initial: formatNumber(current, decimals: decimals)),
     );
     if (result == null) return;
     deps.profileRepository.saveOverrides(apply(result.value));
@@ -87,6 +94,7 @@ class _GoalsBody extends StatelessWidget {
       Object? carb = _keep,
       Object? water = _keep,
       Object? fiber = _keep,
+      Object? sleep = _keep,
     }) =>
         GoalOverrides(
           caloriesKcal: identical(cal, _keep) ? o.caloriesKcal : cal as double?,
@@ -95,6 +103,7 @@ class _GoalsBody extends StatelessWidget {
           carbsGrams: identical(carb, _keep) ? o.carbsGrams : carb as double?,
           waterMl: identical(water, _keep) ? o.waterMl : water as double?,
           fiberGrams: identical(fiber, _keep) ? o.fiberGrams : fiber as double?,
+          sleepMinutes: identical(sleep, _keep) ? o.sleepMinutes : sleep as double?,
         );
     String pct(double share) => '${(share * 100).round()}%';
 
@@ -124,6 +133,11 @@ class _GoalsBody extends StatelessWidget {
             manual: goals.manual.contains('fiber'),
             onTap: () => _edit(context, 'fibra', 'g', goals.fiberGrams, (v) => copy(fiber: v))),
         row('Passos', formatNumber(goals.stepsGoal)),
+        row('Sono por noite', '${formatNumber(o.sleepGoalMinutes / 60, decimals: o.sleepGoalMinutes % 60 == 0 ? 0 : 1)} h',
+            keyName: 'goal_sleep',
+            manual: o.sleepMinutes != null,
+            onTap: () => _edit(context, 'sono por noite', 'h', o.sleepGoalMinutes / 60, (v) => copy(sleep: v == null ? null : v * 60),
+                decimals: 1)),
         const RltSectionHeader('De onde veio a meta de calorias'),
         row('Gasto em repouso (${goals.basalFormula})', _kcal(goals.basalKcal)),
         row('Dia a dia parado (× 1,2)', _kcal(goals.baseKcal)),

@@ -97,6 +97,23 @@ void main() {
     expect(find.text('1.680 ml'), findsOneWidget);
   });
 
+  testWidgets('meta de sono: 8 h por padrão, ajustável em horas', (tester) async {
+    deps.profileRepository.save(Profile(sex: BiologicalSex.female, birthDate: DateTime(1990), heightMeters: 1.65));
+    deps.bodyLogger.weight(kg: 60, occurredAt: DateTime.now().toUtc(), occurredAtTzOffsetMinutes: 0);
+    await openAccount(tester);
+    await tester.tap(find.byKey(const Key('account_Metas')));
+    await tester.pumpAndSettle();
+    await tester.scrollUntilVisible(find.byKey(const Key('goal_sleep')), 200, scrollable: find.byType(Scrollable).last);
+    expect(find.text('8 h'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('goal_sleep')));
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byKey(const Key('goal_edit_value')), '7,5');
+    await tester.tap(find.byKey(const Key('goal_edit_save')));
+    await tester.pumpAndSettle();
+    expect(deps.profileRepository.loadOverrides().sleepMinutes, 450);
+    expect(find.text('7,5 h'), findsOneWidget);
+  });
+
   testWidgets('Preferências troca o tema e guarda a escolha', (tester) async {
     await openAccount(tester);
     await tester.scrollUntilVisible(find.byKey(const Key('account_Preferências')), 200);

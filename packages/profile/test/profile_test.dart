@@ -186,6 +186,9 @@ void main() {
       expect(repo.loadOverrides().caloriesKcal, 2100);
       repo.saveOverrides(GoalOverrides.none);
       expect(repo.loadOverrides().caloriesKcal, isNull);
+      expect(repo.loadOverrides().sleepGoalMinutes, 480);
+      repo.saveOverrides(const GoalOverrides(sleepMinutes: 450));
+      expect(repo.loadOverrides().sleepGoalMinutes, 450);
 
       repo.setSetting('theme_mode', 'dark');
       expect(repo.getSetting('theme_mode'), 'dark');

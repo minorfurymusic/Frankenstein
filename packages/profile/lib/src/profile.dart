@@ -103,7 +103,25 @@ class GoalOverrides {
   final double? waterMl;
   final double? fiberGrams;
 
-  const GoalOverrides({this.caloriesKcal, this.proteinGrams, this.fatGrams, this.carbsGrams, this.waterMl, this.fiberGrams});
+  /// Meta de sono (minutos por noite). Sem ajuste, o app usa
+  /// [defaultSleepGoalMinutes].
+  final double? sleepMinutes;
+
+  /// 8 h: a "Meta 8 h" da prancheta Sono (`docs/design/rlt-layout/
+  /// Sono.dc.html`). Editável em Conta › Metas.
+  static const double defaultSleepGoalMinutes = 480;
+
+  const GoalOverrides({
+    this.caloriesKcal,
+    this.proteinGrams,
+    this.fatGrams,
+    this.carbsGrams,
+    this.waterMl,
+    this.fiberGrams,
+    this.sleepMinutes,
+  });
+
+  double get sleepGoalMinutes => sleepMinutes ?? defaultSleepGoalMinutes;
 
   static const none = GoalOverrides();
 
@@ -114,6 +132,7 @@ class GoalOverrides {
         if (carbsGrams != null) 'carbs_g': carbsGrams!,
         if (waterMl != null) 'water_ml': waterMl!,
         if (fiberGrams != null) 'fiber_g': fiberGrams!,
+        if (sleepMinutes != null) 'sleep_min': sleepMinutes!,
       };
 
   factory GoalOverrides.fromMap(Map<String, dynamic> m) => GoalOverrides(
@@ -123,5 +142,6 @@ class GoalOverrides {
         carbsGrams: (m['carbs_g'] as num?)?.toDouble(),
         waterMl: (m['water_ml'] as num?)?.toDouble(),
         fiberGrams: (m['fiber_g'] as num?)?.toDouble(),
+        sleepMinutes: (m['sleep_min'] as num?)?.toDouble(),
       );
 }

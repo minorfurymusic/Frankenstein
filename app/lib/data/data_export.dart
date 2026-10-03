@@ -148,11 +148,16 @@ String buildFullExportJson(AppDependencies deps) => const JsonEncoder.withIndent
 /// Pasta das fotos e PDFs dentro do .zip exportado.
 const exportFilesDir = 'arquivos';
 
-/// O .zip da exportação: `dados.json` + as fotos e PDFs de receitas e
-/// exames em `arquivos/`. Tudo, sem limite.
+/// O .zip da exportação: `dados.json` + as fotos e PDFs de receitas
+/// médicas e exames e as fotos das receitas próprias, em `arquivos/`.
+/// Tudo, sem limite.
 Future<Uint8List> buildFullExportZip(AppDependencies deps) async {
   final archive = Archive()..addFile(ArchiveFile.string('dados.json', buildFullExportJson(deps)));
-  for (final name in deps.documents.allStoredNames()) {
+  final names = {
+    ...deps.documents.allStoredNames(),
+    for (final r in deps.nutrition.recipes()) ?r.photo,
+  };
+  for (final name in names) {
     final bytes = await deps.documentFiles.readBytes(name);
     if (bytes != null) archive.addFile(ArchiveFile.bytes('$exportFilesDir/$name', bytes));
   }

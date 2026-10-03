@@ -17,20 +17,12 @@ import 'dart:typed_data';
 /// ([FixtureBarcodeDecoder]); a implementação concreta entra depois como
 /// uma classe nova, sem mudar quem consome [BarcodeDecoder].
 ///
-/// **Pacote escolhido para a implementação concreta (não incluído neste
-/// ciclo): `flutter_zxing` (pub.dev, versão 2.3.0 no momento da pesquisa,
-/// licença MIT, ZXing-cpp via Dart FFI — sem ML Kit nem Google Play
-/// Services, `.claude/rules/licenca.md`).** Ele depende do SDK Flutter e
-/// do pacote `camera`, então não pode entrar como dependência deste
-/// pacote (`frankstein_nutrition` é Dart puro, testável com `dart test`,
-/// mesmo padrão de `frankstein_health_core`/`frankstein_activity`) — a
-/// classe concreta que implementa [BarcodeDecoder] com `flutter_zxing`
-/// deve morar em `app/` (o shell Flutter), num ciclo futuro com
-/// dispositivo/emulador para validar.
-///
-/// TODO(frankstein): implementar `ZxingBarcodeDecoder` em `app/` usando
-/// `flutter_zxing` ^2.3.0 (MIT) quando houver dispositivo/emulador para
-/// testar a leitura de câmera de verdade.
+/// **Leitura pela câmera de verdade:** `app/lib/screens/nutrition/
+/// barcode_scanner_screen.dart`, com `flutter_zxing` 2.2.1 (MIT,
+/// zxing-cpp embutido — sem ML Kit nem Google Play Services,
+/// `.claude/rules/licenca.md`). Ela lê direto do vídeo da câmera e devolve
+/// o código; não passa por esta interface, que segue útil para decodificar
+/// uma imagem já pronta (e nos testes deste pacote Dart puro).
 abstract class BarcodeDecoder {
   /// Retorna o valor decodificado do código de barras, ou `null` se
   /// nenhum código pôde ser reconhecido na imagem.

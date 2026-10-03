@@ -1,16 +1,24 @@
 // Implementação original do Frankstein. Não deriva do código-fonte do
 // OpenNutriTracker (GPL-3.0) — ver docs/specs/nutricao.md e ADR-5.
 
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:archive/archive.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frankstein/app_dependencies.dart';
 import 'package:frankstein/card_image_capturer.dart';
 import 'package:frankstein/confirmation_gate.dart';
+import 'package:frankstein/data/data_export.dart';
 import 'package:frankstein/data/nutrition_store.dart';
+import 'package:frankstein/documents/document_files.dart';
 import 'package:frankstein/main.dart';
 import 'package:flutter_zxing/flutter_zxing.dart' show Format;
 import 'package:frankstein/screens/nutrition/barcode_scanner_screen.dart';
+import 'package:frankstein/screens/nutrition/diet_screens.dart';
 import 'package:frankstein/share_sheet.dart';
+import 'package:frankstein/theme/rlt_theme.dart';
 import 'package:frankstein_health_core/health_core.dart';
 import 'package:frankstein_nutrition/nutrition.dart';
 import 'package:frankstein_profile/profile.dart';
@@ -157,6 +165,44 @@ void main() {
     await tester.tap(find.byKey(Key('diary_day_${DateTime.now().day}')));
     await tester.pumpAndSettle();
     expect(find.text('Banana prata'), findsOneWidget);
+  });
+
+  testWidgets('receita própria com foto: foto guardada no celular, miniatura na lista e no .zip', (tester) async {
+    tester.view.physicalSize = const Size(400, 1400);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.reset);
+    final picker = deps.documentPicker as FakeDocumentPicker;
+    final png = base64Decode('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=');
+    await tester.pumpWidget(MaterialApp(theme: RltTheme.light(), home: RecipesScreen(deps: deps)));
+    await tester.tap(find.byKey(const Key('recipe_new')));
+    await tester.pumpAndSettle();
+    picker.next = PickedDocument(bytes: png, name: 'omelete.png', mimeType: 'image/png');
+    await tester.tap(find.byKey(const Key('recipe_photo')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('recipe_photo_camera')));
+    await tester.pumpAndSettle();
+    expect(picker.lastSource, 'camera');
+    await tester.enterText(find.byKey(const Key('recipe_name')), 'Omelete');
+    await tester.enterText(find.byKey(const Key('recipe_search')), 'ovo');
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('recipe_result_0')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Adicionar').last);
+    await tester.pumpAndSettle();
+    await tester.runAsync(() async {
+      await tester.tap(find.byKey(const Key('recipe_save')));
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    });
+    await tester.pumpAndSettle();
+    final r = deps.nutrition.recipes().single;
+    expect(r.photo, isNotNull);
+    expect((deps.documentFiles as MemoryDocumentFileStore).files.keys, [r.photo]);
+    await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 50)));
+    await tester.pumpAndSettle();
+    expect(find.byType(Image), findsOneWidget);
+    late Uint8List zip;
+    await tester.runAsync(() async => zip = await buildFullExportZip(deps));
+    expect(ZipDecoder().decodeBytes(zip).findFile('arquivos/${r.photo}'), isNotNull);
   });
 
   group('NutritionStore', () {

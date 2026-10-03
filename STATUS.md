@@ -23,7 +23,15 @@ branco: navegação Resumo/Chat de verdade, ligada aos pacotes reais, com
 compartilhamento de treino/corrida funcionando de ponta a ponta. Detalhe
 completo em `docs/HISTORICO.md`.
 
-**Ciclo mais recente (2026-10-03): pulseira pelo Health Connect.** ADR-4a
+**Ciclo mais recente (2026-10-03): meta de sono e foto da receita própria.**
+Meta de sono editável em Conta › Metas (`GoalOverrides.sleepMinutes`,
+padrão 8 h da prancheta Sono), usada no gráfico da semana. Receita própria
+ganhou "Adicionar foto" (câmera ou galeria, pasta privada do app),
+miniatura na lista e entra no `.zip` da exportação. Dois TODOs que já não
+valiam saíram (lembrete do remédio já é notificação de verdade; leitor
+ZXing já existe).
+
+**Ciclo anterior (2026-10-03): pulseira pelo Health Connect.** ADR-4a
 (FEDERATE) virou código: `HealthConnectBridge.kt` só **lê** sono (com
 fases) e frequência cardíaca, canal `rlt/health_connect`; Dart
 `HealthConnectDataSource` + `WearableSync` (`app/lib/wearables/`)

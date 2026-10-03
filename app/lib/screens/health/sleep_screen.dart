@@ -10,10 +10,6 @@ import '../../widgets/badges.dart';
 import '../../widgets/state_views.dart';
 import '../account/devices_screen.dart';
 
-/// Meta de sono da prancheta Sono ("Meta 8 h").
-// TODO(frankstein): meta de sono editável em Conta › Metas (hoje fixa no valor da prancheta).
-const int kSleepGoalMinutes = 8 * 60;
-
 String _hm(int minutes) => minutes >= 60 ? '${minutes ~/ 60} h ${two(minutes % 60)}' : '$minutes min';
 
 /// Ordem e nome das fases (prancheta Sono).
@@ -76,7 +72,7 @@ class _SleepScreenState extends State<SleepScreen> {
               if (nights.isNotEmpty) ...[
                 _LastNight(night: nights.first),
                 const SizedBox(height: RltSpace.l),
-                _Week(nights: nights),
+                _Week(nights: nights, goalMinutes: widget.deps.profileRepository.loadOverrides().sleepGoalMinutes.round()),
                 const SizedBox(height: RltSpace.m),
                 Text('Dados da pulseira, via Health Connect.', style: Theme.of(context).textTheme.bodySmall),
               ],
@@ -257,7 +253,8 @@ class _Fact extends StatelessWidget {
 
 class _Week extends StatelessWidget {
   final List<SleepView> nights;
-  const _Week({required this.nights});
+  final int goalMinutes;
+  const _Week({required this.nights, required this.goalMinutes});
 
   @override
   Widget build(BuildContext context) {
@@ -271,7 +268,7 @@ class _Week extends StatelessWidget {
       byDay[d] = (byDay[d] ?? 0) + n.asleepMinutes;
     }
     final days = [for (var i = 6; i >= 0; i--) DateTime(today.year, today.month, today.day).subtract(Duration(days: i))];
-    final maxMinutes = [kSleepGoalMinutes, ...byDay.values].reduce((a, b) => a > b ? a : b);
+    final maxMinutes = [goalMinutes, ...byDay.values].reduce((a, b) => a > b ? a : b);
     const chartHeight = 120.0;
     return Card(
       child: Padding(
@@ -279,7 +276,7 @@ class _Week extends StatelessWidget {
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
           Row(children: [
             Expanded(child: Text('Últimos 7 dias', style: t.titleMedium)),
-            Text('Meta ${kSleepGoalMinutes ~/ 60} h', style: t.bodySmall?.copyWith(color: c.onSurfaceVariant)),
+            Text('Meta ${formatNumber(goalMinutes / 60, decimals: goalMinutes % 60 == 0 ? 0 : 1)} h', style: t.bodySmall?.copyWith(color: c.onSurfaceVariant)),
           ]),
           const SizedBox(height: RltSpace.m),
           SizedBox(
@@ -288,7 +285,7 @@ class _Week extends StatelessWidget {
               Positioned(
                 left: 0,
                 right: 0,
-                top: chartHeight * (1 - kSleepGoalMinutes / maxMinutes),
+                top: chartHeight * (1 - goalMinutes / maxMinutes),
                 child: Container(height: 1, color: c.outline),
               ),
               Row(crossAxisAlignment: CrossAxisAlignment.end, children: [

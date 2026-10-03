@@ -273,8 +273,8 @@ class _MedicationFormScreenState extends State<MedicationFormScreen> {
           SwitchListTile(
             contentPadding: EdgeInsets.zero,
             title: const Text('Lembrete'),
-            // TODO(frankstein): notificação local de verdade (etapa de integrações) — hoje só guarda a escolha.
-            subtitle: const Text('Avisar no horário de cada dose'),
+            // Agendado pelo ReminderSync (lib/reminders/reminders.dart) quando os dados mudam.
+            subtitle: const Text('Notificação do Android no horário de cada dose'),
             value: _reminders,
             onChanged: (v) => setState(() => _reminders = v),
           ),

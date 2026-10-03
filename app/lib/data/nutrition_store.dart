@@ -24,12 +24,16 @@ class Recipe {
   final double totalGrams;
   final int servings;
   final List<RecipeIngredient> ingredients;
+
+  /// Foto (nome do arquivo na pasta privada do app), opcional.
+  final String? photo;
   const Recipe({
     required this.foodId,
     required this.name,
     required this.totalGrams,
     required this.servings,
     required this.ingredients,
+    this.photo,
   });
 
   double get servingGrams => totalGrams / servings;
@@ -40,6 +44,7 @@ class Recipe {
         'total_grams': totalGrams,
         'servings': servings,
         'ingredients': [for (final i in ingredients) i.toJson()],
+        if (photo != null) 'photo': photo,
       };
 
   factory Recipe.fromJson(Map<String, dynamic> m) => Recipe(
@@ -48,6 +53,7 @@ class Recipe {
         totalGrams: (m['total_grams'] as num).toDouble(),
         servings: (m['servings'] as num).toInt(),
         ingredients: [for (final i in (m['ingredients'] as List)) RecipeIngredient.fromJson(i as Map<String, dynamic>)],
+        photo: m['photo'] as String?,
       );
 }
 
@@ -198,7 +204,7 @@ class NutritionStore {
   /// Monta a receita a partir dos ingredientes (`docs/specs/nutricao.md`,
   /// "Refeição/receita personalizada") e grava um alimento próprio com os
   /// valores por 100 g da receita pronta.
-  Recipe createRecipe({required String name, required List<RecipeIngredient> ingredients, int servings = 1}) {
+  Recipe createRecipe({required String name, required List<RecipeIngredient> ingredients, int servings = 1, String? photo}) {
     if (name.trim().isEmpty) throw ArgumentError('dê um nome à receita');
     if (ingredients.isEmpty) throw ArgumentError('a receita precisa de pelo menos um ingrediente');
     if (servings <= 0) throw ArgumentError('porções precisam ser pelo menos 1');
@@ -231,7 +237,14 @@ class NutritionStore {
       fiberPer100g: hasFiber ? fiber * per100 : null,
     );
     foods.insertCustomFood(food);
-    final recipe = Recipe(foodId: food.id, name: food.name, totalGrams: total, servings: servings, ingredients: ingredients);
+    final recipe = Recipe(
+      foodId: food.id,
+      name: food.name,
+      totalGrams: total,
+      servings: servings,
+      ingredients: ingredients,
+      photo: photo,
+    );
     settings.setSetting('recipes', jsonEncode([recipe.toJson(), for (final r in recipes()) r.toJson()]));
     return recipe;
   }

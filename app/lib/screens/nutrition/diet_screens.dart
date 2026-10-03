@@ -1,12 +1,16 @@
 // Implementação original do Frankstein. Não deriva do código-fonte do
 // OpenNutriTracker (GPL-3.0) — ver docs/specs/nutricao.md e ADR-5.
 
+import 'dart:typed_data';
+
 import 'package:flutter/material.dart';
 import 'package:frankstein_nutrition/nutrition.dart';
 
 import '../../app_dependencies.dart';
 import '../../data/nutrition_store.dart';
+import '../../documents/document_files.dart';
 import '../../format.dart';
+import '../../theme/rlt_colors.dart';
 import '../../theme/rlt_theme.dart';
 import '../../widgets/common.dart';
 import '../../widgets/state_views.dart';
@@ -131,6 +135,7 @@ class RecipesScreen extends StatelessWidget {
                 final perServing = food == null ? 0 : food.energyKcalPer100g * r.servingGrams / 100;
                 return ListTile(
                   contentPadding: EdgeInsets.zero,
+                  leading: r.photo == null ? null : _RecipeThumb(deps: deps, storedName: r.photo!),
                   title: Text(r.name, style: t.bodyLarge),
                   subtitle: Text('${r.ingredients.length} ingredientes · ${r.servings} '
                       '${r.servings == 1 ? 'porção' : 'porções'} de ${formatNumber(r.servingGrams)} g · '
@@ -162,6 +167,8 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
   final _search = TextEditingController();
   final _ingredients = <(Food, double)>[];
   List<Food> _results = const [];
+  PickedDocument? _photo;
+  bool _saving = false;
 
   @override
   void dispose() {
@@ -181,18 +188,62 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
     });
   }
 
-  void _save() {
+  Future<void> _pickPhoto() async {
+    final picker = widget.deps.documentPicker;
+    final source = await showModalBottomSheet<String>(
+      context: context,
+      builder: (context) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          ListTile(
+            key: const Key('recipe_photo_camera'),
+            leading: const Icon(Icons.photo_camera_outlined),
+            title: const Text('Fotografar'),
+            onTap: () => Navigator.pop(context, 'camera'),
+          ),
+          ListTile(
+            key: const Key('recipe_photo_gallery'),
+            leading: const Icon(Icons.photo_library_outlined),
+            title: const Text('Escolher da galeria'),
+            onTap: () => Navigator.pop(context, 'gallery'),
+          ),
+        ]),
+      ),
+    );
+    if (source == null) return;
     try {
-      widget.deps.nutrition.createRecipe(
+      final p = source == 'camera' ? await picker.takePhoto() : await picker.pickImage();
+      if (p != null && mounted) setState(() => _photo = p);
+    } catch (e) {
+      if (mounted) showRltError(context, 'Não foi possível abrir: $e');
+    }
+  }
+
+  Future<void> _save() async {
+    if (_saving) return;
+    setState(() => _saving = true);
+    final deps = widget.deps;
+    String? stored;
+    try {
+      // Valida antes de gravar a foto, para não deixar arquivo sobrando.
+      if (_name.text.trim().isEmpty) throw ArgumentError('dê um nome à receita');
+      if (_ingredients.isEmpty) throw ArgumentError('a receita precisa de pelo menos um ingrediente');
+      if (_photo != null) stored = (await deps.documentFiles.store(_photo!)).storedName;
+      deps.nutrition.createRecipe(
         name: _name.text,
         servings: (parseNumber(_servings.text) ?? 1).round(),
         ingredients: [for (final (f, g) in _ingredients) RecipeIngredient(f.id, g)],
+        photo: stored,
       );
-      widget.deps.notifyDataChanged();
+      deps.notifyDataChanged();
+      if (!mounted) return;
       Navigator.of(context).pop();
       showRltSaved(context, 'Receita salva em Nutrição › Receitas próprias.');
     } catch (e) {
-      showRltError(context, e);
+      if (stored != null) await deps.documentFiles.delete(stored);
+      if (mounted) {
+        setState(() => _saving = false);
+        showRltError(context, e);
+      }
     }
   }
 
@@ -204,9 +255,30 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
     return Scaffold(
       appBar: AppBar(
         title: const Text('Nova receita'),
-        actions: [TextButton(key: const Key('recipe_save'), onPressed: _save, child: const Text('Salvar'))],
+        actions: [TextButton(key: const Key('recipe_save'), onPressed: _saving ? null : _save, child: const Text('Salvar'))],
       ),
       body: ListView(padding: const EdgeInsets.all(RltSpace.l), children: [
+        InkWell(
+          key: const Key('recipe_photo'),
+          borderRadius: BorderRadius.circular(RltRadius.card),
+          onTap: _pickPhoto,
+          child: Container(
+            height: 140,
+            clipBehavior: Clip.antiAlias,
+            decoration: BoxDecoration(
+              color: RltColors.of(context).surfaceContainerHigh,
+              borderRadius: BorderRadius.circular(RltRadius.card),
+            ),
+            child: _photo == null
+                ? Column(mainAxisAlignment: MainAxisAlignment.center, children: [
+                    const Icon(Icons.add_a_photo_outlined),
+                    const SizedBox(height: RltSpace.xs),
+                    Text('Adicionar foto', style: t.labelLarge),
+                  ])
+                : Image.memory(_photo!.bytes, fit: BoxFit.cover, width: double.infinity),
+          ),
+        ),
+        const SizedBox(height: RltSpace.m),
         TextField(key: const Key('recipe_name'), controller: _name, textCapitalization: TextCapitalization.sentences, decoration: const InputDecoration(labelText: 'Nome da receita')),
         const SizedBox(height: RltSpace.m),
         TextField(controller: _servings, keyboardType: TextInputType.number, decoration: const InputDecoration(labelText: 'Rende quantas porções')),
@@ -243,8 +315,30 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
             trailing: const Icon(Icons.add),
             onTap: () => _addIngredient(_results[i]),
           ),
-        // TODO(frankstein): foto da receita (câmera, etapa de integrações).
       ]),
+    );
+  }
+}
+
+class _RecipeThumb extends StatelessWidget {
+  final AppDependencies deps;
+  final String storedName;
+  const _RecipeThumb({required this.deps, required this.storedName});
+
+  @override
+  Widget build(BuildContext context) {
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(8),
+      child: SizedBox(
+        width: 48,
+        height: 48,
+        child: FutureBuilder<Uint8List?>(
+          future: deps.documentFiles.readBytes(storedName),
+          builder: (context, snap) => snap.data == null
+              ? ColoredBox(color: RltColors.of(context).surfaceContainerHigh)
+              : Image.memory(snap.data!, fit: BoxFit.cover),
+        ),
+      ),
     );
   }
 }
