@@ -23,7 +23,14 @@ branco: navegação Resumo/Chat de verdade, ligada aos pacotes reais, com
 compartilhamento de treino/corrida funcionando de ponta a ponta. Detalhe
 completo em `docs/HISTORICO.md`.
 
-**Ciclo mais recente (2026-10-03): telas restantes da Conta.** Privacidade
+**Ciclo mais recente (2026-10-03): primeiro uso.** Boas-vindas,
+privacidade, perfil (ou "depois"), metas sugeridas calculadas, permissão de
+passos explicada antes de pedir (com "agora não"), IA opcional. Aparece só
+sem perfil e sem ter concluído antes (APK antigo com perfil não vê). No
+primeiro uso a permissão de passos não é mais pedida na abertura — só no
+passo dela. Login Google entra na rodada de testes (ADR-13). App: 91 testes.
+
+**Ciclo anterior (2026-10-03): telas restantes da Conta.** Privacidade
 e dados (exportar tudo em JSON pelo compartilhamento — grátis, sem limite;
 apagar tudo com "APAGAR" digitado, que apaga os arquivos do banco sem
 mexer na regra "só acrescenta"), Excluir conta (mesmo fluxo; conta Google
