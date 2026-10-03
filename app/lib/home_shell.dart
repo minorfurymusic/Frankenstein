@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 
 import 'app_dependencies.dart';
 import 'screens/account_screen.dart';
-import 'screens/chat_screen.dart';
+import 'screens/brain/brain_screen.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/exercise/exercise_tab.dart';
 import 'screens/health/health_tab.dart';
@@ -49,7 +49,7 @@ class _HomeShellState extends State<HomeShell> {
             onOpenTab: (tab) => setState(() => _tab = tab),
           ),
           HealthTab(deps: widget.dependencies),
-          ChatScreen(pipeline: widget.dependencies.pipeline),
+          BrainScreen(deps: widget.dependencies),
           NutritionTab(deps: widget.dependencies),
           ExerciseTab(deps: widget.dependencies),
         ],

@@ -24,8 +24,12 @@ class MessageComposer extends StatefulWidget {
   final VoidCallback? onRecordStart;
   final ValueChanged<Duration>? onRecordEnd;
   final VoidCallback? onRecordCancel;
+  final Key? fieldKey;
+  final Key? sendKey;
 
   const MessageComposer({
+    this.fieldKey,
+    this.sendKey,
     super.key,
     required this.mode,
     required this.onSend,
@@ -116,7 +120,10 @@ class _MessageComposerState extends State<MessageComposer> {
         Expanded(child: _field(c, t, hint: 'Comando, ex.: registrar água 500ml', withCamera: false)),
         const SizedBox(width: RltSpace.s),
         IconButton.filledTonal(
-          onPressed: _hasText ? _send : null,
+          key: widget.sendKey,
+          // Sempre ativo: _send ignora texto vazio. Habilitar só depois do
+          // redesenho perdia o toque dado logo após digitar.
+          onPressed: _send,
           tooltip: 'Enviar',
           icon: const Icon(Icons.send_outlined),
         ),
@@ -157,7 +164,7 @@ class _MessageComposerState extends State<MessageComposer> {
       Expanded(child: _field(c, t, hint: 'Escreva ou fale…', withCamera: true)),
       const SizedBox(width: RltSpace.s),
       if (_hasText)
-        IconButton.filled(onPressed: _send, tooltip: 'Enviar', icon: const Icon(Icons.send_outlined))
+        IconButton.filled(key: widget.sendKey, onPressed: _send, tooltip: 'Enviar', icon: const Icon(Icons.send_outlined))
       else
         Tooltip(message: 'Segure para gravar voz', child: _micButton(c, recording: false)),
     ]);
@@ -188,6 +195,7 @@ class _MessageComposerState extends State<MessageComposer> {
 
   Widget _field(RltColors c, TextTheme t, {required String hint, required bool withCamera}) {
     return TextField(
+      key: widget.fieldKey,
       controller: _controller,
       minLines: 1,
       maxLines: 5,

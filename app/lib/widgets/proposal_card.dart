@@ -31,7 +31,13 @@ class ProposalCard extends StatelessWidget {
   final VoidCallback? onCancelEdit;
   final VoidCallback? onUndo;
 
+  /// Chaves dos botões, para teste e acessibilidade automatizada.
+  final Key? confirmKey;
+  final Key? discardKey;
+
   const ProposalCard({
+    this.confirmKey,
+    this.discardKey,
     super.key,
     required this.area,
     required this.title,
@@ -98,7 +104,7 @@ class ProposalCard extends StatelessWidget {
             overflowAlignment: OverflowBarAlignment.end,
             overflowSpacing: RltSpace.s,
             children: [
-              TextButton(onPressed: onDiscard, child: const Text('Descartar')),
+              TextButton(key: discardKey, onPressed: onDiscard, child: const Text('Descartar')),
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -108,7 +114,7 @@ class ProposalCard extends StatelessWidget {
                     icon: const Icon(Icons.edit_outlined, size: 20),
                   ),
                   const SizedBox(width: RltSpace.s),
-                  FilledButton.icon(onPressed: onConfirm, icon: const Icon(Icons.check, size: 18), label: const Text('Confirmar')),
+                  FilledButton.icon(key: confirmKey, onPressed: onConfirm, icon: const Icon(Icons.check, size: 18), label: const Text('Confirmar')),
                 ],
               ),
             ],

@@ -45,6 +45,7 @@ class AppDependencies {
   final MedicationRepository medicationRepository;
   final ToolRegistry registry;
   final BrainPipeline pipeline;
+  final ConfirmationGate confirmationGate;
   final ShareSheet shareSheet;
   final CardImageCapturer imageCapturer;
   final StepsRepository stepsRepository;
@@ -91,6 +92,7 @@ class AppDependencies {
     required this.medicationRepository,
     required this.registry,
     required this.pipeline,
+    required this.confirmationGate,
     required this.shareSheet,
     required this.imageCapturer,
     required this.stepsRepository,
@@ -265,6 +267,7 @@ class AppDependencies {
       medicationRepository: medicationRepository,
       registry: registry,
       pipeline: pipeline,
+      confirmationGate: confirmationGate,
       shareSheet: shareSheet,
       imageCapturer: imageCapturer,
       stepsRepository: stepsRepository,

@@ -21,7 +21,7 @@ import 'package:frankstein_brain/brain.dart';
 DeterministicRouter buildChatRouter() {
   final logMealItemPattern = RegExp(r'([a-z0-9\-]+)\s+(\d+(?:\.\d+)?)g');
   final logMealPattern = RegExp(
-    r'^registrar refeição (breakfast|lunch|dinner|snack): (.+)$',
+    r'^registrar refeição (breakfast|lunch|dinner|snack|café da manhã|cafe da manha|almoço|almoco|jantar|lanche): (.+)$',
     caseSensitive: false,
   );
   final logWorkoutSetPattern = RegExp(r'([a-z0-9\-]+)\s+(\d+)x(\d+)x(\d+(?:\.\d+)?)');
@@ -58,7 +58,7 @@ DeterministicRouter buildChatRouter() {
       toolName: 'log_meal',
       pattern: logMealPattern,
       extractParams: (match) {
-        final mealType = match.group(1)!.toLowerCase();
+        final mealType = _mealTypeAliases[match.group(1)!.toLowerCase()] ?? match.group(1)!.toLowerCase();
         final itemsRaw = match.group(2)!;
         final items = logMealItemPattern.allMatches(itemsRaw).map((m) {
           return {'food_id': m.group(1), 'grams': double.parse(m.group(2)!)};
@@ -95,8 +95,18 @@ DeterministicRouter buildChatRouter() {
 /// Data de hoje em UTC, formato `YYYY-MM-DD` — mesma simplificação já
 /// documentada em `getStepsHandler`/`getDailySummaryHandler` (dia tratado
 /// em UTC, não no fuso local de cada evento).
+const _mealTypeAliases = {
+  'café da manhã': 'breakfast',
+  'cafe da manha': 'breakfast',
+  'almoço': 'lunch',
+  'almoco': 'lunch',
+  'jantar': 'dinner',
+  'lanche': 'snack',
+};
+
+/// Data **local** de hoje: o resumo do dia soma o dia local de cada evento.
 String _todayIso() {
-  final now = DateTime.now().toUtc();
+  final now = DateTime.now();
   final month = now.month.toString().padLeft(2, '0');
   final day = now.day.toString().padLeft(2, '0');
   return '${now.year}-$month-$day';

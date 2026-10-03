@@ -23,7 +23,15 @@ branco: navegação Resumo/Chat de verdade, ligada aos pacotes reais, com
 compartilhamento de treino/corrida funcionando de ponta a ponta. Detalhe
 completo em `docs/HISTORICO.md`.
 
-**Ciclo mais recente (2026-10-03): Início no layout novo + resumo no dia
+**Ciclo mais recente (2026-10-03): Cérebro com cartões de proposta.** O
+chat virou o Cérebro: cada comando de escrita aparece como cartão de
+proposta na conversa (confirmar/descartar; "Salvo em …"), respostas de
+leitura em português legível, exemplos clicáveis, aviso de modo básico,
+"nova conversa". Roteador aceita refeição em português (café da manhã,
+almoço, jantar, lanche) e usa a data local. IA em nuvem (ADR-11) segue
+pendente da escolha de provedor. App: 83 testes.
+
+**Ciclo anterior (2026-10-03): Início no layout novo + resumo no dia
 local.** Início: saudação, dia anterior/calendário, sequência de dias
 registrando, metas do dia (anel, macros, água, passos, exercício —
 referência OMS de 30 min/dia), remédios de hoje com tomei/pulei, sono da

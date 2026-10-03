@@ -124,7 +124,7 @@ void main() {
     await tester.tap(find.byKey(const Key('chat_send')));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('get_daily_summary'), findsOneWidget);
+    expect(find.textContaining('Resumo de hoje'), findsOneWidget);
   });
 
   testWidgets('comando não reconhecido pelo roteador determinístico fica unresolved',
@@ -163,21 +163,21 @@ void main() {
     await tester.tap(find.byKey(const Key('chat_send')));
     await tester.pumpAndSettle();
 
-    // Ferramenta de escrita — precisa aparecer o diálogo de confirmação
-    // antes de qualquer coisa ser gravada (.claude/rules/brain.md, passo 4).
+    // Ferramenta de escrita — precisa aparecer o cartão de proposta antes de
+    // qualquer coisa ser gravada (.claude/rules/brain.md, passo 4).
     expect(find.byKey(const Key('confirmation_confirm')), findsOneWidget);
     expect(app.dependencies.core.queryByType(HealthEventType.meal), isEmpty);
 
     await tester.tap(find.byKey(const Key('confirmation_confirm')));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('log_meal'), findsOneWidget);
+    expect(find.textContaining('Salvo em Nutrição › Almoço'), findsOneWidget);
     final mealEvents = app.dependencies.core.queryByType(HealthEventType.meal);
     expect(mealEvents, hasLength(1));
     expect(mealEvents.single.payload['meal_type'], 'lunch');
   });
 
-  testWidgets('log_meal recusado no diálogo não grava nada', (WidgetTester tester) async {
+  testWidgets('log_meal descartado no cartão não grava nada', (WidgetTester tester) async {
     final app = _buildTestApp();
     addTearDown(app.dependencies.close);
 
@@ -196,7 +196,7 @@ void main() {
     await tester.tap(find.byKey(const Key('confirmation_cancel')));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('não registrei nada'), findsOneWidget);
+    expect(find.text('Descartado — nada foi salvo'), findsOneWidget);
     expect(app.dependencies.core.queryByType(HealthEventType.meal), isEmpty);
   });
 
@@ -287,10 +287,10 @@ void main() {
     await tester.pumpAndSettle();
     await sendChat(tester, 'buscar alimento arroz');
 
-    expect(find.textContaining('search_food'), findsOneWidget);
+    expect(find.textContaining('Encontrei'), findsOneWidget);
     // "arroz" bate em vários itens reais do TACO — a mensagem de resposta
     // não é vazia (results não é []).
-    expect(find.textContaining('results: []'), findsNothing);
+    expect(find.textContaining('Não achei'), findsNothing);
   });
 
   testWidgets('comando "plano de treino" (get_workout_plan) lê um plano real cadastrado',
@@ -309,7 +309,7 @@ void main() {
     await tester.pumpAndSettle();
     await sendChat(tester, 'plano de treino plano-peito');
 
-    expect(find.textContaining('get_workout_plan'), findsOneWidget);
+    expect(find.textContaining('Supino reto 4×8'), findsOneWidget);
     expect(find.textContaining('Treino A'), findsOneWidget);
   });
 
@@ -323,8 +323,8 @@ void main() {
     await tester.pumpAndSettle();
     await sendChat(tester, 'resumo da corrida ${run.id}');
 
-    expect(find.textContaining('get_run_summary'), findsOneWidget);
-    expect(find.textContaining('5000.0'), findsOneWidget);
+    expect(find.textContaining('Corrida:'), findsOneWidget);
+    expect(find.textContaining('5,00 km'), findsOneWidget);
   });
 
   testWidgets('comando "registrar treino" (log_workout_session) confirmado grava HealthEvent de verdade',
@@ -337,15 +337,15 @@ void main() {
     await tester.pumpAndSettle();
     await sendChat(tester, 'registrar treino: supino-reto 1x8x70, supino-reto 2x6x75');
 
-    // Ferramenta de escrita — precisa do diálogo de confirmação antes de
-    // gravar (.claude/rules/brain.md, passo 4).
+    // Ferramenta de escrita — precisa do cartão de proposta confirmado antes
+    // de gravar (.claude/rules/brain.md, passo 4).
     expect(find.byKey(const Key('confirmation_confirm')), findsOneWidget);
     expect(app.dependencies.core.queryByType(HealthEventType.workoutSession), isEmpty);
 
     await tester.tap(find.byKey(const Key('confirmation_confirm')));
     await tester.pumpAndSettle();
 
-    expect(find.textContaining('log_workout_session'), findsOneWidget);
+    expect(find.textContaining('Salvo em Exercícios › Academia'), findsOneWidget);
     final events = app.dependencies.core.queryByType(HealthEventType.workoutSession);
     expect(events, hasLength(1));
     expect(events.single.payload['sets_count'], 2);

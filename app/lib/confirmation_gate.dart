@@ -12,12 +12,23 @@ import 'package:frankstein_tool_registry/tool_registry.dart';
 /// antes da árvore de widgets existir, então não há `BuildContext`
 /// disponível ainda nesse momento — só quando [confirm] é chamado de
 /// verdade, depois do primeiro frame.
+/// Mostra a proposta e devolve a decisão da pessoa (o Cérebro usa um
+/// cartão dentro da conversa — prancheta CerebroChat).
+typedef ProposalPresenter = Future<bool> Function(ToolSpec spec, Map<String, dynamic> params);
+
 class AppConfirmationGate implements ConfirmationGate {
   final GlobalKey<NavigatorState> navigatorKey;
   AppConfirmationGate(this.navigatorKey);
 
+  /// Quando a tela do Cérebro está aberta, ela pede as confirmações como
+  /// cartões de proposta; sem ela, cai no diálogo abaixo. Nos dois casos
+  /// nada é gravado antes do "Confirmar" (`.claude/rules/brain.md`).
+  ProposalPresenter? presenter;
+
   @override
   Future<bool> confirm(ToolSpec spec, Map<String, dynamic> params) async {
+    final inline = presenter;
+    if (inline != null) return inline(spec, params);
     final context = navigatorKey.currentContext;
     if (context == null) return false;
 
