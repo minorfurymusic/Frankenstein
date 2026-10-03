@@ -27,6 +27,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _rate = TextEditingController();
   final _steps = TextEditingController();
   Objective _objective = Objective.maintain;
+  bool _training = false;
+  bool _highProtein = false;
   double? _savedWeight;
   double? _savedFat;
 
@@ -44,6 +46,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _weight.text = _savedWeight == null ? '' : formatNumber(_savedWeight!, decimals: 1);
     _fat.text = _savedFat == null ? '' : formatNumber(_savedFat!, decimals: 0);
     _objective = p?.objective ?? Objective.maintain;
+    _training = p?.strengthTraining ?? false;
+    _highProtein = p?.highProtein ?? false;
     _rate.text = p == null || p.rateGramsPerDay == 0 ? '50' : p.rateGramsPerDay.round().toString();
     _steps.text = (p?.stepsGoal ?? 8000).toString();
   }
@@ -85,6 +89,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
         objective: _objective,
         rateGramsPerDay: rate!,
         stepsGoal: steps!,
+        strengthTraining: _training,
+        highProtein: _highProtein,
       );
       final at = DateTime.now().toUtc();
       final tz = deps.tzOffsetMinutesNow();
@@ -201,6 +207,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ),
             ),
           ],
+          const RltSectionHeader('Treino e proteína'),
+          SwitchListTile(
+            key: const Key('profile_training'),
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Faço musculação ou academia'),
+            subtitle: const Text('Sobe a meta de proteína para preservar e ganhar músculo.'),
+            value: _training,
+            onChanged: (v) => setState(() => _training = v),
+          ),
+          SwitchListTile(
+            key: const Key('profile_high_protein'),
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Quero mais proteína'),
+            subtitle: const Text('Soma 0,4 g por kg à meta.'),
+            value: _highProtein,
+            onChanged: (v) => setState(() => _highProtein = v),
+          ),
           const SizedBox(height: RltSpace.m),
           TextField(
             controller: _steps,

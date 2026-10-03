@@ -12,7 +12,9 @@ CREATE TABLE IF NOT EXISTS profile (
   height_m REAL NOT NULL,
   objective TEXT NOT NULL,
   rate_g_per_day REAL NOT NULL,
-  steps_goal INTEGER NOT NULL
+  steps_goal INTEGER NOT NULL,
+  strength_training INTEGER NOT NULL DEFAULT 0,
+  high_protein INTEGER NOT NULL DEFAULT 0
 );
 CREATE TABLE IF NOT EXISTS settings (
   key TEXT PRIMARY KEY,
@@ -26,8 +28,22 @@ class ProfileRepository {
   final Database _db;
   ProfileRepository._(this._db);
 
-  factory ProfileRepository.open(String path) => ProfileRepository._(sqlite3.open(path)..execute(_schemaSql));
-  factory ProfileRepository.openInMemory() => ProfileRepository._(sqlite3.openInMemory()..execute(_schemaSql));
+  factory ProfileRepository.open(String path) => ProfileRepository._(_migrate(sqlite3.open(path)));
+  factory ProfileRepository.openInMemory() => ProfileRepository._(_migrate(sqlite3.openInMemory()));
+
+  /// Banco criado antes das colunas novas (APK de teste antigo) ganha as
+  /// colunas com o valor padrão, sem perder o perfil.
+  static Database _migrate(Database db) {
+    db.execute(_schemaSql);
+    final columns = db.select('PRAGMA table_info(profile)').map((r) => r['name'] as String).toSet();
+    if (!columns.contains('strength_training')) {
+      db.execute('ALTER TABLE profile ADD COLUMN strength_training INTEGER NOT NULL DEFAULT 0');
+    }
+    if (!columns.contains('high_protein')) {
+      db.execute('ALTER TABLE profile ADD COLUMN high_protein INTEGER NOT NULL DEFAULT 0');
+    }
+    return db;
+  }
 
   void close() => _db.dispose();
 
@@ -42,14 +58,17 @@ class ProfileRepository {
       objective: Objective.fromWireValue(r['objective'] as String),
       rateGramsPerDay: (r['rate_g_per_day'] as num).toDouble(),
       stepsGoal: r['steps_goal'] as int,
+      strengthTraining: (r['strength_training'] as int) == 1,
+      highProtein: (r['high_protein'] as int) == 1,
     );
   }
 
   void save(Profile p) {
     final d = p.birthDate;
     _db.execute(
-      'INSERT OR REPLACE INTO profile (id, sex, birth_date, height_m, objective, rate_g_per_day, steps_goal) '
-      'VALUES (1, ?, ?, ?, ?, ?, ?)',
+      'INSERT OR REPLACE INTO profile '
+      '(id, sex, birth_date, height_m, objective, rate_g_per_day, steps_goal, strength_training, high_protein) '
+      'VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?)',
       [
         p.sex.wireValue,
         '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}',
@@ -57,6 +76,8 @@ class ProfileRepository {
         p.objective.wireValue,
         p.rateGramsPerDay,
         p.stepsGoal,
+        p.strengthTraining ? 1 : 0,
+        p.highProtein ? 1 : 0,
       ],
     );
   }

@@ -57,15 +57,36 @@ abstract final class HealthFormulas {
     return activityKcal(met: walkingMet, weightKg: weightKg, duration: Duration(seconds: (hours * 3600).round()));
   }
 
-  /// Proteína em g/kg (ISSN 2017, doi:10.1186/s12970-017-0177-8: 1,4–2,0
-  /// para quem treina). 1,6 ao perder ou ganhar, 1,4 ao manter (ADR-15).
-  static double proteinPerKg(Objective o) => o == Objective.maintain ? 1.4 : 1.6;
+  /// Proteína em g/kg do dia (ADR-15, revisão de 2026-10-03):
+  /// - não treina: manter 0,8 (RDA do Institute of Medicine), perder ou
+  ///   ganhar 1,2 (Leidy et al., Am J Clin Nutr 2015;101:1320S: 1,2–1,6 g/kg
+  ///   melhora saciedade e manutenção na perda de peso);
+  /// - faz musculação: manter 1,6, ganhar 1,8, perder 2,0 (ISSN 2017,
+  ///   doi:10.1186/s12970-017-0177-8: 1,4–2,0 para quem treina, mais alto
+  ///   em déficit para preservar massa magra);
+  /// - "quero mais proteína": +0,4 g/kg.
+  static double proteinPerKg(Objective o, {bool strengthTraining = false, bool highProtein = false}) {
+    final base = strengthTraining
+        ? switch (o) {
+            Objective.maintain => 1.6,
+            Objective.gain => 1.8,
+            Objective.lose => 2.0,
+          }
+        : (o == Objective.maintain ? 0.8 : 1.2);
+    return base + (highProtein ? 0.4 : 0);
+  }
+
+  /// Fibra: 14 g por 1.000 kcal da meta (ingestão adequada do Institute of
+  /// Medicine; 25 g mulher / 38 g homem numa dieta de referência), nunca
+  /// menos que 25 g/dia (EFSA). Fibra é carboidrato: só existe em alimento
+  /// vegetal, e na tabela TACO já está dentro do "carboidrato total".
+  static double fiberGrams(double caloriesKcal) => math.max(25, 14 * caloriesKcal / 1000);
 
   /// Gordura: 30% das calorias (ADR-15).
   static const double fatEnergyShare = 0.30;
 
   /// Faixas aceitáveis do Institute of Medicine (AMDR), em fração das
-  /// calorias.
+  /// calorias — só para mostrar na tela, nunca para travar a meta.
   static const amdrProtein = (0.10, 0.35);
   static const amdrFat = (0.20, 0.35);
   static const amdrCarbs = (0.45, 0.65);
@@ -148,13 +169,18 @@ class DailyGoals {
   final double stepsKcal;
   final double exerciseKcal;
   final double caloriesKcal;
-  final bool flooredAtBasal;
+
+  /// Meta abaixo do gasto em repouso — só informação. O app não trava
+  /// (decisão do usuário, 2026-10-03: quem faz dieta agressiva costuma ter
+  /// acompanhamento profissional; o app não decide por ela).
+  final bool belowBasal;
+  final double proteinPerKg;
   final double proteinGrams;
   final double fatGrams;
   final double carbsGrams;
+  final double fiberGrams;
   final double waterMl;
   final int stepsGoal;
-  final List<String> warnings;
   final Set<String> manual; // metas ajustadas à mão
 
   const DailyGoals({
@@ -165,21 +191,30 @@ class DailyGoals {
     required this.stepsKcal,
     required this.exerciseKcal,
     required this.caloriesKcal,
-    required this.flooredAtBasal,
+    required this.belowBasal,
+    required this.proteinPerKg,
     required this.proteinGrams,
     required this.fatGrams,
     required this.carbsGrams,
+    required this.fiberGrams,
     required this.waterMl,
     required this.stepsGoal,
-    required this.warnings,
     required this.manual,
   });
+
+  /// Fração das calorias que vem de cada macro (para mostrar ao lado da
+  /// faixa AMDR, sem travar nada).
+  double share(double kcal) => caloriesKcal <= 0 ? 0 : kcal / caloriesKcal;
+  double get proteinShare => share(proteinGrams * 4);
+  double get fatShare => share(fatGrams * 9);
+  double get carbsShare => share(carbsGrams * 4);
 }
 
 /// Monta as metas do dia (ADR-15):
-/// `meta = basal × 1,2 − ajuste do objetivo + passos + exercícios`,
-/// nunca abaixo do basal; proteína por g/kg, gordura 30%, carboidrato o
-/// restante, conferidos pelas faixas AMDR; água por kg com piso EFSA.
+/// `meta = basal × 1,2 − ajuste do objetivo + passos + exercícios`, sem
+/// trava no basal; proteína por g/kg conforme objetivo e treino, gordura
+/// 30%, carboidrato o restante (cai na dieta, porque a meta cai e a
+/// proteína sobe); fibra por 1.000 kcal; água por kg com piso EFSA.
 DailyGoals computeDailyGoals(Profile profile, DayInputs day, {GoalOverrides overrides = GoalOverrides.none}) {
   final age = profile.ageOn(day.date);
   final heightCm = profile.heightMeters * 100;
@@ -199,17 +234,20 @@ DailyGoals computeDailyGoals(Profile profile, DayInputs day, {GoalOverrides over
     heightMeters: profile.heightMeters,
     weightKg: day.weightKg,
   );
-  final raw = base + adjustment + steps + day.exerciseKcal;
-  final floored = raw < basal;
   final manual = <String>{};
 
-  var calories = floored ? basal : raw;
+  var calories = math.max(0.0, base + adjustment + steps + day.exerciseKcal);
   if (overrides.caloriesKcal != null) {
     calories = overrides.caloriesKcal!;
     manual.add('calories');
   }
 
-  var protein = HealthFormulas.proteinPerKg(profile.objective) * day.weightKg;
+  final perKg = HealthFormulas.proteinPerKg(
+    profile.objective,
+    strengthTraining: profile.strengthTraining,
+    highProtein: profile.highProtein,
+  );
+  var protein = perKg * day.weightKg;
   var fat = calories * HealthFormulas.fatEnergyShare / 9;
   if (overrides.proteinGrams != null) {
     protein = overrides.proteinGrams!;
@@ -225,22 +263,11 @@ DailyGoals computeDailyGoals(Profile profile, DayInputs day, {GoalOverrides over
     manual.add('carbs');
   }
 
-  final warnings = <String>[];
-  if (floored) {
-    warnings.add('A meta ficou no seu gasto em repouso: o app não propõe comer menos que isso.');
+  var fiber = HealthFormulas.fiberGrams(calories);
+  if (overrides.fiberGrams != null) {
+    fiber = overrides.fiberGrams!;
+    manual.add('fiber');
   }
-  void check(String name, double kcal, (double, double) range) {
-    if (calories <= 0) return;
-    final share = kcal / calories;
-    if (share < range.$1 || share > range.$2) {
-      warnings.add('$name em ${(share * 100).round()}% das calorias, fora da faixa de '
-          '${(range.$1 * 100).round()}–${(range.$2 * 100).round()}%.');
-    }
-  }
-
-  check('Proteína', protein * 4, HealthFormulas.amdrProtein);
-  check('Gordura', fat * 9, HealthFormulas.amdrFat);
-  check('Carboidrato', carbs * 4, HealthFormulas.amdrCarbs);
 
   var water = HealthFormulas.drinkWaterMl(sex: profile.sex, weightKg: day.weightKg);
   if (overrides.waterMl != null) {
@@ -256,13 +283,14 @@ DailyGoals computeDailyGoals(Profile profile, DayInputs day, {GoalOverrides over
     stepsKcal: steps,
     exerciseKcal: day.exerciseKcal,
     caloriesKcal: calories,
-    flooredAtBasal: floored,
+    belowBasal: calories < basal,
+    proteinPerKg: perKg,
     proteinGrams: protein,
     fatGrams: fat,
     carbsGrams: carbs,
+    fiberGrams: fiber,
     waterMl: water,
     stepsGoal: profile.stepsGoal,
-    warnings: warnings,
     manual: manual,
   );
 }

@@ -43,6 +43,12 @@ class Profile {
   /// Meta de passos do dia.
   final int stepsGoal;
 
+  /// Faz musculação/academia com regularidade — sobe a proteína (ISSN).
+  final bool strengthTraining;
+
+  /// Quer mais proteína que o padrão — soma 0,4 g/kg.
+  final bool highProtein;
+
   Profile({
     required this.sex,
     required DateTime birthDate,
@@ -50,6 +56,8 @@ class Profile {
     this.objective = Objective.maintain,
     this.rateGramsPerDay = 0,
     this.stepsGoal = 8000,
+    this.strengthTraining = false,
+    this.highProtein = false,
   }) : birthDate = DateTime(birthDate.year, birthDate.month, birthDate.day) {
     if (heightMeters < 0.5 || heightMeters > 2.5) throw ArgumentError('altura fora de 50–250 cm');
     if (rateGramsPerDay < 0) throw ArgumentError('ritmo não pode ser negativo');
@@ -70,6 +78,8 @@ class Profile {
     Objective? objective,
     double? rateGramsPerDay,
     int? stepsGoal,
+    bool? strengthTraining,
+    bool? highProtein,
   }) =>
       Profile(
         sex: sex ?? this.sex,
@@ -78,6 +88,8 @@ class Profile {
         objective: objective ?? this.objective,
         rateGramsPerDay: rateGramsPerDay ?? this.rateGramsPerDay,
         stepsGoal: stepsGoal ?? this.stepsGoal,
+        strengthTraining: strengthTraining ?? this.strengthTraining,
+        highProtein: highProtein ?? this.highProtein,
       );
 }
 
@@ -89,8 +101,9 @@ class GoalOverrides {
   final double? fatGrams;
   final double? carbsGrams;
   final double? waterMl;
+  final double? fiberGrams;
 
-  const GoalOverrides({this.caloriesKcal, this.proteinGrams, this.fatGrams, this.carbsGrams, this.waterMl});
+  const GoalOverrides({this.caloriesKcal, this.proteinGrams, this.fatGrams, this.carbsGrams, this.waterMl, this.fiberGrams});
 
   static const none = GoalOverrides();
 
@@ -100,6 +113,7 @@ class GoalOverrides {
         if (fatGrams != null) 'fat_g': fatGrams!,
         if (carbsGrams != null) 'carbs_g': carbsGrams!,
         if (waterMl != null) 'water_ml': waterMl!,
+        if (fiberGrams != null) 'fiber_g': fiberGrams!,
       };
 
   factory GoalOverrides.fromMap(Map<String, dynamic> m) => GoalOverrides(
@@ -108,5 +122,6 @@ class GoalOverrides {
         fatGrams: (m['fat_g'] as num?)?.toDouble(),
         carbsGrams: (m['carbs_g'] as num?)?.toDouble(),
         waterMl: (m['water_ml'] as num?)?.toDouble(),
+        fiberGrams: (m['fiber_g'] as num?)?.toDouble(),
       );
 }

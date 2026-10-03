@@ -81,14 +81,23 @@ class _GoalsBody extends StatelessWidget {
           ]),
           onTap: onTap,
         );
-    GoalOverrides copy({Object? cal = _keep, Object? prot = _keep, Object? fat = _keep, Object? carb = _keep, Object? water = _keep}) =>
+    GoalOverrides copy({
+      Object? cal = _keep,
+      Object? prot = _keep,
+      Object? fat = _keep,
+      Object? carb = _keep,
+      Object? water = _keep,
+      Object? fiber = _keep,
+    }) =>
         GoalOverrides(
           caloriesKcal: identical(cal, _keep) ? o.caloriesKcal : cal as double?,
           proteinGrams: identical(prot, _keep) ? o.proteinGrams : prot as double?,
           fatGrams: identical(fat, _keep) ? o.fatGrams : fat as double?,
           carbsGrams: identical(carb, _keep) ? o.carbsGrams : carb as double?,
           waterMl: identical(water, _keep) ? o.waterMl : water as double?,
+          fiberGrams: identical(fiber, _keep) ? o.fiberGrams : fiber as double?,
         );
+    String pct(double share) => '${(share * 100).round()}%';
 
     return ListView(
       padding: const EdgeInsets.all(RltSpace.l),
@@ -98,29 +107,24 @@ class _GoalsBody extends StatelessWidget {
             keyName: 'goal_calories',
             manual: goals.manual.contains('calories'),
             onTap: () => _edit(context, 'calorias', 'kcal', goals.caloriesKcal, (v) => copy(cal: v))),
-        row('Proteína', '${formatNumber(goals.proteinGrams)} g',
+        row('Proteína · ${pct(goals.proteinShare)}', '${formatNumber(goals.proteinGrams)} g',
             manual: goals.manual.contains('protein'),
             onTap: () => _edit(context, 'proteína', 'g', goals.proteinGrams, (v) => copy(prot: v))),
-        row('Carboidrato', '${formatNumber(goals.carbsGrams)} g',
+        row('Carboidrato · ${pct(goals.carbsShare)}', '${formatNumber(goals.carbsGrams)} g',
             manual: goals.manual.contains('carbs'),
             onTap: () => _edit(context, 'carboidrato', 'g', goals.carbsGrams, (v) => copy(carb: v))),
-        row('Gordura', '${formatNumber(goals.fatGrams)} g',
+        row('Gordura · ${pct(goals.fatShare)}', '${formatNumber(goals.fatGrams)} g',
             manual: goals.manual.contains('fat'),
             onTap: () => _edit(context, 'gordura', 'g', goals.fatGrams, (v) => copy(fat: v))),
         row('Água para beber', '${formatNumber(goals.waterMl)} ml',
             keyName: 'goal_water',
             manual: goals.manual.contains('water'),
             onTap: () => _edit(context, 'água', 'ml', goals.waterMl, (v) => copy(water: v))),
+        row('Fibra', '${formatNumber(goals.fiberGrams)} g',
+            keyName: 'goal_fiber',
+            manual: goals.manual.contains('fiber'),
+            onTap: () => _edit(context, 'fibra', 'g', goals.fiberGrams, (v) => copy(fiber: v))),
         row('Passos', formatNumber(goals.stepsGoal)),
-        for (final w in goals.warnings)
-          Padding(
-            padding: const EdgeInsets.only(top: RltSpace.s),
-            child: Container(
-              padding: const EdgeInsets.all(RltSpace.m),
-              decoration: BoxDecoration(color: c.tertiaryContainer, borderRadius: BorderRadius.circular(8)),
-              child: Text(w, style: t.bodyMedium?.copyWith(color: c.onTertiaryContainer)),
-            ),
-          ),
         const RltSectionHeader('De onde veio a meta de calorias'),
         row('Gasto em repouso (${goals.basalFormula})', _kcal(goals.basalKcal)),
         row('Dia a dia parado (× 1,2)', _kcal(goals.baseKcal)),
@@ -131,11 +135,17 @@ class _GoalsBody extends StatelessWidget {
           ),
         row('Passos de hoje', '+${_kcal(goals.stepsKcal)}'),
         row('Exercícios de hoje', '+${_kcal(goals.exerciseKcal)}'),
+        if (goals.belowBasal)
+          Text('A meta está abaixo do seu gasto em repouso. Você decide; o app só informa.', style: t.bodySmall),
         const SizedBox(height: RltSpace.s),
         Text(
-          'A meta sobe ao longo do dia conforme você caminha e treina. Proteína: '
-          '${formatNumber(HealthFormulas.proteinPerKg(p.objective), decimals: 1)} g por kg (ISSN). Gordura: 30% das calorias. '
-          'Carboidrato: o restante. Água: 35 ml por kg, com mínimo da EFSA por sexo; 80% para beber.',
+          'A meta sobe ao longo do dia conforme você caminha e treina. '
+          'Proteína: ${formatNumber(goals.proteinPerKg, decimals: 1)} g por kg — sobe com academia, em dieta e se você '
+          'pedir mais proteína (Conta › Perfil). Gordura: 30% das calorias. Carboidrato: o restante, por isso cai na '
+          'dieta. Fibra: 14 g por 1.000 kcal, no mínimo 25 g — só alimento vegetal tem fibra (feijão, lentilha, grão-de-bico '
+          'contam; carne, ovo e whey não) e ela já está dentro do carboidrato. As faixas de referência são proteína '
+          '10–35%, gordura 20–35% e carboidrato 45–65% das calorias; o app mostra, não trava. Água: 35 ml por kg, com '
+          'mínimo da EFSA por sexo; 80% para beber.',
           style: t.bodySmall,
         ),
         const SizedBox(height: RltSpace.l),

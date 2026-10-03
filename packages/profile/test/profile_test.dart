@@ -72,11 +72,12 @@ void main() {
       expect(g.basalFormula, 'Mifflin-St Jeor');
       expect(g.basalKcal, closeTo(1648.75, 1e-9));
       expect(g.caloriesKcal, closeTo(1978.5, 1e-9));
-      expect(g.proteinGrams, closeTo(98, 1e-9)); // 1,4 g/kg
+      expect(g.proteinGrams, closeTo(56, 1e-9)); // 0,8 g/kg (não treina)
       expect(g.fatGrams, closeTo(1978.5 * 0.3 / 9, 1e-9));
       expect(g.carbsGrams * 4 + g.proteinGrams * 4 + g.fatGrams * 9, closeTo(1978.5, 1e-6));
-      expect(g.warnings, isEmpty);
+      expect(g.fiberGrams, closeTo(14 * 1.9785, 1e-9)); // 27,7 g
       expect(g.waterMl, closeTo(2000, 1e-9));
+      expect(g.belowBasal, isFalse);
     });
 
     test('% de gordura informado troca para Katch-McArdle', () {
@@ -85,20 +86,42 @@ void main() {
       expect(g.basalKcal, closeTo(1579.6, 1e-9));
     });
 
-    test('perder 50 g/dia tira 385 kcal; sem atividade a meta para no basal e avisa', () {
+    test('perder 50 g/dia tira 385 kcal, mesmo abaixo do gasto em repouso (sem trava)', () {
       final lose = man.copyWith(objective: Objective.lose, rateGramsPerDay: 50);
       final g = computeDailyGoals(lose, DayInputs(weightKg: 70, date: day));
       expect(g.objectiveAdjustmentKcal, closeTo(-385, 1e-9));
-      expect(g.flooredAtBasal, isTrue);
-      expect(g.caloriesKcal, closeTo(1648.75, 1e-9));
-      expect(g.warnings.first, contains('gasto em repouso'));
-      expect(g.proteinGrams, closeTo(112, 1e-9)); // 1,6 g/kg
+      expect(g.caloriesKcal, closeTo(1978.5 - 385, 1e-9));
+      expect(g.belowBasal, isTrue); // só informação
+      expect(g.proteinGrams, closeTo(84, 1e-9)); // 1,2 g/kg
+      expect(g.fiberGrams, 25); // piso EFSA
+    });
+
+    test('ritmo enorme não deixa a meta negativa', () {
+      final lose = man.copyWith(objective: Objective.lose, rateGramsPerDay: 1000);
+      expect(computeDailyGoals(lose, DayInputs(weightKg: 70, date: day)).caloriesKcal, 0);
+    });
+
+    test('proteína: academia e "quero mais proteína" sobem a meta; dieta baixa o carboidrato', () {
+      expect(HealthFormulas.proteinPerKg(Objective.maintain), 0.8);
+      expect(HealthFormulas.proteinPerKg(Objective.lose), 1.2);
+      expect(HealthFormulas.proteinPerKg(Objective.maintain, strengthTraining: true), 1.6);
+      expect(HealthFormulas.proteinPerKg(Objective.gain, strengthTraining: true), 1.8);
+      expect(HealthFormulas.proteinPerKg(Objective.lose, strengthTraining: true), 2.0);
+      expect(HealthFormulas.proteinPerKg(Objective.lose, strengthTraining: true, highProtein: true), closeTo(2.4, 1e-9));
+
+      final keep = computeDailyGoals(man.copyWith(strengthTraining: true), DayInputs(weightKg: 70, date: day));
+      final diet = computeDailyGoals(
+        man.copyWith(strengthTraining: true, objective: Objective.lose, rateGramsPerDay: 50),
+        DayInputs(weightKg: 70, date: day),
+      );
+      expect(diet.proteinGrams, greaterThan(keep.proteinGrams));
+      expect(diet.carbsGrams, lessThan(keep.carbsGrams));
+      expect(keep.carbsGrams - diet.carbsGrams, greaterThan(keep.fatGrams - diet.fatGrams)); // carbo cai mais que gordura
     });
 
     test('a meta sobe com passos e exercício do dia', () {
       final lose = man.copyWith(objective: Objective.lose, rateGramsPerDay: 50);
       final g = computeDailyGoals(lose, DayInputs(weightKg: 70, steps: 10000, exerciseKcal: 300, date: day));
-      expect(g.flooredAtBasal, isFalse);
       expect(g.caloriesKcal, closeTo(1978.5 - 385 + 294.82 + 300, 0.01));
     });
 
@@ -119,9 +142,9 @@ void main() {
       expect(g.manual, {'calories', 'water'});
     });
 
-    test('macro fora da faixa AMDR gera aviso', () {
-      final g = computeDailyGoals(man, DayInputs(weightKg: 70, date: day), overrides: const GoalOverrides(proteinGrams: 250));
-      expect(g.warnings.any((w) => w.startsWith('Proteína')), isTrue);
+    test('frações das calorias por macro somam 100%', () {
+      final g = computeDailyGoals(man, DayInputs(weightKg: 70, date: day));
+      expect(g.proteinShare + g.fatShare + g.carbsShare, closeTo(1, 1e-9));
     });
 
     test('bateu a meta: perder ≤, ganhar ≥, manter ±10%', () {
@@ -148,7 +171,7 @@ void main() {
       final repo = ProfileRepository.openInMemory();
       addTearDown(repo.close);
       expect(repo.load(), isNull);
-      repo.save(man.copyWith(objective: Objective.lose, rateGramsPerDay: 50, stepsGoal: 9000));
+      repo.save(man.copyWith(objective: Objective.lose, rateGramsPerDay: 50, stepsGoal: 9000, strengthTraining: true));
       final back = repo.load()!;
       expect(back.sex, BiologicalSex.male);
       expect(back.birthDate, DateTime(1996, 1, 1));
@@ -156,6 +179,8 @@ void main() {
       expect(back.objective, Objective.lose);
       expect(back.rateGramsPerDay, 50);
       expect(back.stepsGoal, 9000);
+      expect(back.strengthTraining, isTrue);
+      expect(back.highProtein, isFalse);
 
       repo.saveOverrides(const GoalOverrides(caloriesKcal: 2100));
       expect(repo.loadOverrides().caloriesKcal, 2100);

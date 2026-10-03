@@ -70,6 +70,7 @@ void main() {
     );
     expect(find.text('Gasto em repouso (Mifflin-St Jeor)'), findsOneWidget);
     expect(find.text('2.000 ml'), findsOneWidget); // água: piso EFSA homem × 80%
+    expect(find.byKey(const Key('goal_fiber')), findsOneWidget);
   });
 
   testWidgets('ajuste manual da meta de água vale e pode voltar ao calculado', (tester) async {

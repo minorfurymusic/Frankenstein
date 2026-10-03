@@ -74,15 +74,39 @@ Cálculo (**aprovado pelo usuário em 2026-10-02**):
   regra clássica; os modelos dinâmicos (Hall, 2008) mostram que ela
   superestima a perda no longo prazo, por isso a meta é **recalculada a cada
   novo peso registrado**.
-- Limite de segurança: meta nunca abaixo do basal. **Sem teto de ritmo de
-  perda** (decisão do usuário, 2026-10-02): quem usa medicação pode perder
-  mais rápido, e meta não é garantia de perda — o app não trava nem alerta
-  pela velocidade.
+- **Sem trava nenhuma** (decisão do usuário, 2026-10-02 e 2026-10-03):
+  sem teto de ritmo de perda e **a meta pode ficar abaixo do gasto em
+  repouso** — dieta agressiva costuma ter acompanhamento profissional, e o
+  app não decide por quem usa. A tela só informa quando a meta está abaixo
+  do basal; a meta nunca fica negativa (limite matemático, não trava).
 - "Bateu a meta": perder → consumo ≤ meta; ganhar → consumo ≥ meta; manter →
   dentro de ±10% da meta.
 - Dia fechado que recebe registro atrasado é recalculado.
 
-## Divisão de macronutrientes da meta diária (aprovada pelo usuário em 2026-10-02)
+## Revisão de 2026-10-03 (pedido do usuário: meta varia com o objetivo e o treino; fibras)
+
+Proteína em g/kg (`HealthFormulas.proteinPerKg`):
+
+| | Manter | Perder | Ganhar |
+|---|---|---|---|
+| Não treina | 0,8 (RDA, Institute of Medicine) | 1,2 (Leidy 2015) | 1,2 |
+| Faz musculação | 1,6 | 2,0 | 1,8 (ISSN 2017) |
+| "Quero mais proteína" | +0,4 em qualquer caso | | |
+
+- Leidy et al., Am J Clin Nutr 2015;101:1320S–9S: 1,2–1,6 g/kg/dia melhora
+  saciedade, controle de peso e marcadores cardiometabólicos.
+- Na dieta o carboidrato cai mais que a gordura: a meta de calorias cai, a
+  proteína sobe e a gordura continua em 30% das calorias.
+- **Fibra:** 14 g por 1.000 kcal da meta (ingestão adequada do Institute of
+  Medicine — 25 g mulher / 38 g homem), nunca menos que 25 g/dia (EFSA).
+  Fibra só existe em alimento vegetal: proteína vegetal (feijão, lentilha,
+  grão-de-bico) traz fibra e conta; carne, ovo, leite e whey não têm. Na
+  TACO a fibra já está dentro do "carboidrato total" (calculado por
+  diferença) — não se soma de novo.
+- AMDR (proteína 10–35%, gordura 20–35%, carboidrato 45–65%) aparece na
+  tela como referência; não gera aviso nem trava.
+
+## Divisão de macronutrientes da meta diária (aprovada pelo usuário em 2026-10-02; proteína revista em 2026-10-03)
 
 Isto é a meta do dia, não a análise do prato (o prato usa os gramas da tabela
 TACO ou a estimativa da IA).
