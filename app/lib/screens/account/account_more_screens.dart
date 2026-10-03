@@ -201,8 +201,17 @@ class PermissionsScreen extends StatelessWidget {
             },
             onTap: steps == StepTrackingStatus.permissionDenied ? () => deps.stepTracking.start() : null,
           ),
+          FutureBuilder<bool>(
+            future: deps.reminders.scheduler.hasPermission(),
+            builder: (context, snap) => row(
+              Icons.notifications_none,
+              'Notificações',
+              'Lembretes de remédio, água e treino.',
+              snap.data == null ? 'Verificando…' : (snap.data! ? 'Permitida' : 'Negada'),
+              onTap: snap.data == false ? () => deps.reminders.scheduler.requestPermission() : null,
+            ),
+          ),
           // TODO(frankstein): pedir e mostrar o estado real destas permissões quando cada recurso entrar (integrações).
-          row(Icons.notifications_none, 'Notificações', 'Lembretes de remédio, água e treino.', 'Ainda não usada pelo app'),
           row(Icons.photo_camera_outlined, 'Câmera', 'Código de barras, foto do prato e da receita.', 'Ainda não usada pelo app'),
           row(Icons.mic_none, 'Microfone', 'Falar com o Cérebro.', 'Ainda não usada pelo app'),
           row(Icons.location_on_outlined, 'Localização', 'Gravar a rota da corrida e da caminhada.', 'Ainda não usada pelo app'),

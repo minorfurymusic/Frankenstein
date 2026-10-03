@@ -31,7 +31,18 @@ class _RemindersScreenState extends State<RemindersScreen> {
         : jsonDecode(raw) as Map<String, dynamic>;
   }
 
-  void _save() => widget.deps.profileRepository.setSetting('reminders', jsonEncode(_prefs));
+  Future<void> _save() async {
+    widget.deps.profileRepository.setSetting('reminders', jsonEncode(_prefs));
+    await _ensurePermission();
+    widget.deps.reminders.schedule();
+  }
+
+  /// Android 13+ pede permissão para notificar; só pergunta quando a pessoa
+  /// liga um lembrete.
+  Future<void> _ensurePermission() async {
+    final s = widget.deps.reminders.scheduler;
+    if (!await s.hasPermission()) await s.requestPermission();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -40,8 +51,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
     return Scaffold(
       appBar: AppBar(title: const Text('Lembretes')),
       body: ListView(padding: const EdgeInsets.all(RltSpace.l), children: [
-        // TODO(frankstein): disparar notificações locais de verdade (etapa de integrações, sem Firebase — notificação do próprio Android).
-        Text('Os avisos no celular entram na etapa de integrações. Suas escolhas já ficam salvas.', style: t.bodySmall),
+        Text('Os avisos usam as notificações do próprio Android — nada passa pela internet.', style: t.bodySmall),
         const RltSectionHeader('Remédios'),
         if (meds.isEmpty) Text('Nenhum remédio ativo.', style: t.bodyMedium),
         for (final m in meds)
@@ -64,6 +74,7 @@ class _RemindersScreenState extends State<RemindersScreen> {
                 remindersEnabled: v,
               ));
               widget.deps.notifyDataChanged();
+              if (v) _ensurePermission();
               setState(() {});
             },
           ),

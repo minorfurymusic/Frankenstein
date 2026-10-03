@@ -14,6 +14,8 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_HEALTH"/>
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
+    <!-- Lembretes (Reminders.kt): reagendar depois de reiniciar o celular. -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <!-- required="false": aparelho sem sensor de passos ainda instala o
          app, só não conta passos — degradação gradual, não trava nada. -->
     <uses-feature android:name="android.hardware.sensor.stepcounter" android:required="false"/>
@@ -50,6 +52,14 @@
             android:name="flutterEmbedding"
             android:value="2" />
 
+        <!-- Lembretes locais: alarme dispara a notificação; boot reagenda. -->
+        <receiver android:name=".ReminderReceiver" android:exported="false"/>
+        <receiver android:name=".ReminderBootReceiver" android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED"/>
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED"/>
+            </intent-filter>
+        </receiver>
         <service
             android:name=".StepCounterService"
             android:exported="false"

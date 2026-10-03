@@ -16,6 +16,7 @@ import 'data/activity_read_model.dart';
 import 'data/day_read_model.dart';
 import 'data/health_read_model.dart';
 import 'data/nutrition_store.dart';
+import 'reminders/reminders.dart';
 import 'chat_router.dart';
 import 'share_sheet.dart';
 import 'step_tracking_controller.dart';
@@ -73,6 +74,9 @@ class AppDependencies {
   final DayReadModel dayRead;
   final GoalsService goals;
 
+  /// Lembretes locais do Android, replanejados quando os dados mudam.
+  late final ReminderSync reminders;
+
   /// Tema escolhido em Conta › Preferências (claro, escuro ou sistema).
   final ValueNotifier<ThemeMode> themeMode;
 
@@ -84,7 +88,10 @@ class AppDependencies {
   /// Sobe a cada gravação feita pelas telas; quem mostra dado escuta e
   /// recarrega.
   final ValueNotifier<int> dataVersion = ValueNotifier(0);
-  void notifyDataChanged() => dataVersion.value++;
+  void notifyDataChanged() {
+    dataVersion.value++;
+    reminders.schedule();
+  }
 
   int tzOffsetMinutesNow() => DateTime.now().timeZoneOffset.inMinutes;
 
@@ -126,6 +133,7 @@ class AppDependencies {
   void close() {
     if (_closed) return;
     _closed = true;
+    reminders.dispose();
     dataVersion.dispose();
     themeMode.dispose();
     profileRepository.close();
@@ -150,8 +158,10 @@ class AppDependencies {
     required ConfirmationGate confirmationGate,
     required ShareSheet shareSheet,
     required CardImageCapturer imageCapturer,
+    ReminderScheduler? reminderScheduler,
   }) {
     return _build(
+      reminderScheduler: reminderScheduler ?? defaultReminderScheduler(),
       dbDirectoryPath: dbDirectoryPath,
       core: HealthDataCore.open('$dbDirectoryPath/frankstein_health.sqlite3'),
       foodRepository: FoodRepository.open('$dbDirectoryPath/frankstein_food.sqlite3'),
@@ -170,8 +180,10 @@ class AppDependencies {
     required ConfirmationGate confirmationGate,
     required ShareSheet shareSheet,
     required CardImageCapturer imageCapturer,
+    ReminderScheduler? reminderScheduler,
   }) {
     return _build(
+      reminderScheduler: reminderScheduler ?? NoopReminderScheduler(),
       core: HealthDataCore.openInMemory(),
       foodRepository: FoodRepository.openInMemory(seedTacoData: true),
       workoutRepository: WorkoutRepository.openInMemory(),
@@ -209,6 +221,7 @@ class AppDependencies {
   }
 
   static AppDependencies _build({
+    required ReminderScheduler reminderScheduler,
     String? dbDirectoryPath,
     required HealthDataCore core,
     required FoodRepository foodRepository,
@@ -339,6 +352,12 @@ class AppDependencies {
           orElse: () => ThemeMode.system,
         ),
       ),
-    )..dbDirectoryPath = dbDirectoryPath;
+    )
+      ..dbDirectoryPath = dbDirectoryPath
+      ..reminders = ReminderSync(
+        scheduler: reminderScheduler,
+        medications: medicationRepository.listAll,
+        prefs: () => ReminderPrefs.fromSettings(profileRepository),
+      );
   }
 }

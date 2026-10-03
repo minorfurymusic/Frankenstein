@@ -23,7 +23,16 @@ branco: navegação Resumo/Chat de verdade, ligada aos pacotes reais, com
 compartilhamento de treino/corrida funcionando de ponta a ponta. Detalhe
 completo em `docs/HISTORICO.md`.
 
-**Ciclo mais recente (2026-10-03): histórico médico.** Condições e
+**Ciclo mais recente (2026-10-03): lembretes no celular.** Kotlin próprio
+(`Reminders.kt`: AlarmManager `setAndAllowWhileIdle` + notificação do
+Android, reagenda no boot), sem biblioteca nova — o plugin
+flutter_local_notifications foi descartado porque exige embutir
+`desugar_jdk_libs`, cuja licença não deu para confirmar daqui. Dart planeja
+7 dias (remédios com lembrete ligado, água a cada N h das 8h às 22h,
+treino) e replaneja quando os dados mudam e a cada abertura. Permissão de
+notificação pedida só ao ligar um lembrete. Não verificado no aparelho.
+
+**Ciclo anterior (2026-10-03): histórico médico.** Condições e
 diagnósticos informados, alergias, cirurgias, vacinas e consultas
 (`MedicalHistoryRepository` em `packages/health_records`, tabela própria —
 cadastro, não `HealthEvent`), com formulário, edição, apagar e exportação.

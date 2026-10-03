@@ -36,6 +36,8 @@ class MainActivity : FlutterActivity() {
     private val methodChannelName = "frankstein/steps"
     private val eventChannelName = "frankstein/steps/stream"
     private val activityRecognitionRequestCode = 9001
+    private val notificationRequestCode = 9002
+    private var pendingNotificationResult: MethodChannel.Result? = null
 
     private var stepService: StepCounterService? = null
     private var bound = false
@@ -83,6 +85,31 @@ class MainActivity : FlutterActivity() {
                             ),
                         )
                     }
+                    else -> result.notImplemented()
+                }
+            }
+
+        // Lembretes locais (Reminders.kt): o Dart manda a lista planejada.
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "rlt/reminders")
+            .setMethodCallHandler { call, result ->
+                when (call.method) {
+                    "sync" -> {
+                        @Suppress("UNCHECKED_CAST")
+                        val raw = call.arguments as? List<Map<String, Any>> ?: emptyList()
+                        val items = raw.map {
+                            Reminders.Item(
+                                (it["id"] as Number).toInt(),
+                                (it["at_millis"] as Number).toLong(),
+                                it["title"] as String,
+                                it["body"] as String,
+                            )
+                        }
+                        Reminders.ensureChannel(this)
+                        Reminders.sync(this, items)
+                        result.success(items.size)
+                    }
+                    "hasNotificationPermission" -> result.success(hasNotificationPermission())
+                    "requestNotificationPermission" -> requestNotificationPermission(result)
                     else -> result.notImplemented()
                 }
             }
@@ -136,16 +163,38 @@ class MainActivity : FlutterActivity() {
         )
     }
 
+    private fun hasNotificationPermission(): Boolean {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU) return true
+        return ContextCompat.checkSelfPermission(this, Manifest.permission.POST_NOTIFICATIONS) ==
+            PackageManager.PERMISSION_GRANTED
+    }
+
+    private fun requestNotificationPermission(result: MethodChannel.Result) {
+        if (hasNotificationPermission()) {
+            result.success(true)
+            return
+        }
+        pendingNotificationResult = result
+        ActivityCompat.requestPermissions(this, arrayOf(Manifest.permission.POST_NOTIFICATIONS), notificationRequestCode)
+    }
+
     override fun onRequestPermissionsResult(
         requestCode: Int,
         permissions: Array<out String>,
         grantResults: IntArray,
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
-        if (requestCode != activityRecognitionRequestCode) return
         val granted = grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
-        pendingPermissionResult?.success(granted)
-        pendingPermissionResult = null
+        when (requestCode) {
+            activityRecognitionRequestCode -> {
+                pendingPermissionResult?.success(granted)
+                pendingPermissionResult = null
+            }
+            notificationRequestCode -> {
+                pendingNotificationResult?.success(granted)
+                pendingNotificationResult = null
+            }
+        }
     }
 
     private fun startStepService() {

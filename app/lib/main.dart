@@ -34,6 +34,9 @@ Future<void> main() async {
   // quando resolver — o Início e Exercícios › Passos escutam esse `ValueNotifier`.
   // No primeiro uso, quem pede a permissão é o onboarding, depois de explicar.
   if (!firstUse) unawaited(dependencies.stepTracking.start());
+  // Replaneja os lembretes dos próximos 7 dias a cada abertura (as
+  // janelas andam com o tempo).
+  unawaited(dependencies.reminders.syncNow());
 }
 
 /// A OFL exige que a licença acompanhe a fonte: aparece em Conta > Sobre.
