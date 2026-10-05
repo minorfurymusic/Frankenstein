@@ -1,6 +1,6 @@
 # ADRs
 
-18 registradas. **17 em vigor, 1 substituída** (ADR-2, pela ADR-11 em
+19 registradas. **18 em vigor, 1 substituída** (ADR-2, pela ADR-11 em
 2026-10-02). ADR-1 e ADR-7 foram alteradas pela ADR-12 (Android apenas); a
 ADR-7 também pela ADR-13 (login Google substitui o código de "Já assinei"
 quando houver servidor).
@@ -27,5 +27,6 @@ Nenhuma virou "aceita" sem confirmação explícita do usuário.
 | [ADR-15](015-formulas-saude.md) | Fórmulas de saúde (Mifflin-St Jeor / Katch-McArdle, METs 2024, ISSN, IMC, cintura/altura, US Navy) | metas | **aceito; coeficientes a conferir** |
 | [ADR-16](016-valores-exame-unidade-do-laudo.md) | Valores de exame na unidade do laudo (exceção à regra de SI, só para exames) | exames | **aceito** |
 | [ADR-17](017-peso-desejado.md) | Peso desejado comanda o objetivo (perder/manter ±1 kg/ganhar), previsão pelo ritmo | metas | **aceito** |
+| [ADR-18](018-plano-de-refeicoes.md) | Plano de refeições: importar do profissional (IA transcreve), montar ou pedir sugestão à IA (não é prescrição) | nutrição | **aceito; revisão jurídica pendente** |
 
 `_MODELO.md` neste diretório é o template usado em todas.

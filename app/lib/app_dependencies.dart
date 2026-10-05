@@ -17,6 +17,7 @@ import 'card_image_capturer.dart';
 import 'data/activity_read_model.dart';
 import 'data/day_read_model.dart';
 import 'data/health_read_model.dart';
+import 'data/meal_plan.dart';
 import 'data/nutrition_store.dart';
 import 'documents/document_files.dart';
 import 'run/opentracks.dart';
@@ -91,6 +92,9 @@ class AppDependencies {
   final MealLogger mealLogger;
   final WaterLogger waterLogger;
   final NutritionStore nutrition;
+
+  /// Plano de refeições (montado, importado ou sugerido pela IA).
+  late final MealPlanStore mealPlans = MealPlanStore(profileRepository);
   final WorkoutLogger workoutLogger;
   final ActivityLogger activityLogger;
   final ActivityReadModel activityRead;

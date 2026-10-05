@@ -16,6 +16,7 @@ import '../../widgets/common.dart';
 import '../../widgets/state_views.dart';
 import '../account/goals_screen.dart';
 import 'food_detail_screen.dart';
+import 'meal_plan_screens.dart';
 
 /// Dieta e metas (prancheta DietaMetas): atalho para as metas calculadas e
 /// as preferências/restrições de dieta.
@@ -76,7 +77,17 @@ class _DietAndGoalsScreenState extends State<DietAndGoalsScreen> {
           trailing: const Icon(Icons.chevron_right),
           onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => GoalsScreen(deps: widget.deps))),
         ),
-        // TODO(frankstein): plano de refeições (opcional no prompt do design) — sem especificação ainda.
+        ListTile(
+          key: const Key('diet_meal_plan'),
+          contentPadding: EdgeInsets.zero,
+          title: Text('Plano de refeições', style: t.titleSmall),
+          subtitle: Text(widget.deps.mealPlans.load()?.name ?? 'Montar, importar do profissional ou pedir à IA'),
+          trailing: const Icon(Icons.chevron_right),
+          onTap: () async {
+            await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => MealPlanScreen(deps: widget.deps)));
+            if (mounted) setState(() {});
+          },
+        ),
         const RltSectionHeader('Preferências e restrições'),
         Wrap(spacing: RltSpace.s, runSpacing: RltSpace.s, children: [
           for (final e in DietPreferences.labels.entries)

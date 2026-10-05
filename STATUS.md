@@ -23,7 +23,18 @@ branco: navegação Resumo/Chat de verdade, ligada aos pacotes reais, com
 compartilhamento de treino/corrida funcionando de ponta a ponta. Detalhe
 completo em `docs/HISTORICO.md`.
 
-**Ciclo mais recente (2026-10-05): integração com o OpenTracks.** Decisão do
+**Ciclo mais recente (2026-10-05): plano de refeições.** Decisão do usuário
+na ADR-18. Nutrição › Dieta e metas › Plano de refeições: importar do
+profissional (foto/PDF; a IA transcreve sem mudar nada, o documento fica
+guardado e entra na exportação; sem IA, guarda e a pessoa digita), montar
+o próprio, ou pedir sugestão à IA (vai só metas do dia e preferências/
+alergias; nunca alérgeno, suplemento ou remédio; aviso "não é
+prescrição"). Tudo vira rascunho revisado antes de salvar. Cada item com
+kcal registra no diário com um toque. Tarefas de IA em
+`packages/ai/lib/src/meal_plan_ai.dart`. Risco registrado: prescrição
+dietética é atividade de nutricionista (revisão jurídica pendente).
+
+**Ciclo anterior (2026-10-05): integração com o OpenTracks.** Decisão do
 usuário na ADR-9 revisão 2. `OpenTracksBridge.kt` usa só as APIs públicas
 do OpenTracks (lidas no repositório dele): API pública (iniciar/parar por
 Intent explícita) e API de dados (URIs de leitura temporária da trilha e
