@@ -62,9 +62,9 @@ class _RunStartScreenState extends State<RunStartScreen> {
   bool? _gps;
   bool _starting = false;
 
-  /// OpenTracks instalado: dá para gravar por ele (ADR-9 revisão 2).
+  /// OpenTracks instalado: quem grava é ele (ADR-9 revisão 2). O gravador
+  /// do RLT é a alternativa para quando ele não está instalado.
   bool _openTracksInstalled = false;
-  late bool _useOpenTracks = widget.deps.profileRepository.getSetting('run_recorder') != 'rlt';
 
   RunRecorder get _rec => widget.deps.runRecorder;
 
@@ -87,12 +87,11 @@ class _RunStartScreenState extends State<RunStartScreen> {
     }
   }
 
-  bool get _viaOpenTracks => _openTracksInstalled && _useOpenTracks;
+  bool get _viaOpenTracks => _openTracksInstalled;
 
   Future<void> _start() async {
     setState(() => _starting = true);
     widget.deps.profileRepository.setSetting('run_auto_pause', _autoPause ? '1' : '0');
-    if (_openTracksInstalled) widget.deps.profileRepository.setSetting('run_recorder', _useOpenTracks ? 'opentracks' : 'rlt');
     if (_viaOpenTracks) {
       await widget.deps.openTracks.start(_kind);
       if (!mounted) return;
@@ -129,20 +128,6 @@ class _RunStartScreenState extends State<RunStartScreen> {
           onSelectionChanged: (v) => setState(() => _kind = v.first),
         ),
         const SizedBox(height: RltSpace.l),
-        if (_openTracksInstalled) ...[
-          Text('Gravar com', style: t.labelLarge),
-          const SizedBox(height: RltSpace.xs),
-          SegmentedButton<bool>(
-            key: const Key('run_recorder_choice'),
-            segments: const [
-              ButtonSegment(value: true, label: Text('OpenTracks')),
-              ButtonSegment(value: false, label: Text('RLT')),
-            ],
-            selected: {_useOpenTracks},
-            onSelectionChanged: (v) => setState(() => _useOpenTracks = v.first),
-          ),
-          const SizedBox(height: RltSpace.m),
-        ],
         if (_viaOpenTracks)
           Card(
             key: const Key('run_opentracks_info'),

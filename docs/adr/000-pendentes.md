@@ -27,6 +27,6 @@ Nenhuma virou "aceita" sem confirmação explícita do usuário.
 | [ADR-15](015-formulas-saude.md) | Fórmulas de saúde (Mifflin-St Jeor / Katch-McArdle, METs 2024, ISSN, IMC, cintura/altura, US Navy) | metas | **aceito; coeficientes a conferir** |
 | [ADR-16](016-valores-exame-unidade-do-laudo.md) | Valores de exame na unidade do laudo (exceção à regra de SI, só para exames) | exames | **aceito** |
 | [ADR-17](017-peso-desejado.md) | Peso desejado comanda o objetivo (perder/manter ±1 kg/ganhar), previsão pelo ritmo | metas | **aceito** |
-| [ADR-18](018-plano-de-refeicoes.md) | Plano de refeições: importar do profissional (IA transcreve), montar ou pedir sugestão à IA (não é prescrição) | nutrição | **aceito; revisão jurídica pendente** |
+| [ADR-18](018-plano-de-refeicoes.md) | Plano de refeições: importar do profissional (IA transcreve), montar ou pedir sugestão à IA (sugestão, sempre avisada) | nutrição | **aceito** |
 
 `_MODELO.md` neste diretório é o template usado em todas.

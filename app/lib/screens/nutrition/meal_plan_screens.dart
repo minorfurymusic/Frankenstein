@@ -239,7 +239,7 @@ class _MealPlanScreenState extends State<MealPlanScreen> {
           'Foto ou PDF do plano do nutricionista. A IA lê as refeições; você confere.', _import),
       option('plan_create', Icons.edit_note_outlined, 'Montar o meu', 'Você escreve as refeições e os itens.', () => _edit(null)),
       option('plan_ai', Icons.auto_awesome_outlined, 'Pedir sugestão à IA',
-          'Um cardápio a partir das suas metas e preferências. Sugestão, não prescrição.', _suggest),
+          'Um cardápio a partir das suas metas e preferências. É uma sugestão para você ajustar.', _suggest),
     ];
   }
 
@@ -259,7 +259,7 @@ class _MealPlanScreenState extends State<MealPlanScreen> {
         Padding(
           padding: const EdgeInsets.only(top: RltSpace.s),
           child: Text(
-            'Sugestão automática a partir das suas metas e preferências. Não é prescrição: um nutricionista pode ajustar.',
+            'Isto é uma sugestão, feita pela IA a partir das suas metas e preferências. Ajuste como quiser; um nutricionista pode orientar melhor.',
             key: const Key('plan_ai_disclaimer'),
             style: t.bodySmall,
           ),
@@ -413,6 +413,18 @@ class _MealPlanEditScreenState extends State<MealPlanEditScreen> {
               const SizedBox(width: RltSpace.s),
               Expanded(child: Text('Confira cada item antes de salvar. Calorias são estimativa.', style: t.bodySmall)),
             ]),
+          ),
+        if (widget.source == MealPlanSource.ai)
+          Card(
+            key: const Key('plan_edit_suggestion'),
+            color: RltColors.of(context).tertiaryContainer,
+            child: Padding(
+              padding: const EdgeInsets.all(RltSpace.m),
+              child: Text(
+                'Sugestão da IA: um ponto de partida a partir das suas metas e preferências. Confira e ajuste antes de salvar.',
+                style: t.bodyMedium?.copyWith(color: RltColors.of(context).onTertiaryContainer),
+              ),
+            ),
           ),
         if (widget.newAttachment != null)
           ListTile(

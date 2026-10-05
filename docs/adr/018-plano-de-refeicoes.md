@@ -30,8 +30,7 @@ pedir para a ia."
   fibra) e preferências, alergias e o que a pessoa não gosta; nada de
   nome, histórico ou dado clínico. A instrução proíbe alérgenos,
   suplementos, remédios, chás medicinais e jejum. Sai como **"Sugestão da
-  IA"**, com o aviso fixo "Não é prescrição: um nutricionista pode
-  ajustar."
+  IA"**, sempre avisada como sugestão (ver Consequências).
 - Tudo chega como **rascunho a revisar**; nada é salvo sem "Salvar".
   Consentimento antes do primeiro envio (ADR-11).
 - Um plano por vez (dia-tipo). Cada item com kcal pode ser registrado no
@@ -41,11 +40,13 @@ pedir para a ia."
 
 - **Fica mais fácil:** seguir o plano do nutricionista dentro do app, ou
   começar de uma sugestão.
-- **Fica mais difícil / risco:** no Brasil, prescrição dietética é
-  atividade de nutricionista (Lei 8.234/1991). A sugestão da IA é
-  apresentada como sugestão de cardápio para revisão, nunca como
-  prescrição, e não usa dado clínico. **Não verificado:** o texto da lei
-  não foi lido neste ambiente; vale revisão jurídica antes de publicar
-  (junto com o texto do consentimento, já pendente na ADR-11).
+- **Sugestão, não prescrição (decisão do usuário, 2026-10-05):** "Não é
+  prescrição é sugestão, temos que avisar que é sugestão." O app avisa em
+  todos os pontos: na opção ("É uma sugestão para você ajustar"), na
+  revisão antes de salvar ("Sugestão da IA: um ponto de partida…") e no
+  plano salvo ("Isto é uma sugestão, feita pela IA…"). Obs.: prescrição
+  dietética é atividade de nutricionista (Lei 8.234/1991 — texto não lido
+  neste ambiente); por isso a sugestão não usa dado clínico e o texto do
+  consentimento segue para revisão antes de publicar (ADR-11).
 - **Passa a ser proibido:** a IA mudar o plano importado do profissional;
   sugestão com alérgeno informado, suplemento ou remédio.

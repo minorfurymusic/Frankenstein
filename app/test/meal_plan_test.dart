@@ -189,8 +189,10 @@ void main() {
     expect(sent, contains('amendoim'));
     expect(sent, contains('Sem lactose'));
     expect(sent, isNot(contains('1990')));
+    expect(find.byKey(const Key('plan_edit_suggestion')), findsOneWidget);
     await save(tester);
     expect(deps.mealPlans.load()!.source, MealPlanSource.ai);
+    expect(find.textContaining('Isto é uma sugestão'), findsOneWidget);
     expect(find.byKey(const Key('plan_ai_disclaimer')), findsOneWidget);
   });
 

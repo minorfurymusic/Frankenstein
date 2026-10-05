@@ -23,7 +23,14 @@ branco: navegação Resumo/Chat de verdade, ligada aos pacotes reais, com
 compartilhamento de treino/corrida funcionando de ponta a ponta. Detalhe
 completo em `docs/HISTORICO.md`.
 
-**Ciclo mais recente (2026-10-05): foto do prato.** Adicionar alimento ›
+**Ajuste (2026-10-05): respostas do usuário.** (1) Cardápio da IA é
+**sugestão**, avisado em três pontos (opção, revisão e plano salvo) —
+ADR-18 aceita. (2) O gravador do RLT é só a alternativa quando o
+OpenTracks não está instalado; com ele instalado, não há escolha (ADR-9
+rev2). (3) Exceção de unidade dos exames entra como obs. em
+`.claude/rules/00-inviolaveis.md` (ADR-16).
+
+**Ciclo anterior (2026-10-05): foto do prato.** Adicionar alimento ›
 Foto do prato (prancheta CerebroFotoPrato): foto da câmera/galeria, peso da
 balança opcional e refeição; com a IA (consentimento antes do primeiro
 envio), o Gemini identifica os alimentos e estima porção, kcal e macros
@@ -41,8 +48,8 @@ na ADR-18. Nutrição › Dieta e metas › Plano de refeições: importar do
 profissional (foto/PDF; a IA transcreve sem mudar nada, o documento fica
 guardado e entra na exportação; sem IA, guarda e a pessoa digita), montar
 o próprio, ou pedir sugestão à IA (vai só metas do dia e preferências/
-alergias; nunca alérgeno, suplemento ou remédio; aviso "não é
-prescrição"). Tudo vira rascunho revisado antes de salvar. Cada item com
+alergias; nunca alérgeno, suplemento ou remédio; avisada como
+sugestão). Tudo vira rascunho revisado antes de salvar. Cada item com
 kcal registra no diário com um toque. Tarefas de IA em
 `packages/ai/lib/src/meal_plan_ai.dart`. Risco registrado: prescrição
 dietética é atividade de nutricionista (revisão jurídica pendente).
@@ -52,8 +59,8 @@ usuário na ADR-9 revisão 2. `OpenTracksBridge.kt` usa só as APIs públicas
 do OpenTracks (lidas no repositório dele): API pública (iniciar/parar por
 Intent explícita) e API de dados (URIs de leitura temporária da trilha e
 dos pontos, ação `Intent.OpenTracks-Dashboard`). Com o OpenTracks
-instalado, Iniciar mostra "Gravar com: OpenTracks | RLT" (padrão
-OpenTracks); a tela ao vivo mostra tempo em movimento, km e ritmo lidos do
+instalado, Iniciar grava por ele (o gravador do RLT só quando não está
+instalado); a tela ao vivo mostra tempo em movimento, km e ritmo lidos do
 OpenTracks e, ao terminar, salva a rota (`gps_track`, origem `opentracks`,
 `external_id` = UUID — não duplica). "Mostrar no painel" no OpenTracks
 abre o RLT, que pergunta antes de trazer. Se o OpenTracks não responder em

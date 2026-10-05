@@ -9,3 +9,4 @@
 - Nenhum degrau pago é decidido no cliente. O cliente apresenta um entitlement
   assinado pelo servidor; quem valida é o servidor.
 - Unidades sempre em SI. Timestamps em UTC, com timezone gravado à parte.
+  Obs.: valores de exame ficam na unidade do próprio laudo (ADR-16).

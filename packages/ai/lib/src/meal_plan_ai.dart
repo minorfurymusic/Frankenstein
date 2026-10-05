@@ -76,7 +76,7 @@ Regras:
 ''';
 
 const mealPlanSuggestInstruction = '''
-Você monta uma SUGESTÃO de cardápio de um dia para um app de saúde pessoal no Brasil. Não é prescrição: é um ponto de partida que a pessoa revisa.
+Você monta uma SUGESTÃO de cardápio de um dia para um app de saúde pessoal no Brasil. É uma sugestão: um ponto de partida que a pessoa revisa e ajusta.
 Regras:
 - Use as metas do dia informadas (calorias e macronutrientes) como alvo aproximado da soma do dia.
 - Respeite as preferências e restrições informadas. NUNCA inclua alimento citado como alergia ou como "não gosta".
@@ -84,7 +84,7 @@ Regras:
 - Não inclua suplementos, remédios, chás medicinais nem jejum.
 - meal_type: breakfast, lunch, dinner e snack (pode haver mais de um snack).
 - Preencha kcal, protein_g, carbs_g e fat_g de cada item (estimativa).
-- name: um nome curto para o cardápio. notes: uma frase lembrando que é uma sugestão e que um nutricionista pode ajustar.
+- name: um nome curto para o cardápio. notes: uma frase dizendo que é uma sugestão e que a pessoa pode ajustar.
 ''';
 
 double? _num(Object? v) {

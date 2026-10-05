@@ -78,15 +78,16 @@ void main() {
 
   testWidgets('OpenTracks instalado: grava por ele, acompanha ao vivo e salva sem duplicar', (tester) async {
     await pump(tester, RunStartScreen(deps: deps));
-    expect(find.byKey(const Key('run_recorder_choice')), findsOneWidget);
+    // Com o OpenTracks instalado, ele grava; sem escolha de gravador.
+    expect(find.byKey(const Key('run_recorder_choice')), findsNothing);
     expect(find.byKey(const Key('run_opentracks_info')), findsOneWidget);
+    expect(find.byKey(const Key('run_auto_pause')), findsNothing);
     await tester.tap(find.text('Caminhada'));
     await tester.pump();
     await tester.tap(find.byKey(const Key('run_start')));
     await tester.pump();
     await tester.pump();
     expect(ot.startedKind, RunKind.walk);
-    expect(deps.profileRepository.getSetting('run_recorder'), 'opentracks');
 
     ot.tracks = [trackFromChannel(channelTrack(id: 3, type: 'walking', pts: [for (var i = 0; i <= 60; i++) (i * 10.0, i * 6, i == 0 ? -2 : 0)]))];
     await tester.pump(const Duration(seconds: 2));
