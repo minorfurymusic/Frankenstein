@@ -20,7 +20,7 @@ Nenhuma virou "aceita" sem confirmação explícita do usuário.
 | [ADR-8](008-multitenant-b2b-consentimento.md) | Multi-tenant B2B e modelo de consentimento (revisão 1: isolamento de banco decidido — schema separado por Organization, custo justificado por `docs/CUSTOS.md`) | F14 | **aceito** |
 | [ADR-9](009-gps.md) | GPS: precisão x bateria x privacidade (revisão 1: gravador próprio no Android, sem OpenTracks) | F8 | **aceito, revisado** |
 | [ADR-10](010-substitutos-livres.md) | Substitutos livres de dependências proprietárias | F2 | **aceito** |
-| [ADR-11](011-cerebro-nuvem-chave-usuario.md) | Cérebro em nuvem com a chave de API do próprio usuário (substitui ADR-2) | F5 | **aceito** |
+| [ADR-11](011-cerebro-nuvem-chave-usuario.md) | Cérebro em nuvem com a chave de API do próprio usuário (substitui ADR-2; revisão 1: provedor Gemini) | F5 | **aceito, revisado** |
 | [ADR-12](012-android-only-nome-rlt.md) | Android apenas; nome do produto RLT — Real Life Track | — | **aceito** |
 | [ADR-13](013-login-google-obrigatorio.md) | Login com Google obrigatório (mecanismo técnico decidido na fase do servidor) | servidor | **aceito (produto); técnico em aberto** |
 | [ADR-14](014-recursos-premium-relatorio.md) | Relatório para consulta é Premium; "mais espaço" removido da tela Assinatura | — | **aceito** |

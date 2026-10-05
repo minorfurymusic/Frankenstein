@@ -1,6 +1,7 @@
 import 'dart:io';
 
 import 'package:frankstein_activity/activity.dart';
+import 'package:frankstein_ai/ai.dart';
 import 'package:frankstein_brain/brain.dart';
 import 'package:frankstein_health_core/health_core.dart';
 import 'package:frankstein_health_records/health_records.dart';
@@ -11,6 +12,7 @@ import 'package:frankstein_tool_registry/tool_registry.dart';
 
 import 'package:flutter/material.dart' show ThemeMode, ValueNotifier;
 
+import 'ai/ai_settings.dart';
 import 'card_image_capturer.dart';
 import 'data/activity_read_model.dart';
 import 'data/day_read_model.dart';
@@ -61,6 +63,9 @@ class AppDependencies {
 
   /// Gravador de corrida/caminhada com GPS (ADR-9 revisão 1).
   final RunRecorder runRecorder;
+
+  /// IA com a chave do usuário (ADR-11): Gemini. Sem chave, modo básico.
+  final AiSettings ai;
   final ToolRegistry registry;
   final BrainPipeline pipeline;
   final ConfirmationGate confirmationGate;
@@ -123,6 +128,7 @@ class AppDependencies {
     required this.documentPicker,
     required this.pdfRenderer,
     required this.runRecorder,
+    required this.ai,
     required this.registry,
     required this.pipeline,
     required this.confirmationGate,
@@ -166,6 +172,7 @@ class AppDependencies {
     medicationRepository.close();
     medicalHistory.close();
     documents.close();
+    ai.dispose();
   }
 
   /// Produção: bancos reais em arquivo, um por módulo (mesma separação
@@ -186,8 +193,12 @@ class AppDependencies {
     PdfPageRenderer? pdfRenderer,
     HealthConnectBridge? healthConnect,
     RunRecorder? runRecorder,
+    SecretStore? secretStore,
+    AiTransport? aiTransport,
   }) {
     return _build(
+      secretStore: secretStore ?? defaultSecretStore(),
+      aiTransport: aiTransport,
       reminderScheduler: reminderScheduler ?? defaultReminderScheduler(),
       healthConnect: healthConnect ?? defaultHealthConnectBridge(),
       runRecorder: runRecorder ?? defaultRunRecorder(),
@@ -218,8 +229,12 @@ class AppDependencies {
     PdfPageRenderer? pdfRenderer,
     HealthConnectBridge? healthConnect,
     RunRecorder? runRecorder,
+    SecretStore? secretStore,
+    AiTransport? aiTransport,
   }) {
     return _build(
+      secretStore: secretStore ?? MemorySecretStore(),
+      aiTransport: aiTransport,
       reminderScheduler: reminderScheduler ?? NoopReminderScheduler(),
       healthConnect: healthConnect ?? FakeHealthConnectBridge(),
       runRecorder: runRecorder ?? FakeRunRecorder(),
@@ -256,6 +271,9 @@ class AppDependencies {
   /// Core — o banco inteiro deixa de existir; o app abre do zero depois.
   Future<void> eraseAllDataAndClose() async {
     final dir = dbDirectoryPath;
+    try {
+      await ai.removeKey(); // a chave da IA também sai
+    } catch (_) {}
     close();
     await documentFiles.deleteAll();
     if (dir == null) return;
@@ -268,6 +286,8 @@ class AppDependencies {
   }
 
   static AppDependencies _build({
+    required SecretStore secretStore,
+    AiTransport? aiTransport,
     required ReminderScheduler reminderScheduler,
     required HealthConnectBridge healthConnect,
     required RunRecorder runRecorder,
@@ -378,6 +398,7 @@ class AppDependencies {
       documentPicker: documentPicker,
       pdfRenderer: pdfRenderer,
       runRecorder: runRecorder,
+      ai: AiSettings(secrets: secretStore, settings: profileRepository, transport: aiTransport),
       registry: registry,
       pipeline: pipeline,
       confirmationGate: confirmationGate,

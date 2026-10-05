@@ -1,0 +1,19 @@
+name: frankstein_ai
+description: >-
+  IA em nuvem com a chave do próprio usuário (ADR-11): cliente REST do
+  provedor (Gemini, sem SDK), respostas validadas por JSON Schema e as
+  tarefas de leitura (exame, prato, plano de refeições). Dart puro; a rede
+  só acontece quando o app chama, sempre por ação da pessoa.
+publish_to: 'none'
+version: 0.1.0
+
+environment:
+  sdk: ^3.9.0
+
+dependencies:
+  frankstein_tool_registry:
+    path: ../tool_registry
+
+dev_dependencies:
+  lints: ^5.0.0
+  test: ^1.25.0

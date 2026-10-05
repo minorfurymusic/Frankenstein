@@ -1,6 +1,7 @@
 import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
+import 'package:frankstein_ai/ai.dart';
 import 'package:frankstein_health_core/health_core.dart';
 import 'package:frankstein_health_records/health_records.dart';
 
@@ -13,7 +14,10 @@ import '../../widgets/badges.dart';
 import '../../widgets/common.dart';
 import '../../widgets/line_chart.dart';
 import '../../widgets/state_views.dart';
+import '../../ai/ai_consent.dart';
+import '../../ai/ai_settings.dart';
 import '../account/account_more_screens.dart';
+import '../account/brain_settings_screen.dart';
 
 String _fmtDate(LocalDate d) => ddmmyyyy(DateTime(d.year, d.month, d.day));
 
@@ -417,7 +421,88 @@ class _DocumentFormScreenState extends State<DocumentFormScreen> {
   late final List<ExamMarker> _markers = [...?widget.existing?.markers];
   bool _saving = false;
 
+  // Leitura dos valores pela IA (ADR-11/ADR-16): sempre estimativa.
+  bool _reading = false;
+  String? _readError;
+  bool _estimate = false;
+
   bool get _isPrescription => widget.kind == HealthDocumentKind.prescription;
+
+  @override
+  void initState() {
+    super.initState();
+    // Exame anexado direto da lista ("Fotografar exame"/"Enviar PDF"): lê
+    // os valores sozinho, como na escolha de arquivo dentro do formulário.
+    if (!_isPrescription && widget.initialFile != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _readWithAi(auto: true);
+      });
+    }
+  }
+
+  /// Lê nome, data, categoria e valores do exame anexado. Só com a chave da
+  /// pessoa e depois do consentimento; o resultado preenche o formulário
+  /// como estimativa — nada é salvo sem o "Salvar".
+  Future<void> _readWithAi({bool auto = false}) async {
+    final deps = widget.deps;
+    if (_reading) return;
+    if (!deps.ai.hasKey.value) {
+      if (!auto) {
+        await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => BrainSettingsScreen(deps: deps)));
+        if (mounted) setState(() {});
+      }
+      return;
+    }
+    if (_added.isEmpty && _kept.isEmpty) return;
+    final ok = await ensureAiConsent(context, deps, sending: 'A foto ou o PDF deste exame, para ler os valores');
+    if (!ok || !mounted) return;
+    setState(() {
+      _reading = true;
+      _readError = null;
+    });
+    try {
+      final parts = <AiPart>[
+        for (final p in _added) AiPart.file(p.bytes, p.mimeType),
+      ];
+      for (final f in _kept) {
+        final bytes = await deps.documentFiles.readBytes(f.storedName);
+        if (bytes != null) parts.add(AiPart.file(bytes, f.mimeType));
+      }
+      final reading = await readExam(await deps.ai.client(), parts);
+      if (!mounted) return;
+      setState(() {
+        if (_title.text.trim().isEmpty && reading.title != null) _title.text = reading.title!;
+        if (reading.date != null) _date = LocalDate.fromDateTime(reading.date!);
+        final cat = ExamCategory.values.where((c) => c.wireValue == reading.category).firstOrNull;
+        if (cat != null) _category = cat;
+        final known = {for (final m in _markers) m.key};
+        for (final r in reading.markers) {
+          try {
+            final m = ExamMarker(
+              name: r.name,
+              value: r.value,
+              unit: r.unit,
+              referenceLow: r.referenceLow,
+              referenceHigh: r.referenceHigh,
+            );
+            if (known.add(m.key)) _markers.add(m);
+          } on ArgumentError {
+            // valor que não passa na validação fica de fora
+          }
+        }
+        _estimate = true;
+        _reading = false;
+        if (reading.markers.isEmpty) _readError = 'A IA não achou valores numéricos neste arquivo. Confira ou preencha à mão.';
+      });
+    } catch (e) {
+      if (mounted) {
+        setState(() {
+          _reading = false;
+          _readError = aiFailureMessage(e);
+        });
+      }
+    }
+  }
 
   @override
   void dispose() {
@@ -430,7 +515,10 @@ class _DocumentFormScreenState extends State<DocumentFormScreen> {
   Future<void> _pick(Future<PickedDocument?> Function() pick) async {
     try {
       final p = await pick();
-      if (p != null && mounted) setState(() => _added.add(p));
+      if (p != null && mounted) {
+        setState(() => _added.add(p));
+        if (!_isPrescription) await _readWithAi(auto: true);
+      }
     } catch (e) {
       if (mounted) showRltError(context, 'Não foi possível abrir: $e');
     }
@@ -499,6 +587,54 @@ class _DocumentFormScreenState extends State<DocumentFormScreen> {
     widget.deps.notifyDataChanged();
     if (!mounted) return;
     Navigator.of(context).pop();
+  }
+
+  Widget _aiReadingPanel(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    final c = RltColors.of(context);
+    final hasFiles = _added.isNotEmpty || _kept.isNotEmpty;
+    return ValueListenableBuilder<bool>(
+      valueListenable: widget.deps.ai.hasKey,
+      builder: (context, hasKey, _) {
+        if (_reading) {
+          return Padding(
+            key: const Key('exam_reading'),
+            padding: const EdgeInsets.only(top: RltSpace.m),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              const LinearProgressIndicator(),
+              const SizedBox(height: RltSpace.xs),
+              Text('Lendo os valores com o Gemini…', style: t.bodySmall),
+            ]),
+          );
+        }
+        if (!hasKey) {
+          return Card(
+            key: const Key('exam_ai_hint'),
+            margin: const EdgeInsets.only(top: RltSpace.m),
+            child: ListTile(
+              leading: const Icon(Icons.auto_awesome_outlined),
+              title: const Text('Ler os valores sozinho'),
+              subtitle: const Text('Ative a IA com a sua chave e o app preenche nome, data e valores a partir da foto ou do PDF.'),
+              onTap: () => _readWithAi(),
+            ),
+          );
+        }
+        return Padding(
+          padding: const EdgeInsets.only(top: RltSpace.s),
+          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+            if (_readError != null)
+              Text(_readError!, key: const Key('exam_read_error'), style: t.bodyMedium?.copyWith(color: c.error)),
+            if (hasFiles)
+              TextButton.icon(
+                key: const Key('exam_read_ai'),
+                onPressed: () => _readWithAi(),
+                icon: const Icon(Icons.auto_awesome_outlined),
+                label: Text(_estimate || _readError != null ? 'Ler de novo com a IA' : 'Ler valores com a IA'),
+              ),
+          ]),
+        );
+      },
+    );
   }
 
   Widget _dateField(String label, LocalDate? value, ValueChanged<LocalDate?> onChanged, {Key? key, bool clearable = false}) {
@@ -579,6 +715,7 @@ class _DocumentFormScreenState extends State<DocumentFormScreen> {
           padding: const EdgeInsets.only(top: RltSpace.xs),
           child: Text('Os arquivos ficam só no seu celular.', style: t.bodySmall),
         ),
+        if (!_isPrescription) _aiReadingPanel(context),
         const SizedBox(height: RltSpace.l),
         TextField(
           key: const Key('document_title'),
@@ -625,7 +762,7 @@ class _DocumentFormScreenState extends State<DocumentFormScreen> {
           const SizedBox(height: RltSpace.m),
           _dateField('Data do exame', _date, (v) => _date = v),
           RltSectionHeader(
-            'Valores do exame',
+            _estimate ? 'Valores lidos' : 'Valores do exame',
             action: TextButton.icon(
               key: const Key('marker_add'),
               onPressed: () async {
@@ -640,6 +777,11 @@ class _DocumentFormScreenState extends State<DocumentFormScreen> {
             Text('Opcional. Digite os valores como estão no laudo, com a unidade dele, para acompanhar cada um ao longo do tempo.',
                 style: t.bodySmall)
           else ...[
+            if (_estimate)
+              const Padding(
+                padding: EdgeInsets.only(bottom: RltSpace.xs),
+                child: Align(alignment: Alignment.centerLeft, child: RltBadge(RltBadgeKind.estimate, key: Key('marker_estimate'))),
+              ),
             Text('Confira cada valor com o papel antes de salvar.', style: t.bodySmall),
             for (var i = 0; i < _markers.length; i++)
               ListTile(

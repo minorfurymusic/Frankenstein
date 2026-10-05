@@ -80,13 +80,17 @@ class MedicationAgenda {
   MedicationAgenda({required this.repository, required this.core});
 
   List<AgendaEntry> forDay(LocalDate date) {
-    // Janela larga em UTC (dia ± 1) e filtro exato pela chave local gravada no
-    // evento — o dia local e o dia UTC não coincidem fora de UTC+0.
+    // Janela larga em UTC e filtro exato pela chave local gravada no evento —
+    // o dia local e o dia UTC não coincidem fora de UTC+0. O fim vai até
+    // agora: o "tomei" de uma dose pode ser marcado dias depois (o evento
+    // nasce na hora da marcação), e precisa aparecer no dia da dose.
     final dayUtc = DateTime.utc(date.year, date.month, date.day);
+    final dayEnd = dayUtc.add(const Duration(days: 2));
+    final now = DateTime.now().toUtc().add(const Duration(days: 1));
     final events = core.queryByType(
       HealthEventType.medicationDose,
       from: dayUtc.subtract(const Duration(days: 1)),
-      to: dayUtc.add(const Duration(days: 2)),
+      to: now.isAfter(dayEnd) ? now : dayEnd,
     );
 
     // Se a mesma dose foi marcada mais de uma vez, vale a última (correção).

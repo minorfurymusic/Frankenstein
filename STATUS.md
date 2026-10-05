@@ -23,7 +23,27 @@ branco: navegação Resumo/Chat de verdade, ligada aos pacotes reais, com
 compartilhamento de treino/corrida funcionando de ponta a ponta. Detalhe
 completo em `docs/HISTORICO.md`.
 
-**Ciclo mais recente (2026-10-03): corrida e caminhada com GPS.** Gravador
+**Ciclo mais recente (2026-10-05): IA com a chave Gemini e leitura de exame.**
+Provedor decidido pelo usuário (ADR-11 revisão 1): Gemini, com a chave
+dele. Novo pacote `packages/ai` (REST direto, sem SDK; endereço e campos
+conferidos no código do SDK oficial): resposta em JSON validada por JSON
+Schema, no máximo 2 tentativas, erros traduzidos (chave recusada, limite,
+sem rede, bloqueado, arquivo grande). Chave cifrada pelo Android Keystore
+(`SecureStore.kt`), fora do banco, apagada com "Apagar chave" e "Apagar
+todos os dados". Backup automático do Android desligado (levaria os dados
+de saúde para a nuvem do Google sem ação da pessoa). Conta › Cérebro (IA)
+no layout: testar e salvar a chave, apagar, modelo (padrão
+`gemini-flash-latest`), o que é enviado, consentimento. Consentimento
+antes do primeiro envio (prancheta CerebroConsentimento). **Exame:** ao
+anexar foto ou PDF, com a IA ativa, o app lê nome, data, categoria e
+valores (unidade e faixa do laudo, ADR-16) e preenche o formulário como
+"Valores lidos — Estimativa"; nada é salvo sem "Salvar". Sem chave,
+aparece o convite para ativar; digitar continua possível. Não verificado
+com a API real (rede de desenvolvimento bloqueia o Google). Corrigido de
+carona: a agenda de remédios só via o "tomei" marcado até 2 dias depois da
+dose; agora vê marcações feitas a qualquer momento.
+
+**Ciclo anterior (2026-10-03): corrida e caminhada com GPS.** Gravador
 próprio (ADR-9 revisão 1): `RunRecorderService.kt` (serviço em primeiro
 plano, `LocationManager` do Android, sem Play Services) grava cada ponto na
 hora em `run_current.jsonl`; se o app/processo cair, o Android recria o

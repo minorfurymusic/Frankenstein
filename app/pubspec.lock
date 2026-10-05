@@ -255,6 +255,13 @@ packages:
       relative: true
     source: path
     version: "0.1.0"
+  frankstein_ai:
+    dependency: "direct main"
+    description:
+      path: "../packages/ai"
+      relative: true
+    source: path
+    version: "0.1.0"
   frankstein_brain:
     dependency: "direct main"
     description:

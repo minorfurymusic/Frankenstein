@@ -1,6 +1,7 @@
 # ADR-11 — Cérebro em nuvem com a chave de API do próprio usuário
 
-**Status:** aceito (decisão explícita do usuário, 2026-10-02) — substitui ADR-2
+**Status:** aceito (decisão explícita do usuário, 2026-10-02) — substitui ADR-2;
+revisão 1 (2026-10-05): provedor escolhido — Gemini
 **Data:** 2026-10-02
 
 ## Contexto
@@ -88,3 +89,33 @@ Atualizado em `.claude/rules/brain.md` junto com esta ADR.
 - Transcrição de voz: precisa ser feita sem Play Services
   (`.claude/rules/licenca.md`) — provavelmente pelo próprio provedor de IA.
 - Texto do consentimento (LGPD) — redação a revisar antes de publicar.
+
+## Revisão 1 (2026-10-05) — provedor: Gemini
+
+**Decisão do usuário (2026-10-05):** "Provedor por enquanto é minha api key
+gemini." Primeiro provedor suportado: **Gemini (Google), Gemini Developer
+API**, com a chave do próprio usuário.
+
+- **Como é chamado (conferido no código do SDK oficial
+  `googleapis/python-genai`, já que a documentação `ai.google.dev` é
+  bloqueada na rede de desenvolvimento):** `POST
+  https://generativelanguage.googleapis.com/v1beta/models/{modelo}:generateContent`,
+  chave no cabeçalho `x-goog-api-key` (nunca na URL), anexos em
+  `inlineData` (`mimeType` + base64), instrução em `systemInstruction` e
+  resposta em JSON por `generationConfig.responseMimeType` +
+  `responseJsonSchema`. Modelo padrão: o apelido `gemini-flash-latest`
+  (o mesmo usado nos exemplos do SDK), trocável em Conta › Cérebro (IA).
+  Implementação: `packages/ai` (REST com `dart:io`, sem SDK).
+- **Chave:** cifrada por chave AES do Android Keystore (`SecureStore.kt`),
+  fora do banco; "Apagar chave" e "Apagar todos os dados" a removem. O
+  backup automático do Android foi desligado (`allowBackup=false`): ele
+  levaria os bancos e a chave para a nuvem do Google sem ação da pessoa.
+- **Uso atual:** só ações explícitas — anexar exame (lê os valores),
+  e as que vierem (foto do prato, plano de refeições). Toda resposta é
+  validada por JSON Schema (até 2 tentativas) e chega como estimativa a
+  conferir.
+- **Não verificado:** PDF enviado direto em `inlineData` (os exemplos do SDK
+  mostram PDF por URI; imagem por bytes). Confirmar no primeiro teste no
+  aparelho; se o provedor recusar, o app mostra o erro e a pessoa pode
+  mandar foto.
+

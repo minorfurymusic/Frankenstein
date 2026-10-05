@@ -46,10 +46,16 @@
          app, só não conta passos — degradação gradual, não trava nada. -->
     <uses-feature android:name="android.hardware.sensor.stepcounter" android:required="false"/>
 
+    <!-- allowBackup=false: o backup automático do Android mandaria os bancos
+         (dados de saúde) e a chave da IA para a nuvem do Google sem ação da
+         pessoa (.claude/rules/00-inviolaveis.md, .claude/rules/brain.md).
+         Levar os dados é pela exportação, sempre por escolha dela. -->
     <application
         android:label="RLT"
         android:name="${applicationName}"
-        android:icon="@mipmap/ic_launcher">
+        android:icon="@mipmap/ic_launcher"
+        android:allowBackup="false"
+        android:fullBackupContent="false">
         <!-- image_picker_android declara um serviço-marcador que pede ao
              Google Play Services o seletor de fotos "retroportado". Sem
              serviços do Google (CLAUDE.md, regra 6): sai do APK; em Android

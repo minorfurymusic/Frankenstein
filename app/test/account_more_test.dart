@@ -137,7 +137,7 @@ void main() {
 
     await openAndBack('Privacidade e dados', 'Exportar todos os dados');
     await openAndBack('Permissões', 'Atividade física');
-    await openAndBack('Cérebro (IA)', 'Modo atual: básico');
+    await openAndBack('Cérebro (IA)', 'Modo básico ativo');
     await tester.tap(find.byKey(const Key('account_Assinatura')));
     await tester.pumpAndSettle();
     expect(find.text('Plano atual: Grátis'), findsOneWidget);

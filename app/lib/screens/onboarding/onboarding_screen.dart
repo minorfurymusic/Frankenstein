@@ -5,7 +5,7 @@ import '../../format.dart';
 import '../../step_tracking_controller.dart';
 import '../../theme/rlt_colors.dart';
 import '../../theme/rlt_theme.dart';
-import '../account/account_more_screens.dart';
+import '../account/brain_settings_screen.dart';
 import '../account/profile_screen.dart';
 
 /// Primeiro uso (pranchetas Main, OnbPrivacidade, OnbPerfil, OnbMetas,
@@ -138,7 +138,7 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   primary: 'Depois',
                   onPrimary: _finish,
                   secondary: 'Saber mais',
-                  onSecondary: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const BrainSettingsScreen())),
+                  onSecondary: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => BrainSettingsScreen(deps: widget.deps))),
                   keyName: 'onb_ai',
                 ),
               ],

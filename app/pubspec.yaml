@@ -37,6 +37,8 @@ dependencies:
 
   frankstein_activity:
     path: ../packages/activity
+  frankstein_ai:
+    path: ../packages/ai
   frankstein_brain:
     path: ../packages/brain
   frankstein_health_core:

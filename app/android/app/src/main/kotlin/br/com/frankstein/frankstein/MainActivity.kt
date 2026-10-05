@@ -118,6 +118,10 @@ class MainActivity : FlutterActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "rlt/pdf")
             .setMethodCallHandler { call, result -> PdfPages.handle(call, result) }
 
+        // Chave da IA no cofre do Android (SecureStore.kt).
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "rlt/secure")
+            .setMethodCallHandler { call, result -> SecureStore.handle(this, call, result) }
+
         // Corrida/caminhada: gravador próprio com GPS (RunRecorderService.kt).
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "rlt/run")
             .setMethodCallHandler { call, result -> RunBridge.handle(this, call, result) }
