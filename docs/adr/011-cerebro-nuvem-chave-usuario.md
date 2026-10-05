@@ -114,6 +114,20 @@ API**, com a chave do próprio usuário.
   e as que vierem (foto do prato, plano de refeições). Toda resposta é
   validada por JSON Schema (até 2 tentativas) e chega como estimativa a
   conferir.
+- **Cérebro conversando (2026-10-05):** o roteador determinístico tenta
+  primeiro, sem rede; só o que ele não resolve vai ao Gemini, com chave e
+  consentimento. Em vez do *function calling* do provedor, a IA responde
+  num JSON Schema fixo de "o que foi dito" (água, refeições, remédios,
+  sintomas, sinais vitais, medidas, perguntas); o app traduz cada item em
+  chamada de ferramenta, que passa pela mesma validação e pela mesma
+  confirmação do modo básico (`app/lib/ai/brain_ai.dart`,
+  `BrainPipeline.runPlan`). Motivo: o mesmo caminho já validado das outras
+  tarefas, e a IA nunca vê a lista de ferramentas nem dado guardado. Vai
+  só o texto da mensagem e a hora atual; o remédio citado é casado com os
+  cadastrados **no aparelho**. A IA não completa dose: sem dose dita e sem
+  cadastro, o app pergunta. Perguntas sobre os próprios dados são
+  respondidas localmente. Sinal de alerta vira o aviso fixo do app
+  ("procure atendimento… 192"), não texto da IA.
 - **Não verificado:** PDF enviado direto em `inlineData` (os exemplos do SDK
   mostram PDF por URI; imagem por bytes). Confirmar no primeiro teste no
   aparelho; se o provedor recusar, o app mostra o erro e a pessoa pode

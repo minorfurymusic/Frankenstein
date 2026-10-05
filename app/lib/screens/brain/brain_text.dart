@@ -12,14 +12,51 @@ class ProposalView {
   final String title;
   final String? detail;
   final String savedIn;
-  const ProposalView(this.area, this.title, this.detail, this.savedIn);
+
+  /// Quando a pessoa disse ("hoje, 09:00"); sem hora dita, vale agora.
+  final String? when;
+
+  /// Valores estimados pela IA — o cartão marca e deixa editar.
+  final bool estimated;
+  const ProposalView(this.area, this.title, this.detail, this.savedIn, {this.when, this.estimated = false});
 }
+
+/// "hoje, 09:00", "ontem, 21:30" ou "03/10, 08:00" — no fuso do aparelho.
+String? whenLabel(Object? atUtc, {DateTime? now}) {
+  if (atUtc is! String) return null;
+  final at = DateTime.tryParse(atUtc)?.toLocal();
+  if (at == null) return null;
+  final today = now ?? DateTime.now();
+  final d0 = DateTime(today.year, today.month, today.day);
+  final d = DateTime(at.year, at.month, at.day);
+  final diff = d0.difference(d).inDays;
+  String two(int v) => v.toString().padLeft(2, '0');
+  final day = switch (diff) {
+    0 => 'hoje',
+    1 => 'ontem',
+    _ => '${two(at.day)}/${two(at.month)}',
+  };
+  return '$day, ${two(at.hour)}:${two(at.minute)}';
+}
+
+const _bodyLabels = {
+  'weight': 'Peso',
+  'body_fat': 'Gordura corporal',
+  'waist': 'Cintura',
+  'hip': 'Quadril',
+  'chest': 'Peito',
+  'neck': 'Pescoço',
+  'arm': 'Braço',
+  'thigh': 'Coxa',
+  'calf': 'Panturrilha',
+};
 
 ProposalView describeProposal(AppDependencies deps, String tool, Map<String, dynamic> p) {
   String n(Object? v, {int d = 0}) => v is num ? formatNumber(v, decimals: d) : '$v';
+  final when = whenLabel(p['at']);
   switch (tool) {
     case 'log_water':
-      return ProposalView(HealthArea.water, 'Água — ${n(p['amount_ml'])} ml', 'hoje, agora', 'Nutrição › Água');
+      return ProposalView(HealthArea.water, 'Água — ${n(p['amount_ml'])} ml', null, 'Nutrição › Água', when: when ?? 'hoje, agora');
     case 'log_meal':
       final items = (p['items'] as List? ?? const []).cast<Map<String, dynamic>>();
       var kcal = 0.0;
@@ -30,9 +67,20 @@ ProposalView describeProposal(AppDependencies deps, String tool, Map<String, dyn
         names.add('${food?.name ?? i['food_id']} ${n(grams)} g');
         if (food != null) kcal += food.energyKcalPer100g * grams / 100;
       }
-      final type = MealType.values.where((t) => t.name == p['meal_type']).firstOrNull;
-      final label = type == null ? 'Refeição' : _mealLabel(type);
-      return ProposalView(HealthArea.meal, '$label — ${names.join(', ')}', '${n(kcal)} kcal', 'Nutrição › $label');
+      final label = _mealLabelOf(p['meal_type']);
+      return ProposalView(HealthArea.meal, '$label — ${names.join(', ')}', '${n(kcal)} kcal', 'Nutrição › $label', when: when);
+    case 'log_estimated_meal':
+      final items = (p['items'] as List? ?? const []).cast<Map<String, dynamic>>();
+      final kcal = items.fold<double>(0, (s, i) => s + (i['kcal'] as num).toDouble());
+      final label = _mealLabelOf(p['meal_type']);
+      return ProposalView(
+        HealthArea.meal,
+        '$label — ${items.map((i) => '${i['name']} ${n(i['grams'])} g').join(', ')}',
+        '≈ ${n(kcal)} kcal (estimativa)',
+        'Nutrição › $label',
+        when: when,
+        estimated: true,
+      );
     case 'log_workout_session':
       final sets = (p['sets'] as List? ?? const []).cast<Map<String, dynamic>>();
       return ProposalView(
@@ -40,23 +88,49 @@ ProposalView describeProposal(AppDependencies deps, String tool, Map<String, dyn
         'Treino — ${sets.length} ${sets.length == 1 ? 'série' : 'séries'}',
         sets.map((s) => '${s['exercise_name']} ${n(s['load_kg'], d: 1)} kg × ${s['reps']}').join(' · '),
         'Exercícios › Academia',
+        when: when,
       );
     case 'add_medication':
       return ProposalView(HealthArea.medication, '${p['name']} ${n(p['dose_amount'])} ${p['dose_unit']}',
           'Horários: ${(p['times'] as List? ?? const []).join(', ')}', 'Saúde › Remédios');
     case 'log_medication_dose':
-      return ProposalView(HealthArea.medication, 'Remédio ${p['status'] == 'skipped' ? 'pulado' : 'tomado'} — ${p['name']}',
-          p['dose_amount'] == null ? null : '${n(p['dose_amount'])} ${p['dose_unit'] ?? ''}', 'Saúde › Remédios');
+      final med = p['medication_id'] == null ? null : deps.medicationRepository.findById('${p['medication_id']}');
+      final name = p['name'] ?? med?.name ?? 'remédio';
+      final amount = p['dose_amount'] ?? med?.doseAmount;
+      final unit = p['dose_unit'] ?? med?.doseUnit;
+      return ProposalView(HealthArea.medication, 'Remédio ${p['status'] == 'skipped' ? 'pulado' : 'tomado'} — $name',
+          amount == null ? null : '${n(amount, d: amount is num && amount % 1 != 0 ? 1 : 0)} ${unit ?? ''}'.trim(), 'Saúde › Remédios',
+          when: when ?? 'hoje, agora');
     case 'log_symptom':
       return ProposalView(HealthArea.symptom, 'Sintoma — ${p['name']}',
-          p['intensity'] == null ? null : 'Intensidade ${p['intensity']} de 10', 'Saúde › Histórico médico');
+          p['intensity'] == null ? null : 'Intensidade ${p['intensity']} de 10', 'Saúde › Histórico médico',
+          when: when ?? 'hoje, agora');
     case 'log_vital_sign':
-      return ProposalView(HealthArea.vitalSign, 'Sinal vital — ${p['kind']}', '$p', 'Saúde › Sinais vitais');
+      final title = switch (p['kind']) {
+        'blood_pressure' => 'Pressão — ${n(p['systolic_mmhg'])}/${n(p['diastolic_mmhg'])} mmHg',
+        'glucose' => 'Glicemia — ${n(p['glucose_mg_dl'])} mg/dL',
+        'temperature' => 'Temperatura — ${n(p['celsius'], d: 1)} °C',
+        'spo2' => 'Saturação — ${n(p['spo2_percent'])}%',
+        'heart_rate' => 'Frequência cardíaca — ${n(p['bpm'])} bpm',
+        _ => 'Sinal vital — ${p['kind']}',
+      };
+      return ProposalView(HealthArea.vitalSign, title, p['glucose_context'] as String?, 'Saúde › Sinais vitais',
+          when: when ?? 'hoje, agora');
     case 'log_body_measurement':
-      return ProposalView(HealthArea.body, 'Medida — ${p['kind']}', '$p', 'Saúde › Corpo');
+      final kind = '${p['kind']}';
+      final unit = switch (kind) { 'weight' => 'kg', 'body_fat' => '%', _ => 'cm' };
+      final v = p['value'];
+      return ProposalView(HealthArea.body, '${_bodyLabels[kind] ?? kind} — ${n(v, d: v is num && v % 1 != 0 ? 1 : 0)} $unit', null,
+          'Saúde › Corpo',
+          when: when ?? 'hoje, agora');
     default:
       return ProposalView(HealthArea.body, tool, '$p', 'RLT');
   }
+}
+
+String _mealLabelOf(Object? wire) {
+  final type = MealType.values.where((t) => t.name == wire).firstOrNull;
+  return type == null ? 'Refeição' : _mealLabel(type);
 }
 
 String _mealLabel(MealType t) => switch (t) {
@@ -89,6 +163,11 @@ String describeReadResult(String tool, Map<String, dynamic> data) {
     case 'get_workout_plan':
       final exercises = (data['exercises'] as List? ?? const []).cast<Map<String, dynamic>>();
       return '${data['name'] ?? 'Plano'}:\n${exercises.map((e) => '• ${e['exercise_name']} ${e['target_sets']}×${e['target_reps']}').join('\n')}';
+    case 'get_medication_agenda':
+      final doses = (data['doses'] as List? ?? const []).cast<Map<String, dynamic>>();
+      if (doses.isEmpty) return 'Nenhum remédio na agenda de hoje.';
+      String status(Object? s) => switch (s) { 'taken' => 'tomado', 'skipped' => 'pulado', _ => 'pendente' };
+      return 'Remédios de hoje:\n${doses.map((d) => '• ${d['time']} ${d['name']} ${n(d['dose_amount'])} ${d['dose_unit']} — ${status(d['status'])}').join('\n')}';
     case 'get_run_summary':
       return 'Corrida: ${n((data['distance_meters'] as num? ?? 0) / 1000, d: 2)} km em '
           '${n((data['duration_seconds'] as num? ?? 0) / 60)} min.';

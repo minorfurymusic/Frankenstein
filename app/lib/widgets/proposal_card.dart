@@ -130,7 +130,7 @@ class ProposalCard extends StatelessWidget {
             overflowSpacing: RltSpace.s,
             children: [
               TextButton(onPressed: onCancelEdit, child: const Text('Cancelar')),
-              FilledButton.icon(onPressed: onConfirm, icon: const Icon(Icons.check, size: 18), label: const Text('Confirmar')),
+              FilledButton.icon(key: confirmKey, onPressed: onConfirm, icon: const Icon(Icons.check, size: 18), label: const Text('Confirmar')),
             ],
           ),
         ],

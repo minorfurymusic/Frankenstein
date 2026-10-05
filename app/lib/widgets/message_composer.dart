@@ -27,7 +27,11 @@ class MessageComposer extends StatefulWidget {
   final Key? fieldKey;
   final Key? sendKey;
 
+  /// Texto de ajuda do campo no modo básico.
+  final String? hint;
+
   const MessageComposer({
+    this.hint,
     this.fieldKey,
     this.sendKey,
     super.key,
@@ -117,7 +121,7 @@ class _MessageComposerState extends State<MessageComposer> {
 
     if (widget.mode == ComposerMode.basic) {
       return _Bar(children: [
-        Expanded(child: _field(c, t, hint: 'Comando, ex.: registrar água 500ml', withCamera: false)),
+        Expanded(child: _field(c, t, hint: widget.hint ?? 'Comando, ex.: registrar água 500ml', withCamera: false)),
         const SizedBox(width: RltSpace.s),
         IconButton.filledTonal(
           key: widget.sendKey,

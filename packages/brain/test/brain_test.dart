@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:frankstein_brain/brain.dart';
 import 'package:frankstein_health_core/health_core.dart';
 import 'package:frankstein_tool_registry/tool_registry.dart';
@@ -96,6 +98,25 @@ ToolHandler _logMealHandler(HealthDataCore core) {
     core.insertEvent(event);
     return ToolResult.ok({'event_id': event.id});
   };
+}
+
+/// Gate que segura cada cartão até o teste decidir — prova que os cartões
+/// de um plano aparecem juntos e são decididos um a um.
+class _HeldGate implements ConfirmationGate {
+  final pending = <Map<String, dynamic>, Completer<bool>>{};
+  @override
+  Future<bool> confirm(ToolSpec spec, Map<String, dynamic> params) {
+    final c = Completer<bool>();
+    pending[params] = c;
+    return c.future;
+  }
+}
+
+class _FakePlanner implements PlanningToolCaller {
+  final ToolCallPlan answer;
+  _FakePlanner(this.answer);
+  @override
+  Future<ToolCallPlan> plan(String userInput, List<ToolSpec> availableTools) async => answer;
 }
 
 void main() {
@@ -220,6 +241,67 @@ void main() {
 
       final result = await pipeline.handle('fantasma');
       expect(result.outcome, PipelineOutcome.unresolved);
+    });
+  });
+  group('BrainPipeline.handleWith — vários registros de uma mensagem (IA)', () {
+    test('cada chamada vira um cartão; todos aparecem juntos e são decididos um a um', () async {
+      final gate = _HeldGate();
+      final pipeline = BrainPipeline(registry: registry, callers: [_buildRouter()], confirmationGate: gate);
+      final lunch = {
+        'meal_type': 'lunch',
+        'items': [
+          {'food_id': 'ovo', 'grams': 150}
+        ],
+      };
+      final dinner = {
+        'meal_type': 'dinner',
+        'items': [
+          {'food_id': 'sopa', 'grams': 300}
+        ],
+      };
+      final planner = _FakePlanner(ToolCallPlan(
+        calls: [
+          ToolCallDecision('log_meal', lunch),
+          ToolCallDecision('log_meal', {'items': <Object>[]}), // inválida: sem meal_type
+          ToolCallDecision('log_meal', dinner),
+        ],
+        messages: ['Anotei duas refeições.'],
+      ));
+
+      final future = pipeline.handleWith(planner, 'almocei 3 ovos e jantei sopa');
+      await Future<void>.delayed(Duration.zero);
+      // Os dois válidos esperam a pessoa ao mesmo tempo; o inválido nem pediu.
+      expect(gate.pending.keys, [lunch, dinner]);
+      gate.pending[dinner]!.complete(true);
+      gate.pending[lunch]!.complete(false);
+
+      final r = await future;
+      expect(r.messages, ['Anotei duas refeições.']);
+      expect(r.results.map((x) => x.outcome), [
+        PipelineOutcome.abortedByUser,
+        PipelineOutcome.rejected,
+        PipelineOutcome.executed,
+      ]);
+      final stored = core.queryByType(HealthEventType.meal).single;
+      expect(stored.payload['meal_type'], 'dinner');
+    });
+
+    test('parâmetro estragado depois da confirmação (edição) é rejeitado, não executado', () async {
+      final params = <String, dynamic>{
+        'meal_type': 'snack',
+        'items': [
+          {'food_id': 'fruta', 'grams': 100}
+        ],
+      };
+      final gate = _HeldGate();
+      final pipeline = BrainPipeline(registry: registry, callers: const [], confirmationGate: gate);
+      final future = pipeline.handleWith(_FakePlanner(ToolCallPlan(calls: [ToolCallDecision('log_meal', params)])), 'x');
+      await Future<void>.delayed(Duration.zero);
+      params.remove('meal_type');
+      gate.pending.values.single.complete(true);
+      final r = await future;
+      expect(r.results.single.outcome, PipelineOutcome.rejected);
+      expect(core.queryByType(HealthEventType.meal), isEmpty);
     });
   });
 }

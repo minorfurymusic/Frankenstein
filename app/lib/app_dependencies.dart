@@ -13,6 +13,7 @@ import 'package:frankstein_tool_registry/tool_registry.dart';
 import 'package:flutter/material.dart' show ThemeMode, ValueNotifier;
 
 import 'ai/ai_settings.dart';
+import 'ai/brain_ai.dart';
 import 'card_image_capturer.dart';
 import 'data/activity_read_model.dart';
 import 'data/day_read_model.dart';
@@ -346,6 +347,8 @@ class AppDependencies {
       tzOffsetMinutesProvider: tzOffsetMinutesProvider,
     );
 
+    final nutrition = NutritionStore(foods: foodRepository, settings: profileRepository, core: core);
+
     final registry = ToolRegistry()
       ..register(getStepsSpec(), getStepsHandler(core))
       ..register(getDailySummarySpec(), getDailySummaryHandler(core))
@@ -359,6 +362,10 @@ class AppDependencies {
       ..register(
         logMealSpec(),
         logMealHandler(mealLogger, tzOffsetMinutesProvider: tzOffsetMinutesProvider),
+      )
+      ..register(
+        logEstimatedMealSpec(),
+        logEstimatedMealHandler(nutrition, mealLogger, tzOffsetMinutesProvider: tzOffsetMinutesProvider),
       )
       ..register(
         logWaterSpec(),
@@ -429,7 +436,7 @@ class AppDependencies {
       profileRepository: profileRepository,
       mealLogger: mealLogger,
       waterLogger: waterLogger,
-      nutrition: NutritionStore(foods: foodRepository, settings: profileRepository, core: core),
+      nutrition: nutrition,
       dayRead: dayRead,
       goals: GoalsService(
         profiles: profileRepository,

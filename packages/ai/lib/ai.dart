@@ -4,6 +4,7 @@
 /// por JSON Schema e chega como estimativa a conferir.
 library;
 
+export 'src/chat_intents.dart';
 export 'src/exam_reading.dart';
 export 'src/gemini_client.dart';
 export 'src/meal_plan_ai.dart';

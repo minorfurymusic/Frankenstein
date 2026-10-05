@@ -204,12 +204,13 @@ class NutritionStore {
     double carbs = 0,
     double fat = 0,
     double? fiber,
+    String idPrefix = 'photo',
   }) {
     if (name.trim().isEmpty) throw ArgumentError('dê um nome ao alimento');
     if (grams <= 0) throw ArgumentError('a porção precisa ser maior que zero');
     final per100 = 100 / grams;
     final food = Food(
-      id: 'photo-${HealthDataCore.newId()}',
+      id: '$idPrefix-${HealthDataCore.newId()}',
       name: name.trim(),
       source: FoodSource.custom,
       energyKcalPer100g: kcal * per100,
