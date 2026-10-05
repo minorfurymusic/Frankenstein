@@ -19,6 +19,7 @@ import 'data/day_read_model.dart';
 import 'data/health_read_model.dart';
 import 'data/nutrition_store.dart';
 import 'documents/document_files.dart';
+import 'run/opentracks.dart';
 import 'run/run_recorder.dart';
 import 'wearables/health_connect.dart';
 import 'reminders/reminders.dart';
@@ -63,6 +64,9 @@ class AppDependencies {
 
   /// Gravador de corrida/caminhada com GPS (ADR-9 revisão 1).
   final RunRecorder runRecorder;
+
+  /// App OpenTracks instalado (ADR-9 revisão 2).
+  final OpenTracksBridge openTracks;
 
   /// IA com a chave do usuário (ADR-11): Gemini. Sem chave, modo básico.
   final AiSettings ai;
@@ -128,6 +132,7 @@ class AppDependencies {
     required this.documentPicker,
     required this.pdfRenderer,
     required this.runRecorder,
+    required this.openTracks,
     required this.ai,
     required this.registry,
     required this.pipeline,
@@ -195,8 +200,10 @@ class AppDependencies {
     RunRecorder? runRecorder,
     SecretStore? secretStore,
     AiTransport? aiTransport,
+    OpenTracksBridge? openTracks,
   }) {
     return _build(
+      openTracks: openTracks ?? defaultOpenTracksBridge(),
       secretStore: secretStore ?? defaultSecretStore(),
       aiTransport: aiTransport,
       reminderScheduler: reminderScheduler ?? defaultReminderScheduler(),
@@ -231,8 +238,10 @@ class AppDependencies {
     RunRecorder? runRecorder,
     SecretStore? secretStore,
     AiTransport? aiTransport,
+    OpenTracksBridge? openTracks,
   }) {
     return _build(
+      openTracks: openTracks ?? FakeOpenTracksBridge(),
       secretStore: secretStore ?? MemorySecretStore(),
       aiTransport: aiTransport,
       reminderScheduler: reminderScheduler ?? NoopReminderScheduler(),
@@ -286,6 +295,7 @@ class AppDependencies {
   }
 
   static AppDependencies _build({
+    required OpenTracksBridge openTracks,
     required SecretStore secretStore,
     AiTransport? aiTransport,
     required ReminderScheduler reminderScheduler,
@@ -398,6 +408,7 @@ class AppDependencies {
       documentPicker: documentPicker,
       pdfRenderer: pdfRenderer,
       runRecorder: runRecorder,
+      openTracks: openTracks,
       ai: AiSettings(secrets: secretStore, settings: profileRepository, transport: aiTransport),
       registry: registry,
       pipeline: pipeline,

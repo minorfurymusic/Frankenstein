@@ -38,7 +38,7 @@ HealthEvent
   confidence         float
   device_id          string?
   external_id        string?   -- id do evento na fonte externa (wearable,
-                                   wger, fasten); par com 'source' formam a
+                                   wger, fasten, opentracks); par com 'source' formam a
                                    chave de deduplicação. Nulo pra eventos
                                    sem origem externa (manual, llm).
   corrects_event_id  uuid?     -- id do HealthEvent que este evento corrige.

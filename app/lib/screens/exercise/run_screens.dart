@@ -14,6 +14,7 @@ import '../../theme/rlt_theme.dart';
 import '../../widgets/common.dart';
 import '../../widgets/state_views.dart';
 import 'activity_screens.dart';
+import 'opentracks_screens.dart';
 
 String runKindLabel(RunKind k) => k == RunKind.walk ? 'Caminhada' : 'Corrida';
 
@@ -61,6 +62,10 @@ class _RunStartScreenState extends State<RunStartScreen> {
   bool? _gps;
   bool _starting = false;
 
+  /// OpenTracks instalado: dá para gravar por ele (ADR-9 revisão 2).
+  bool _openTracksInstalled = false;
+  late bool _useOpenTracks = widget.deps.profileRepository.getSetting('run_recorder') != 'rlt';
+
   RunRecorder get _rec => widget.deps.runRecorder;
 
   @override
@@ -72,17 +77,30 @@ class _RunStartScreenState extends State<RunStartScreen> {
   Future<void> _check() async {
     final p = await _rec.hasPermission();
     final g = await _rec.gpsEnabled();
+    final ot = await widget.deps.openTracks.installed();
     if (mounted) {
       setState(() {
         _permission = p;
         _gps = g;
+        _openTracksInstalled = ot;
       });
     }
   }
 
+  bool get _viaOpenTracks => _openTracksInstalled && _useOpenTracks;
+
   Future<void> _start() async {
     setState(() => _starting = true);
     widget.deps.profileRepository.setSetting('run_auto_pause', _autoPause ? '1' : '0');
+    if (_openTracksInstalled) widget.deps.profileRepository.setSetting('run_recorder', _useOpenTracks ? 'opentracks' : 'rlt');
+    if (_viaOpenTracks) {
+      await widget.deps.openTracks.start(_kind);
+      if (!mounted) return;
+      await Navigator.of(context).pushReplacement(
+        MaterialPageRoute<void>(builder: (_) => OpenTracksLiveScreen(deps: widget.deps, kind: _kind)),
+      );
+      return;
+    }
     try {
       await _rec.start(_kind, autoPause: _autoPause);
       if (!mounted) return;
@@ -98,7 +116,7 @@ class _RunStartScreenState extends State<RunStartScreen> {
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
-    final ready = _permission == true && _gps == true;
+    final ready = _viaOpenTracks || (_permission == true && _gps == true);
     return Scaffold(
       appBar: AppBar(title: const Text('Corrida e caminhada')),
       body: ListView(padding: const EdgeInsets.all(RltSpace.l), children: [
@@ -111,7 +129,30 @@ class _RunStartScreenState extends State<RunStartScreen> {
           onSelectionChanged: (v) => setState(() => _kind = v.first),
         ),
         const SizedBox(height: RltSpace.l),
-        if (_permission == null)
+        if (_openTracksInstalled) ...[
+          Text('Gravar com', style: t.labelLarge),
+          const SizedBox(height: RltSpace.xs),
+          SegmentedButton<bool>(
+            key: const Key('run_recorder_choice'),
+            segments: const [
+              ButtonSegment(value: true, label: Text('OpenTracks')),
+              ButtonSegment(value: false, label: Text('RLT')),
+            ],
+            selected: {_useOpenTracks},
+            onSelectionChanged: (v) => setState(() => _useOpenTracks = v.first),
+          ),
+          const SizedBox(height: RltSpace.m),
+        ],
+        if (_viaOpenTracks)
+          Card(
+            key: const Key('run_opentracks_info'),
+            child: ListTile(
+              leading: const Icon(Icons.route_outlined),
+              title: const Text('O OpenTracks grava; o RLT acompanha e salva no fim'),
+              subtitle: const Text(openTracksSetupHelp),
+            ),
+          )
+        else if (_permission == null)
           const LoadingCard()
         else if (_permission == false)
           StateCard(
@@ -146,7 +187,7 @@ class _RunStartScreenState extends State<RunStartScreen> {
             ),
           ),
         const SizedBox(height: RltSpace.m),
-        SwitchListTile(
+        if (!_viaOpenTracks) SwitchListTile(
           key: const Key('run_auto_pause'),
           contentPadding: EdgeInsets.zero,
           title: const Text('Pausa automática'),

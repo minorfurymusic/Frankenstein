@@ -87,6 +87,12 @@
             <intent-filter>
                 <action android:name="androidx.health.ACTION_SHOW_PERMISSIONS_RATIONALE"/>
             </intent-filter>
+            <!-- OpenTracks entrega trilhas por aqui (API de dados, "mostrar no
+                 painel"): só leitura temporária, por escolha da pessoa. -->
+            <intent-filter>
+                <action android:name="Intent.OpenTracks-Dashboard"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+            </intent-filter>
         </activity>
         <!-- Mesmo papel no Android 14+. -->
         <activity-alias
@@ -134,5 +140,11 @@
         </intent>
         <!-- Saber se o Health Connect está instalado (Android 9 a 13). -->
         <package android:name="com.google.android.apps.healthdata"/>
+        <!-- OpenTracks (F-Droid, Play, nightly, debug) para a integração. -->
+        <package android:name="de.dennisguse.opentracks"/>
+        <package android:name="de.dennisguse.opentracks.playStore"/>
+        <package android:name="de.dennisguse.opentracks.playstore"/>
+        <package android:name="de.dennisguse.opentracks.nightly"/>
+        <package android:name="de.dennisguse.opentracks.debug"/>
     </queries>
 </manifest>

@@ -59,7 +59,11 @@ enum HealthEventSource {
   manual,
   wger,
   fasten,
-  llm;
+  llm,
+
+  /// Trilha gravada no app OpenTracks e trazida pela API de dados dele
+  /// (ADR-9 revisão 2). `externalId` = UUID da trilha no OpenTracks.
+  opentracks;
 
   String get wireValue => name;
 

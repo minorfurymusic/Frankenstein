@@ -23,7 +23,21 @@ branco: navegação Resumo/Chat de verdade, ligada aos pacotes reais, com
 compartilhamento de treino/corrida funcionando de ponta a ponta. Detalhe
 completo em `docs/HISTORICO.md`.
 
-**Ciclo mais recente (2026-10-05): peso desejado.** Decisão do usuário na
+**Ciclo mais recente (2026-10-05): integração com o OpenTracks.** Decisão do
+usuário na ADR-9 revisão 2. `OpenTracksBridge.kt` usa só as APIs públicas
+do OpenTracks (lidas no repositório dele): API pública (iniciar/parar por
+Intent explícita) e API de dados (URIs de leitura temporária da trilha e
+dos pontos, ação `Intent.OpenTracks-Dashboard`). Com o OpenTracks
+instalado, Iniciar mostra "Gravar com: OpenTracks | RLT" (padrão
+OpenTracks); a tela ao vivo mostra tempo em movimento, km e ritmo lidos do
+OpenTracks e, ao terminar, salva a rota (`gps_track`, origem `opentracks`,
+`external_id` = UUID — não duplica). "Mostrar no painel" no OpenTracks
+abre o RLT, que pergunta antes de trazer. Se o OpenTracks não responder em
+~12 s, o app explica que é preciso ligar a "API pública" e a "API de
+dados" nele. O gravador próprio continua como alternativa. Não verificado
+com o OpenTracks real (só no aparelho).
+
+**Ciclo anterior (2026-10-05): peso desejado.** Decisão do usuário na
 ADR-17: campo opcional em Conta › Perfil que comanda o objetivo — acima do
 peso desejado por mais de 1 kg perde, abaixo ganha, dentro de ±1 kg mantém
 (passa sozinho para manutenção ao chegar). Calorias, proteína e "meta do

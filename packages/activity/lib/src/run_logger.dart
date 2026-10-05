@@ -66,6 +66,8 @@ class RunLogger {
     double maxAccuracyMeters = RunCalculator.defaultMaxAccuracyMeters,
     DateTime? recordedAt,
     RunKind? kind,
+    HealthEventSource source = HealthEventSource.manual,
+    String? externalId,
   }) {
     final points = RunCalculator.filterSpeedOutliers(
       RunCalculator.filterByAccuracy(rawPoints, maxAccuracyMeters: maxAccuracyMeters),
@@ -81,7 +83,7 @@ class RunLogger {
     final event = HealthEvent(
       id: HealthDataCore.newId(),
       type: HealthEventType.gpsTrack,
-      source: HealthEventSource.manual,
+      source: source,
       occurredAt: occurredAt,
       occurredAtTzOffsetMinutes: occurredAtTzOffsetMinutes,
       recordedAt: recordedAt ?? DateTime.now().toUtc(),
@@ -106,6 +108,7 @@ class RunLogger {
         ],
       },
       confidence: 1.0,
+      externalId: externalId,
     );
     core.insertEvent(event);
 

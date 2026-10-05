@@ -5,6 +5,7 @@ import 'screens/account_screen.dart';
 import 'screens/brain/brain_screen.dart';
 import 'screens/home/home_screen.dart';
 import 'screens/exercise/exercise_tab.dart';
+import 'screens/exercise/opentracks_screens.dart';
 import 'screens/health/health_tab.dart';
 import 'screens/nutrition/nutrition_tab.dart';
 import 'widgets/rlt_navigation_bar.dart';
@@ -22,8 +23,33 @@ class HomeShell extends StatefulWidget {
   State<HomeShell> createState() => _HomeShellState();
 }
 
-class _HomeShellState extends State<HomeShell> {
+class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   RltTab _tab = RltTab.inicio;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _checkOpenTracks());
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _checkOpenTracks();
+  }
+
+  /// O OpenTracks pode abrir o RLT com uma trilha ("mostrar no painel"):
+  /// pergunta antes de trazer.
+  Future<void> _checkOpenTracks() async {
+    if (!mounted) return;
+    await offerOpenTracksImport(context, widget.dependencies);
+  }
 
   void _openAccount() {
     Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => AccountScreen(deps: widget.dependencies)));

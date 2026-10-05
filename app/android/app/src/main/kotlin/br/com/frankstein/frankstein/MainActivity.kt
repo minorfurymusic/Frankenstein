@@ -122,6 +122,11 @@ class MainActivity : FlutterActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "rlt/secure")
             .setMethodCallHandler { call, result -> SecureStore.handle(this, call, result) }
 
+        // OpenTracks instalado: API pública + API de dados (OpenTracksBridge.kt).
+        OpenTracksBridge.noteIntent(intent)
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "rlt/opentracks")
+            .setMethodCallHandler { call, result -> OpenTracksBridge.handle(this, call, result) }
+
         // Corrida/caminhada: gravador próprio com GPS (RunRecorderService.kt).
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "rlt/run")
             .setMethodCallHandler { call, result -> RunBridge.handle(this, call, result) }
@@ -203,6 +208,7 @@ class MainActivity : FlutterActivity() {
     override fun onNewIntent(intent: Intent) {
         super.onNewIntent(intent)
         HealthConnectBridge.noteLaunchIntent(intent)
+        OpenTracksBridge.noteIntent(intent)
     }
 
     override fun onRequestPermissionsResult(
