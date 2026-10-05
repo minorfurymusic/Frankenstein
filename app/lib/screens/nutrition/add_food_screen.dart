@@ -12,6 +12,7 @@ import '../../widgets/common.dart';
 import 'barcode_scanner_screen.dart';
 import 'food_detail_screen.dart';
 import 'meal_labels.dart';
+import 'plate_photo_screen.dart';
 
 /// Adicionar alimento (prancheta AdicionarAlimento; `docs/specs/nutricao.md`,
 /// tela 2): busca por nome, código de barras, adição rápida, foto do prato,
@@ -123,9 +124,10 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                   if (created != null && mounted) _open(created, method: MealItemInputMethod.quickAdd);
                 }),
                 const SizedBox(width: RltSpace.s),
-                // TODO(frankstein): foto do prato vai para o Cérebro analisar (precisa da IA com a chave do usuário, ADR-11).
                 action('add_photo', Icons.photo_camera_outlined, 'Foto do prato', () {
-                  showRltSaved(context, 'Foto do prato: entra com a IA (Conta › Cérebro). Por enquanto, busque ou use a adição rápida.');
+                  Navigator.of(context).push(MaterialPageRoute<void>(
+                    builder: (_) => PlatePhotoScreen(deps: widget.deps, mealType: widget.mealType, day: widget.day),
+                  ));
                 }),
               ]),
             ]),

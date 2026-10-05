@@ -15,12 +15,12 @@ import '../../widgets/common.dart';
 import '../../widgets/weight_target.dart';
 import '../../widgets/line_chart.dart';
 import '../../widgets/progress.dart';
-import '../../widgets/state_views.dart';
 import '../account/goals_screen.dart';
 import '../account/profile_screen.dart';
 import 'add_food_screen.dart';
 import 'diet_screens.dart';
 import 'meal_labels.dart';
+import 'plate_photo_screen.dart';
 
 /// Aba Nutrição (prancheta NutricaoHoje): Hoje, Diário, Tendências e
 /// Galeria; atalhos para Dieta e metas e Receitas próprias.
@@ -62,14 +62,7 @@ class NutritionTab extends StatelessWidget {
               NutritionDayView(deps: deps, key: const Key('nutrition_today')),
               DiaryView(deps: deps),
               TrendsView(deps: deps),
-              // TODO(frankstein): galeria de pratos precisa das fotos do prato (câmera + IA, etapa de integrações).
-              ListView(padding: const EdgeInsets.all(RltSpace.l), children: const [
-                StateCard(
-                  icon: Icons.photo_library_outlined,
-                  title: 'Galeria de pratos: em construção',
-                  message: 'As fotos dos pratos entram junto com a câmera e a IA.',
-                ),
-              ]),
+              PlateGalleryView(deps: deps),
             ]),
           ),
         ),

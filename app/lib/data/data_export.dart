@@ -143,6 +143,9 @@ Map<String, dynamic> buildFullExport(AppDependencies deps, {DateTime? now}) {
     'recipes': [for (final r in deps.nutrition.recipes()) r.toJson()],
     'diet_preferences': deps.nutrition.dietPreferences().toJson(),
     'meal_plan': deps.mealPlans.load()?.toJson(),
+    'plate_photos': [
+      for (final p in deps.nutrition.platePhotos()) {...p.toJson(), 'path_in_export': '$exportFilesDir/${p.storedName}'},
+    ],
     'events': events,
   };
 }
@@ -161,6 +164,7 @@ Future<Uint8List> buildFullExportZip(AppDependencies deps) async {
     ...deps.documents.allStoredNames(),
     for (final r in deps.nutrition.recipes()) ?r.photo,
     ...?deps.mealPlans.load()?.attachments,
+    for (final p in deps.nutrition.platePhotos()) p.storedName,
   };
   for (final name in names) {
     final bytes = await deps.documentFiles.readBytes(name);

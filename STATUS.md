@@ -23,7 +23,20 @@ branco: navegação Resumo/Chat de verdade, ligada aos pacotes reais, com
 compartilhamento de treino/corrida funcionando de ponta a ponta. Detalhe
 completo em `docs/HISTORICO.md`.
 
-**Ciclo mais recente (2026-10-05): plano de refeições.** Decisão do usuário
+**Ciclo mais recente (2026-10-05): foto do prato.** Adicionar alimento ›
+Foto do prato (prancheta CerebroFotoPrato): foto da câmera/galeria, peso da
+balança opcional e refeição; com a IA (consentimento antes do primeiro
+envio), o Gemini identifica os alimentos e estima porção, kcal e macros
+(com o peso, as porções somam o peso). Cartão de revisão "Estimativa":
+ajustar gramas (recalcula na proporção), tirar, adicionar alimento,
+totais; nada é gravado antes de "Confirmar". Grava a refeição com
+`input_method: photo` (alimentos estimados não entram em "Meus itens") e a
+foto vai para a nova aba **Galeria** (por data, foto grande ao tocar),
+incluída na exportação. Tarefa de IA em
+`packages/ai/lib/src/plate_estimate.dart`. Corrigido de carona: diálogos
+que liberavam o campo de texto enquanto fechavam.
+
+**Ciclo anterior (2026-10-05): plano de refeições.** Decisão do usuário
 na ADR-18. Nutrição › Dieta e metas › Plano de refeições: importar do
 profissional (foto/PDF; a IA transcreve sem mudar nada, o documento fica
 guardado e entra na exportação; sem IA, guarda e a pessoa digita), montar

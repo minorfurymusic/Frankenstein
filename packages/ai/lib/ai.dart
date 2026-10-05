@@ -7,3 +7,4 @@ library;
 export 'src/exam_reading.dart';
 export 'src/gemini_client.dart';
 export 'src/meal_plan_ai.dart';
+export 'src/plate_estimate.dart';

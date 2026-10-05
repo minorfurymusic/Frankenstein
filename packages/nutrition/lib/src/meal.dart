@@ -29,6 +29,10 @@ enum MealItemInputMethod {
   barcode,
   quickAdd,
 
+  /// Estimado pela IA a partir da foto do prato (ADR-11) — sempre
+  /// estimativa, conferida antes de gravar.
+  photo,
+
   /// Quem chamou (ex.: a ferramenta do cérebro, que só recebe `food_id`)
   /// não informou o caminho — não é um bug, é a ausência legítima desse
   /// dado nesse caminho de entrada.
@@ -38,6 +42,7 @@ enum MealItemInputMethod {
         MealItemInputMethod.search => 'search',
         MealItemInputMethod.barcode => 'barcode',
         MealItemInputMethod.quickAdd => 'quick_add',
+        MealItemInputMethod.photo => 'photo',
         MealItemInputMethod.unspecified => 'unspecified',
       };
 }

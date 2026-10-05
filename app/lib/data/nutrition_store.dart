@@ -81,6 +81,40 @@ class DietPreferences {
       );
 }
 
+/// Foto de um prato gravado pela foto (Galeria de pratos).
+class PlatePhoto {
+  final String mealEventId;
+  final String storedName;
+  final MealType mealType;
+  final DateTime atUtc;
+  final int tzOffsetMinutes;
+  const PlatePhoto({
+    required this.mealEventId,
+    required this.storedName,
+    required this.mealType,
+    required this.atUtc,
+    required this.tzOffsetMinutes,
+  });
+
+  DateTime get local => atUtc.add(Duration(minutes: tzOffsetMinutes));
+
+  Map<String, Object> toJson() => {
+        'meal_event_id': mealEventId,
+        'stored_name': storedName,
+        'meal_type': mealType.wireValue,
+        'at_utc': atUtc.toIso8601String(),
+        'tz_offset_minutes': tzOffsetMinutes,
+      };
+
+  factory PlatePhoto.fromJson(Map<String, dynamic> m) => PlatePhoto(
+        mealEventId: m['meal_event_id'] as String,
+        storedName: m['stored_name'] as String,
+        mealType: MealType.fromWireValue(m['meal_type'] as String),
+        atUtc: DateTime.parse(m['at_utc'] as String),
+        tzOffsetMinutes: (m['tz_offset_minutes'] as num).toInt(),
+      );
+}
+
 /// O que a aba Nutrição guarda além dos eventos `meal`: favoritos, itens
 /// próprios (adição rápida e receitas) e preferências. Recentes saem dos
 /// próprios eventos `meal`.
@@ -159,6 +193,46 @@ class NutritionStore {
     _addMyItem(food.id);
     return food;
   }
+
+  /// Alimento estimado pela IA na foto do prato: valores da porção
+  /// convertidos para 100 g. Não entra em "Meus itens" (é de uma refeição).
+  Food createEstimatedFood({
+    required String name,
+    required double grams,
+    required double kcal,
+    double protein = 0,
+    double carbs = 0,
+    double fat = 0,
+    double? fiber,
+  }) {
+    if (name.trim().isEmpty) throw ArgumentError('dê um nome ao alimento');
+    if (grams <= 0) throw ArgumentError('a porção precisa ser maior que zero');
+    final per100 = 100 / grams;
+    final food = Food(
+      id: 'photo-${HealthDataCore.newId()}',
+      name: name.trim(),
+      source: FoodSource.custom,
+      energyKcalPer100g: kcal * per100,
+      proteinPer100g: protein * per100,
+      carbohydratesPer100g: carbs * per100,
+      fatPer100g: fat * per100,
+      fiberPer100g: fiber == null ? null : fiber * per100,
+    );
+    foods.insertCustomFood(food);
+    return food;
+  }
+
+  /// Fotos de prato (Galeria): qual refeição gravada tem qual foto.
+  List<PlatePhoto> platePhotos() {
+    final raw = settings.getSetting('plate_photos');
+    if (raw == null) return const [];
+    final list = [for (final p in jsonDecode(raw) as List) PlatePhoto.fromJson(p as Map<String, dynamic>)];
+    list.sort((a, b) => b.atUtc.compareTo(a.atUtc));
+    return list;
+  }
+
+  void addPlatePhoto(PlatePhoto p) =>
+      settings.setSetting('plate_photos', jsonEncode([p.toJson(), for (final x in platePhotos()) x.toJson()]));
 
   /// Item próprio com código de barras (quando o código não está no
   /// catálogo): valores por 100 g, como no rótulo.
