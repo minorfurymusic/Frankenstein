@@ -114,6 +114,44 @@ void main() {
     expect(find.text('7,5 h'), findsOneWidget);
   });
 
+  testWidgets('peso desejado: objetivo automático no perfil, metas de quem perde e previsão no Corpo', (tester) async {
+    deps.profileRepository.save(Profile(
+      sex: BiologicalSex.female,
+      birthDate: DateTime(1990),
+      heightMeters: 1.65,
+      objective: Objective.gain,
+      rateGramsPerDay: 50,
+    ));
+    deps.bodyLogger.weight(kg: 66, occurredAt: DateTime.now().toUtc(), occurredAtTzOffsetMinutes: 0);
+    await openAccount(tester);
+    await tester.tap(find.byKey(const Key('account_Perfil')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('profile_objective')), findsOneWidget);
+    await tester.enterText(find.byKey(const Key('profile_target')), '60');
+    await tester.pump();
+    expect(find.byKey(const Key('profile_objective')), findsNothing);
+    expect(find.textContaining('Perder — você está 6'), findsOneWidget);
+    expect(find.textContaining('~18 semanas'), findsOneWidget);
+    expect(find.textContaining('IMC no peso desejado: 22'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('profile_save')));
+    await tester.pumpAndSettle();
+    expect(deps.profileRepository.load()!.targetWeightKg, 60);
+
+    final g = deps.goals.goalsFor(DateTime.now())!;
+    expect(g.objective, Objective.lose);
+    expect(g.objectiveAdjustmentKcal, lessThan(0));
+
+    await tester.tap(find.byKey(const Key('account_Metas')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('goal_objective_source')), findsOneWidget);
+    expect(find.text('perder'), findsOneWidget);
+
+    // Chegou: vira manutenção sozinho.
+    deps.bodyLogger.weight(kg: 60.4, occurredAt: DateTime.now().toUtc().add(const Duration(minutes: 1)), occurredAtTzOffsetMinutes: 0);
+    expect(deps.goals.goalsFor(DateTime.now())!.objective, Objective.maintain);
+    expect(deps.goals.goalsFor(DateTime.now())!.targetReached, isTrue);
+  });
+
   testWidgets('Preferências troca o tema e guarda a escolha', (tester) async {
     await openAccount(tester);
     await tester.scrollUntilVisible(find.byKey(const Key('account_Preferências')), 200);

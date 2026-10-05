@@ -9,6 +9,7 @@ import '../../theme/rlt_colors.dart';
 import '../../theme/rlt_theme.dart';
 import '../../widgets/badges.dart';
 import '../../widgets/common.dart';
+import '../../widgets/weight_target.dart';
 import '../../widgets/line_chart.dart';
 
 /// O que dá para registrar em Corpo, com rótulo e unidade da tela.
@@ -147,8 +148,10 @@ class _BodyScreenState extends State<BodyScreen> {
                       RltLineChart(
                         semanticsLabel: 'Gráfico do peso nos últimos $_months meses',
                         series: [ChartSeries(label: 'Peso', color: c.protein, points: chartPoints)],
+                        referenceY: weightTargetLine(deps),
+                        referenceLabel: weightTargetLine(deps) == null ? null : 'Peso desejado',
                       ),
-                    // TODO(frankstein): linha da meta e projeção de quando chega lá (precisa de Conta › Metas, ADR-15).
+                    WeightTargetSummary(deps: deps),
                   ]),
                 ),
               ),

@@ -12,6 +12,7 @@ import '../../format.dart';
 import '../../theme/rlt_colors.dart';
 import '../../theme/rlt_theme.dart';
 import '../../widgets/common.dart';
+import '../../widgets/weight_target.dart';
 import '../../widgets/line_chart.dart';
 import '../../widgets/progress.dart';
 import '../../widgets/state_views.dart';
@@ -124,7 +125,7 @@ class _NutritionDayViewState extends State<NutritionDayView> {
     if (goals == null || p == null) {
       message = 'Dia fechado com ${formatNumber(totals.energyKcal)} kcal. Preencha o perfil para comparar com a meta.';
     } else {
-      final hit = metCalorieGoal(p.objective, consumedKcal: totals.energyKcal, goalKcal: goals.caloriesKcal);
+      final hit = metCalorieGoal(goals.objective, consumedKcal: totals.energyKcal, goalKcal: goals.caloriesKcal);
       message = hit
           ? 'Você bateu a meta: ${formatNumber(totals.energyKcal)} de ${formatNumber(goals.caloriesKcal)} kcal.'
           : 'Meta não batida: ${formatNumber(totals.energyKcal)} de ${formatNumber(goals.caloriesKcal)} kcal.';
@@ -388,7 +389,7 @@ class _DiaryViewState extends State<DiaryView> {
       final goals = future || profile == null ? null : deps.goals.goalsFor(date);
       bool? hit;
       if (totals != null && totals.mealCount > 0 && goals != null) {
-        hit = metCalorieGoal(profile!.objective, consumedKcal: totals.energyKcal, goalKcal: goals.caloriesKcal);
+        hit = metCalorieGoal(goals.objective, consumedKcal: totals.energyKcal, goalKcal: goals.caloriesKcal);
         hit ? inGoal++ : outGoal++;
       }
       final color = hit == null ? null : (hit ? c.successContainer : c.errorContainer);
@@ -551,13 +552,17 @@ class _TrendsViewState extends State<TrendsView> {
         Card(
           child: Padding(
             padding: const EdgeInsets.all(RltSpace.l),
-            child: RltLineChart(
-              semanticsLabel: 'Peso nos últimos $_days dias',
-              series: [ChartSeries(label: 'Peso', color: c.protein, points: [for (final w in weights) ChartPoint(w.local, w.value)])],
-            ),
+            child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+              RltLineChart(
+                semanticsLabel: 'Peso nos últimos $_days dias',
+                series: [ChartSeries(label: 'Peso', color: c.protein, points: [for (final w in weights) ChartPoint(w.local, w.value)])],
+                referenceY: weightTargetLine(deps),
+                referenceLabel: weightTargetLine(deps) == null ? null : 'Peso desejado',
+              ),
+              WeightTargetSummary(deps: deps),
+            ]),
           ),
         ),
-      // TODO(frankstein): peso contra a meta de peso com previsão de chegada (precisa de "peso desejado" no perfil — decisão de produto).
       const SizedBox(height: RltSpace.l),
       OutlinedButton(
         onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => GoalsScreen(deps: deps))),

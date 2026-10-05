@@ -1,4 +1,7 @@
+import 'dart:io';
+
 import 'package:frankstein_profile/profile.dart';
+import 'package:sqlite3/sqlite3.dart';
 import 'package:test/test.dart';
 
 void main() {
@@ -192,6 +195,73 @@ void main() {
 
       repo.setSetting('theme_mode', 'dark');
       expect(repo.getSetting('theme_mode'), 'dark');
+    });
+  });
+
+  group('peso desejado (ADR-17)', () {
+    final day = DateTime(2026, 10, 5);
+    final p = Profile(
+      sex: BiologicalSex.female,
+      birthDate: DateTime(1990, 1, 1),
+      heightMeters: 1.65,
+      objective: Objective.gain, // escolhido à mão; o peso desejado manda
+      rateGramsPerDay: 50,
+      targetWeightKg: 60,
+    );
+
+    test('objetivo segue o peso: acima perde, dentro de ±1 kg mantém, abaixo ganha', () {
+      expect(p.effectiveObjective(70), Objective.lose);
+      expect(p.effectiveObjective(61), Objective.maintain);
+      expect(p.effectiveObjective(59.2), Objective.maintain);
+      expect(p.effectiveObjective(58.5), Objective.gain);
+      expect(p.copyWith(clearTargetWeight: true).effectiveObjective(70), Objective.gain);
+      expect(p.reachedTarget(60.8), isTrue);
+      expect(p.reachedTarget(62), isFalse);
+    });
+
+    test('metas usam o objetivo efetivo: déficit e proteína de quem perde; manutenção ao chegar', () {
+      final losing = computeDailyGoals(p, DayInputs(weightKg: 70, date: day));
+      expect(losing.objective, Objective.lose);
+      expect(losing.objectiveAdjustmentKcal, closeTo(-50 * HealthFormulas.kcalPerGramBodyWeight, 1e-9));
+      expect(losing.proteinPerKg, HealthFormulas.proteinPerKg(Objective.lose));
+      final arrived = computeDailyGoals(p, DayInputs(weightKg: 60.5, date: day));
+      expect(arrived.objective, Objective.maintain);
+      expect(arrived.objectiveAdjustmentKcal, 0);
+      expect(arrived.targetReached, isTrue);
+    });
+
+    test('previsão: diferença em gramas ÷ ritmo; nada sem ritmo ou já na faixa', () {
+      final proj = projectTargetWeight(p, currentWeightKg: 66, from: day)!;
+      expect(proj.days, 120); // 6000 g ÷ 50 g/dia
+      expect(proj.weeks, 18);
+      expect(proj.date, DateTime(2026, 10, 5).add(const Duration(days: 120)));
+      expect(projectTargetWeight(p.copyWith(rateGramsPerDay: 0), currentWeightKg: 66, from: day), isNull);
+      expect(projectTargetWeight(p, currentWeightKg: 60.4, from: day), isNull);
+      expect(() => p.copyWith(targetWeightKg: 10), throwsArgumentError);
+    });
+
+    test('guarda e lê o peso desejado; banco antigo ganha a coluna', () {
+      final dir = Directory.systemTemp.createTempSync('rlt_profile_target');
+      addTearDown(() => dir.deleteSync(recursive: true));
+      final path = '${dir.path}/profile.sqlite3';
+      final old = sqlite3.open(path);
+      old.execute('''
+CREATE TABLE profile (
+  id INTEGER PRIMARY KEY CHECK (id = 1), sex TEXT NOT NULL, birth_date TEXT NOT NULL, height_m REAL NOT NULL,
+  objective TEXT NOT NULL, rate_g_per_day REAL NOT NULL, steps_goal INTEGER NOT NULL,
+  strength_training INTEGER NOT NULL DEFAULT 0, high_protein INTEGER NOT NULL DEFAULT 0
+);''');
+      old.execute("INSERT INTO profile VALUES (1, 'male', '1985-03-02', 1.8, 'lose', 40, 9000, 1, 0)");
+      old.dispose();
+      final repo = ProfileRepository.open(path);
+      addTearDown(repo.close);
+      final loaded = repo.load()!;
+      expect(loaded.targetWeightKg, isNull);
+      expect(loaded.strengthTraining, isTrue);
+      repo.save(loaded.copyWith(targetWeightKg: 78.5));
+      expect(repo.load()!.targetWeightKg, 78.5);
+      repo.save(repo.load()!.copyWith(clearTargetWeight: true));
+      expect(repo.load()!.targetWeightKg, isNull);
     });
   });
 }

@@ -141,9 +141,19 @@ class _GoalsBody extends StatelessWidget {
         const RltSectionHeader('De onde veio a meta de calorias'),
         row('Gasto em repouso (${goals.basalFormula})', _kcal(goals.basalKcal)),
         row('Dia a dia parado (× 1,2)', _kcal(goals.baseKcal)),
-        if (p.objective != Objective.maintain)
+        if (p.targetWeightKg != null)
           row(
-            p.objective == Objective.lose ? 'Perder ${formatNumber(p.rateGramsPerDay)} g/dia' : 'Ganhar ${formatNumber(p.rateGramsPerDay)} g/dia',
+            goals.targetReached ? 'Peso desejado alcançado: manter' : 'Objetivo pelo peso desejado (${formatNumber(p.targetWeightKg!, decimals: 1)} kg)',
+            switch (goals.objective) {
+              Objective.lose => 'perder',
+              Objective.gain => 'ganhar',
+              Objective.maintain => 'manter',
+            },
+            keyName: 'goal_objective_source',
+          ),
+        if (goals.objective != Objective.maintain)
+          row(
+            goals.objective == Objective.lose ? 'Perder ${formatNumber(p.rateGramsPerDay)} g/dia' : 'Ganhar ${formatNumber(p.rateGramsPerDay)} g/dia',
             '${goals.objectiveAdjustmentKcal >= 0 ? '+' : '−'}${_kcal(goals.objectiveAdjustmentKcal.abs())}',
           ),
         row('Passos de hoje', '+${_kcal(goals.stepsKcal)}'),

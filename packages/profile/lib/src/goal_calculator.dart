@@ -166,6 +166,12 @@ class DailyGoals {
   final String basalFormula; // 'Mifflin-St Jeor' | 'Katch-McArdle'
   final double baseKcal; // basal × 1,2
   final double objectiveAdjustmentKcal; // negativo ao perder
+
+  /// Objetivo que valeu no cálculo (o do peso desejado, se houver — ADR-17).
+  final Objective objective;
+
+  /// Dentro de ±1 kg do peso desejado.
+  final bool targetReached;
   final double stepsKcal;
   final double exerciseKcal;
   final double caloriesKcal;
@@ -188,6 +194,8 @@ class DailyGoals {
     required this.basalFormula,
     required this.baseKcal,
     required this.objectiveAdjustmentKcal,
+    this.objective = Objective.maintain,
+    this.targetReached = false,
     required this.stepsKcal,
     required this.exerciseKcal,
     required this.caloriesKcal,
@@ -223,7 +231,9 @@ DailyGoals computeDailyGoals(Profile profile, DayInputs day, {GoalOverrides over
       ? HealthFormulas.bmrKatchMcArdle(weightKg: day.weightKg, bodyFatFraction: day.bodyFatFraction!)
       : HealthFormulas.bmrMifflinStJeor(sex: profile.sex, weightKg: day.weightKg, heightCm: heightCm, ageYears: age);
   final base = basal * HealthFormulas.sedentaryFactor;
-  final adjustment = switch (profile.objective) {
+  // Com peso desejado, o objetivo segue o peso atual (ADR-17).
+  final objective = profile.effectiveObjective(day.weightKg);
+  final adjustment = switch (objective) {
     Objective.lose => -profile.rateGramsPerDay * HealthFormulas.kcalPerGramBodyWeight,
     Objective.gain => profile.rateGramsPerDay * HealthFormulas.kcalPerGramBodyWeight,
     Objective.maintain => 0.0,
@@ -243,7 +253,7 @@ DailyGoals computeDailyGoals(Profile profile, DayInputs day, {GoalOverrides over
   }
 
   final perKg = HealthFormulas.proteinPerKg(
-    profile.objective,
+    objective,
     strengthTraining: profile.strengthTraining,
     highProtein: profile.highProtein,
   );
@@ -280,6 +290,8 @@ DailyGoals computeDailyGoals(Profile profile, DayInputs day, {GoalOverrides over
     basalFormula: useKatch ? 'Katch-McArdle' : 'Mifflin-St Jeor',
     baseKcal: base,
     objectiveAdjustmentKcal: adjustment,
+    objective: objective,
+    targetReached: profile.reachedTarget(day.weightKg),
     stepsKcal: steps,
     exerciseKcal: day.exerciseKcal,
     caloriesKcal: calories,

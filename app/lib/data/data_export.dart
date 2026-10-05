@@ -56,6 +56,7 @@ Map<String, dynamic> buildFullExport(AppDependencies deps, {DateTime? now}) {
         'steps_goal': profile.stepsGoal,
         'strength_training': profile.strengthTraining,
         'high_protein': profile.highProtein,
+        'target_weight_kg': profile.targetWeightKg,
       },
     'goal_overrides': deps.profileRepository.loadOverrides().toMap(),
     'medications': [

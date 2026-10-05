@@ -14,7 +14,8 @@ CREATE TABLE IF NOT EXISTS profile (
   rate_g_per_day REAL NOT NULL,
   steps_goal INTEGER NOT NULL,
   strength_training INTEGER NOT NULL DEFAULT 0,
-  high_protein INTEGER NOT NULL DEFAULT 0
+  high_protein INTEGER NOT NULL DEFAULT 0,
+  target_weight_kg REAL
 );
 CREATE TABLE IF NOT EXISTS settings (
   key TEXT PRIMARY KEY,
@@ -42,6 +43,9 @@ class ProfileRepository {
     if (!columns.contains('high_protein')) {
       db.execute('ALTER TABLE profile ADD COLUMN high_protein INTEGER NOT NULL DEFAULT 0');
     }
+    if (!columns.contains('target_weight_kg')) {
+      db.execute('ALTER TABLE profile ADD COLUMN target_weight_kg REAL');
+    }
     return db;
   }
 
@@ -60,6 +64,7 @@ class ProfileRepository {
       stepsGoal: r['steps_goal'] as int,
       strengthTraining: (r['strength_training'] as int) == 1,
       highProtein: (r['high_protein'] as int) == 1,
+      targetWeightKg: (r['target_weight_kg'] as num?)?.toDouble(),
     );
   }
 
@@ -67,8 +72,8 @@ class ProfileRepository {
     final d = p.birthDate;
     _db.execute(
       'INSERT OR REPLACE INTO profile '
-      '(id, sex, birth_date, height_m, objective, rate_g_per_day, steps_goal, strength_training, high_protein) '
-      'VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?)',
+      '(id, sex, birth_date, height_m, objective, rate_g_per_day, steps_goal, strength_training, high_protein, target_weight_kg) '
+      'VALUES (1, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
       [
         p.sex.wireValue,
         '${d.year.toString().padLeft(4, '0')}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}',
@@ -78,6 +83,7 @@ class ProfileRepository {
         p.stepsGoal,
         p.strengthTraining ? 1 : 0,
         p.highProtein ? 1 : 0,
+        p.targetWeightKg,
       ],
     );
   }

@@ -49,6 +49,9 @@ class Profile {
   /// Quer mais proteína que o padrão — soma 0,4 g/kg.
   final bool highProtein;
 
+  /// Peso desejado (kg). Preenchido, comanda o objetivo (ADR-17).
+  final double? targetWeightKg;
+
   Profile({
     required this.sex,
     required DateTime birthDate,
@@ -58,11 +61,34 @@ class Profile {
     this.stepsGoal = 8000,
     this.strengthTraining = false,
     this.highProtein = false,
+    this.targetWeightKg,
   }) : birthDate = DateTime(birthDate.year, birthDate.month, birthDate.day) {
     if (heightMeters < 0.5 || heightMeters > 2.5) throw ArgumentError('altura fora de 50–250 cm');
     if (rateGramsPerDay < 0) throw ArgumentError('ritmo não pode ser negativo');
     if (stepsGoal <= 0) throw ArgumentError('meta de passos precisa ser maior que zero');
+    if (targetWeightKg != null && (targetWeightKg! < 20 || targetWeightKg! > 400)) {
+      throw ArgumentError('peso desejado fora de 20–400 kg');
+    }
   }
+
+  /// Faixa em torno do peso desejado em que o objetivo vira "manter"
+  /// (ADR-17): a oscilação normal de um dia para o outro não troca o objetivo.
+  static const double targetToleranceKg = 1.0;
+
+  /// Objetivo que vale hoje: o do peso desejado, se houver; senão o
+  /// escolhido à mão (ADR-17).
+  Objective effectiveObjective(double currentWeightKg) {
+    final target = targetWeightKg;
+    if (target == null) return objective;
+    final diff = currentWeightKg - target;
+    if (diff > targetToleranceKg) return Objective.lose;
+    if (diff < -targetToleranceKg) return Objective.gain;
+    return Objective.maintain;
+  }
+
+  /// Chegou ao peso desejado (dentro de ±1 kg).
+  bool reachedTarget(double currentWeightKg) =>
+      targetWeightKg != null && (currentWeightKg - targetWeightKg!).abs() <= targetToleranceKg;
 
   /// Idade completa em anos na data [on].
   int ageOn(DateTime on) {
@@ -80,6 +106,8 @@ class Profile {
     int? stepsGoal,
     bool? strengthTraining,
     bool? highProtein,
+    double? targetWeightKg,
+    bool clearTargetWeight = false,
   }) =>
       Profile(
         sex: sex ?? this.sex,
@@ -90,7 +118,27 @@ class Profile {
         stepsGoal: stepsGoal ?? this.stepsGoal,
         strengthTraining: strengthTraining ?? this.strengthTraining,
         highProtein: highProtein ?? this.highProtein,
+        targetWeightKg: clearTargetWeight ? null : (targetWeightKg ?? this.targetWeightKg),
       );
+}
+
+/// Previsão de chegada ao peso desejado pelo ritmo do perfil (ADR-17).
+/// Conta simples, não promessa.
+class WeightProjection {
+  final int days;
+  final DateTime date;
+  const WeightProjection({required this.days, required this.date});
+
+  int get weeks => (days / 7).ceil();
+}
+
+/// `null` sem peso desejado, sem ritmo ou já dentro da faixa.
+WeightProjection? projectTargetWeight(Profile p, {required double currentWeightKg, required DateTime from}) {
+  final target = p.targetWeightKg;
+  if (target == null || p.rateGramsPerDay <= 0 || p.reachedTarget(currentWeightKg)) return null;
+  final days = ((currentWeightKg - target).abs() * 1000 / p.rateGramsPerDay).ceil();
+  final start = DateTime(from.year, from.month, from.day);
+  return WeightProjection(days: days, date: start.add(Duration(days: days)));
 }
 
 /// Ajustes manuais das metas (Conta › Metas: "toda meta aceita ajuste

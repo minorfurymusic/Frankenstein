@@ -23,7 +23,19 @@ branco: navegação Resumo/Chat de verdade, ligada aos pacotes reais, com
 compartilhamento de treino/corrida funcionando de ponta a ponta. Detalhe
 completo em `docs/HISTORICO.md`.
 
-**Ciclo mais recente (2026-10-05): IA com a chave Gemini e leitura de exame.**
+**Ciclo mais recente (2026-10-05): peso desejado.** Decisão do usuário na
+ADR-17: campo opcional em Conta › Perfil que comanda o objetivo — acima do
+peso desejado por mais de 1 kg perde, abaixo ganha, dentro de ±1 kg mantém
+(passa sozinho para manutenção ao chegar). Calorias, proteína e "meta do
+dia cumprida" usam o objetivo efetivo (`Profile.effectiveObjective`,
+`DailyGoals.objective`). Perfil mostra o objetivo atual, a previsão pelo
+ritmo ("~N semanas, por volta de dd/mm — estimativa") e o IMC do peso
+desejado (só informação, nada travado). Corpo e Nutrição › Tendências
+ganharam a linha do peso desejado e o resumo; Metas mostra de onde veio
+o objetivo. Coluna `target_weight_kg` com migração testada; entra na
+exportação.
+
+**Ciclo anterior (2026-10-05): IA com a chave Gemini e leitura de exame.**
 Provedor decidido pelo usuário (ADR-11 revisão 1): Gemini, com a chave
 dele. Novo pacote `packages/ai` (REST direto, sem SDK; endereço e campos
 conferidos no código do SDK oficial): resposta em JSON validada por JSON

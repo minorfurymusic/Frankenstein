@@ -25,6 +25,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _fat = TextEditingController();
   final _rate = TextEditingController();
   final _steps = TextEditingController();
+  final _target = TextEditingController();
   Objective _objective = Objective.maintain;
   bool _training = false;
   bool _highProtein = false;
@@ -49,11 +50,25 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _highProtein = p?.highProtein ?? false;
     _rate.text = p == null || p.rateGramsPerDay == 0 ? '50' : p.rateGramsPerDay.round().toString();
     _steps.text = (p?.stepsGoal ?? 8000).toString();
+    _target.text = p?.targetWeightKg == null ? '' : formatNumber(p!.targetWeightKg!, decimals: 1);
+  }
+
+  double? get _targetKg => _target.text.trim().isEmpty ? null : _num(_target);
+
+  /// Objetivo que vai valer com o peso desejado digitado (ADR-17).
+  Objective? get _autoObjective {
+    final target = _targetKg;
+    final weight = _num(_weight);
+    if (target == null || weight == null) return null;
+    final diff = weight - target;
+    if (diff > Profile.targetToleranceKg) return Objective.lose;
+    if (diff < -Profile.targetToleranceKg) return Objective.gain;
+    return Objective.maintain;
   }
 
   @override
   void dispose() {
-    for (final c in [_height, _weight, _fat, _rate, _steps]) {
+    for (final c in [_height, _weight, _fat, _rate, _steps, _target]) {
       c.dispose();
     }
     super.dispose();
@@ -65,7 +80,12 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final height = _num(_height);
     final weight = _num(_weight);
     final fat = _fat.text.trim().isEmpty ? null : _num(_fat);
-    final rate = _objective == Objective.maintain ? 0.0 : _num(_rate);
+    final target = _targetKg;
+    if (_target.text.trim().isNotEmpty && target == null) {
+      showRltError(context, ArgumentError('peso desejado inválido'));
+      return;
+    }
+    final rate = target == null && _objective == Objective.maintain ? 0.0 : _num(_rate);
     final steps = _num(_steps)?.round();
     final missing = [
       if (_sex == null) 'sexo biológico',
@@ -90,6 +110,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
         stepsGoal: steps!,
         strengthTraining: _training,
         highProtein: _highProtein,
+        targetWeightKg: target,
       );
       final at = DateTime.now().toUtc();
       final tz = deps.tzOffsetMinutesNow();
@@ -107,6 +128,42 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } catch (e) {
       showRltError(context, e);
     }
+  }
+
+  List<Widget> _targetInfo(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    final target = _targetKg!;
+    final weight = _num(_weight);
+    final height = _num(_height);
+    final auto = _autoObjective;
+    final label = switch (auto) {
+      Objective.lose => 'Perder — você está ${formatNumber(weight! - target, decimals: 1)} kg acima do peso desejado.',
+      Objective.gain => 'Ganhar — você está ${formatNumber(target - weight!, decimals: 1)} kg abaixo do peso desejado.',
+      Objective.maintain => 'Manter — você chegou ao peso desejado (±1 kg).',
+      null => 'Preencha o peso atual para o app saber o objetivo.',
+    };
+    final rate = _num(_rate) ?? 0;
+    final bmi = height == null || height <= 0 ? null : target / ((height / 100) * (height / 100));
+    String? forecast;
+    if (weight != null && auto != Objective.maintain && auto != null) {
+      if (rate > 0) {
+        final days = ((weight - target).abs() * 1000 / rate).ceil();
+        final when = DateTime.now().add(Duration(days: days));
+        forecast = 'No ritmo de ${formatNumber(rate)} g/dia, chega em ~${(days / 7).ceil()} semanas (por volta de ${ddmmyyyy(when)}). '
+            'É conta, não promessa: o peso não cai em linha reta.';
+      } else {
+        forecast = 'Escolha o ritmo abaixo para ver a previsão.';
+      }
+    }
+    return [
+      Text('Objetivo agora', style: t.labelLarge),
+      Text(label, key: const Key('profile_auto_objective'), style: t.bodyLarge),
+      if (forecast != null) ...[const SizedBox(height: RltSpace.xs), Text(forecast, key: const Key('profile_forecast'), style: t.bodySmall)],
+      if (bmi != null) ...[
+        const SizedBox(height: RltSpace.xs),
+        Text('IMC no peso desejado: ${formatNumber(bmi, decimals: 1)} (${HealthFormulas.bmiCategory(bmi)}). Só informação.', style: t.bodySmall),
+      ],
+    ];
   }
 
   @override
@@ -183,7 +240,20 @@ class _ProfileScreenState extends State<ProfileScreen> {
             ),
           ),
           const RltSectionHeader('Objetivo'),
-          SegmentedButton<Objective>(
+          TextField(
+            key: const Key('profile_target'),
+            controller: _target,
+            keyboardType: numeric,
+            onChanged: (_) => setState(() {}),
+            decoration: const InputDecoration(
+              labelText: 'Peso desejado (opcional)',
+              suffixText: 'kg',
+              helperText: 'Com ele, o objetivo segue o seu peso: perder, manter ao chegar (±1 kg) ou ganhar.',
+              helperMaxLines: 2,
+            ),
+          ),
+          const SizedBox(height: RltSpace.m),
+          if (_targetKg != null) ..._targetInfo(context) else SegmentedButton<Objective>(
             key: const Key('profile_objective'),
             segments: const [
               ButtonSegment(value: Objective.lose, label: Text('Perder')),
@@ -193,14 +263,15 @@ class _ProfileScreenState extends State<ProfileScreen> {
             selected: {_objective},
             onSelectionChanged: (s) => setState(() => _objective = s.first),
           ),
-          if (_objective != Objective.maintain) ...[
+          if ((_targetKg != null && _autoObjective != Objective.maintain) || (_targetKg == null && _objective != Objective.maintain)) ...[
             const SizedBox(height: RltSpace.m),
             TextField(
               key: const Key('profile_rate'),
               controller: _rate,
               keyboardType: numeric,
+              onChanged: (_) => setState(() {}),
               decoration: InputDecoration(
-                labelText: _objective == Objective.lose ? 'Quanto perder por dia' : 'Quanto ganhar por dia',
+                labelText: (_autoObjective ?? _objective) == Objective.lose ? 'Quanto perder por dia' : 'Quanto ganhar por dia',
                 suffixText: 'g/dia',
                 helperText: 'Cada 50 g por dia ≈ 385 kcal (7.700 kcal por kg).',
               ),
