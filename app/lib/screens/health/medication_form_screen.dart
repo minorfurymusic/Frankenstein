@@ -32,12 +32,27 @@ enum DoseFrequency {
 
 const doseUnits = ['mg', 'g', 'mcg', 'ml', 'gotas', 'UI', 'unidade'];
 
+/// Remédio lido de uma receita, para pré-preencher o cadastro. São os dados
+/// do papel (lidos pela IA, estimativa); a pessoa confere e salva.
+class MedicationDraft {
+  final String name;
+  final double? doseAmount;
+  final String? doseUnit;
+  final MedicationForm? form;
+  final int? intervalHours;
+  final int? durationDays;
+  final String? notes;
+  const MedicationDraft({required this.name, this.doseAmount, this.doseUnit, this.form, this.intervalHours, this.durationDays, this.notes});
+}
+
 /// Cadastrar/editar remédio (prancheta RemedioForm). Nada é sugerido: dose,
-/// horários e duração são os que a pessoa digita (o RLT não prescreve).
+/// horários e duração são os que a pessoa digita ou os que a receita diz (o
+/// RLT não prescreve). Com [draft], devolve o remédio salvo ao fechar.
 class MedicationFormScreen extends StatefulWidget {
   final AppDependencies deps;
   final Medication? existing;
-  const MedicationFormScreen({super.key, required this.deps, this.existing});
+  final MedicationDraft? draft;
+  const MedicationFormScreen({super.key, required this.deps, this.existing, this.draft});
 
   @override
   State<MedicationFormScreen> createState() => _MedicationFormScreenState();
@@ -74,6 +89,19 @@ class _MedicationFormScreenState extends State<MedicationFormScreen> {
     _start = m == null ? DateTime(now.year, now.month, now.day) : DateTime(m.startDate.year, m.startDate.month, m.startDate.day);
     _end = m?.endDate == null ? null : DateTime(m!.endDate!.year, m.endDate!.month, m.endDate!.day);
     _reminders = m?.remindersEnabled ?? true;
+    final d = widget.draft;
+    if (m == null && d != null) {
+      _name.text = d.name;
+      if (d.doseAmount != null) {
+        _dose.text = d.doseAmount == d.doseAmount!.roundToDouble() ? d.doseAmount!.toInt().toString() : '${d.doseAmount}';
+      }
+      if (d.doseUnit != null && doseUnits.contains(d.doseUnit)) _unit = d.doseUnit!;
+      if (d.form != null) _form = d.form!;
+      _frequency = DoseFrequency.values.where((f) => f != DoseFrequency.custom && f.intervalHours == d.intervalHours).firstOrNull ?? _frequency;
+      _times = _frequency.timesFrom(_times.first);
+      if (d.durationDays != null) _end = _start.add(Duration(days: d.durationDays! - 1));
+      if (d.notes != null) _notes.text = d.notes!;
+    }
   }
 
   @override
@@ -132,7 +160,11 @@ class _MedicationFormScreenState extends State<MedicationFormScreen> {
       );
       widget.deps.medicationRepository.save(medication);
       widget.deps.notifyDataChanged();
-      Navigator.of(context).pop();
+      if (widget.draft != null) {
+        Navigator.of(context).pop(medication);
+      } else {
+        Navigator.of(context).pop();
+      }
       showRltSaved(context, '${medication.name} salvo em Saúde › Remédios.');
     } catch (e) {
       showRltError(context, e);

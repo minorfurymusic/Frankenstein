@@ -63,17 +63,18 @@ Regras:
 - Se o documento não for um exame, devolva markers vazio.
 ''';
 
+/// "AAAA-MM-DD" lido de um documento; data impossível (2026-02-31) é
+/// descartada em vez de virar outra.
+DateTime? parseReadDate(Object? raw) {
+  if (raw is! String) return null;
+  final m = RegExp(r'^(\d{4})-(\d{2})-(\d{2})').firstMatch(raw.trim());
+  if (m == null) return null;
+  final d = DateTime(int.parse(m[1]!), int.parse(m[2]!), int.parse(m[3]!));
+  return d.month == int.parse(m[2]!) && d.day == int.parse(m[3]!) ? d : null;
+}
+
 ExamReading parseExamReading(Map<String, dynamic> json) {
-  DateTime? date;
-  final raw = json['date'];
-  if (raw is String) {
-    final m = RegExp(r'^(\d{4})-(\d{2})-(\d{2})').firstMatch(raw.trim());
-    if (m != null) {
-      final d = DateTime(int.parse(m[1]!), int.parse(m[2]!), int.parse(m[3]!));
-      // Data impossível (ex.: 2026-02-31) vira outra; descarta.
-      if (d.month == int.parse(m[2]!) && d.day == int.parse(m[3]!)) date = d;
-    }
-  }
+  final date = parseReadDate(json['date']);
   final markers = <ReadMarker>[];
   for (final item in (json['markers'] as List? ?? const [])) {
     final m = item as Map<String, dynamic>;

@@ -196,4 +196,81 @@ void main() {
     expect(find.textContaining('limite de uso'), findsOneWidget);
     expect(find.text('Ler de novo com a IA'), findsOneWidget);
   });
+
+  testWidgets('receita: a IA lê médico, datas e remédios; o já cadastrado é vinculado e o novo abre o cadastro preenchido', (tester) async {
+    await activateKey();
+    deps.medicationRepository.save(Medication(
+      id: 'm1',
+      name: 'Losartana 50 mg',
+      doseAmount: 1,
+      doseUnit: 'unidade',
+      form: MedicationForm.tablet,
+      timesOfDay: const [8 * 60],
+      startDate: LocalDate(2026, 1, 1),
+    ));
+    transport.replies.add(reply({
+      'doctor': 'Dra. Ana Souza',
+      'specialty': 'Clínica geral',
+      'date': '2026-10-01',
+      'valid_until': '2026-10-31',
+      'medicines': [
+        {
+          'name': 'Amoxicilina 500 mg',
+          'dose_amount': 1,
+          'dose_unit': 'unidade',
+          'form': 'capsule',
+          'instructions': '1 cápsula de 8 em 8 horas por 7 dias',
+          'interval_hours': 8,
+          'duration_days': 7,
+        },
+        {'name': 'losartana 50 mg', 'continuous': true, 'instructions': '1 comprimido pela manhã'},
+      ],
+    }));
+    await pump(tester, PrescriptionsScreen(deps: deps));
+    await tester.tap(find.byKey(const Key('document_add')));
+    await tester.pumpAndSettle();
+    picker.next = PickedDocument(bytes: Uint8List.fromList([1, 2, 3]), name: 'receita.jpg', mimeType: 'image/jpeg');
+    await tester.tap(find.byKey(const Key('document_gallery')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('desta receita, para ler médico'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('ai_consent_yes')));
+    await tester.pumpAndSettle();
+
+    final sent = (transport.bodies.single['contents'] as List).single['parts'] as List;
+    expect(sent.first['inlineData']['mimeType'], 'image/jpeg');
+    expect(transport.bodies.single.toString(), isNot(contains('Losartana')));
+    expect(find.text('Dra. Ana Souza'), findsOneWidget);
+    expect(find.text('Clínica geral'), findsOneWidget);
+    expect(find.text('01/10/2026'), findsOneWidget);
+    expect(find.text('31/10/2026'), findsOneWidget);
+    expect(find.byKey(const Key('rx_estimate')), findsOneWidget);
+    expect(find.byKey(const Key('rx_med_linked_1')), findsOneWidget);
+    expect(find.textContaining('1 unidade por vez · 1 cápsula de 8 em 8 horas por 7 dias'), findsOneWidget);
+
+    await tester.ensureVisible(find.byKey(const Key('rx_med_add_0')));
+    await tester.tap(find.byKey(const Key('rx_med_add_0')));
+    await tester.pumpAndSettle();
+    expect(find.widgetWithText(TextField, 'Amoxicilina 500 mg'), findsOneWidget);
+    expect(find.text('A cada 8 horas'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('medication_save')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('rx_med_linked_0')), findsOneWidget);
+    final amox = deps.medicationRepository.listAll().firstWhere((m) => m.name == 'Amoxicilina 500 mg');
+    expect(amox.form, MedicationForm.capsule);
+    expect(amox.doseUnit, 'unidade');
+    expect(amox.timesOfDay, [0, 8 * 60, 16 * 60]);
+    expect(amox.endDate!.toIso(), LocalDate.fromDateTime(DateTime.now().add(const Duration(days: 6))).toIso());
+    expect(amox.notes, '1 cápsula de 8 em 8 horas por 7 dias');
+
+    await tester.runAsync(() async {
+      await tester.tap(find.byKey(const Key('document_save')));
+      await Future<void>.delayed(const Duration(milliseconds: 50));
+    });
+    await tester.pumpAndSettle();
+    final rx = deps.documents.list(HealthDocumentKind.prescription).single;
+    expect(rx.title, 'Dra. Ana Souza');
+    expect(rx.date, LocalDate(2026, 10, 1));
+    expect(rx.validUntil, LocalDate(2026, 10, 31));
+    expect(rx.linkedMedicationIds.toSet(), {'m1', amox.id});
+  });
 }

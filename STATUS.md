@@ -23,7 +23,25 @@ branco: navegação Resumo/Chat de verdade, ligada aos pacotes reais, com
 compartilhamento de treino/corrida funcionando de ponta a ponta. Detalhe
 completo em `docs/HISTORICO.md`.
 
-**Ajuste (2026-10-05): respostas do usuário.** (1) Cardápio da IA é
+**Ciclo mais recente (2026-10-05): Cérebro conversando com o Gemini +
+leitura de receita.** (1) Com a chave ativa, frase livre ("bebi 2 L de
+água, comi 3 ovos e tomei dipirona às 9h") vira **vários cartões**, um por
+registro, decididos um a um (água, refeição estimada e editável em gramas,
+dose de remédio, sintoma, sinal vital, medida). O roteador determinístico
+continua primeiro, sem rede. Vai só o texto e a hora; remédio citado é
+casado com os cadastrados **no aparelho**; sem dose dita e sem cadastro, o
+app pergunta (a IA não completa dose). "Quantos passos / resumo / remédios
+de hoje" são respondidos localmente. Sinal de alerta mostra o aviso fixo
+do app (192). Respostas da IA levam "não diagnostica nem prescreve".
+Código: `packages/ai/lib/src/chat_intents.dart`,
+`app/lib/ai/brain_ai.dart`, `BrainPipeline.runPlan`. (2) Receita médica:
+ao anexar foto/PDF, a IA lê médico, especialidade, data, validade (só se
+escrita) e remédios (nome com concentração, quanto por vez, posologia,
+intervalo, duração); remédio já cadastrado é vinculado, o novo abre o
+cadastro preenchido para conferir e salvar
+(`packages/ai/lib/src/prescription_reading.dart`).
+
+**Ajuste anterior (2026-10-05): respostas do usuário.** (1) Cardápio da IA é
 **sugestão**, avisado em três pontos (opção, revisão e plano salvo) —
 ADR-18 aceita. (2) O gravador do RLT é só a alternativa quando o
 OpenTracks não está instalado; com ele instalado, não há escolha (ADR-9

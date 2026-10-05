@@ -111,7 +111,8 @@ API**, com a chave do próprio usuário.
   backup automático do Android foi desligado (`allowBackup=false`): ele
   levaria os bancos e a chave para a nuvem do Google sem ação da pessoa.
 - **Uso atual:** só ações explícitas — anexar exame (lê os valores),
-  e as que vierem (foto do prato, plano de refeições). Toda resposta é
+  anexar receita (lê médico, datas e remédios), foto do prato, plano de
+  refeições e mensagem livre no Cérebro. Toda resposta é
   validada por JSON Schema (até 2 tentativas) e chega como estimativa a
   conferir.
 - **Cérebro conversando (2026-10-05):** o roteador determinístico tenta

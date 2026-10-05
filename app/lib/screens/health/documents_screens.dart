@@ -16,8 +16,10 @@ import '../../widgets/line_chart.dart';
 import '../../widgets/state_views.dart';
 import '../../ai/ai_consent.dart';
 import '../../ai/ai_settings.dart';
+import '../../ai/brain_ai.dart';
 import '../account/account_more_screens.dart';
 import '../account/brain_settings_screen.dart';
+import 'medication_form_screen.dart';
 
 String _fmtDate(LocalDate d) => ddmmyyyy(DateTime(d.year, d.month, d.day));
 
@@ -426,14 +428,22 @@ class _DocumentFormScreenState extends State<DocumentFormScreen> {
   String? _readError;
   bool _estimate = false;
 
+  /// Receita: remédios lidos pela IA e, de cada um, o remédio cadastrado
+  /// a que ficou vinculado (casado no aparelho ou cadastrado agora).
+  final List<ReadPrescribedMedicine> _readMeds = [];
+  final Map<int, String> _readLinks = {};
+
   bool get _isPrescription => widget.kind == HealthDocumentKind.prescription;
+
+  /// Prefixo das chaves do painel de leitura (`exam_…` ou `rx_…`).
+  String get _k => _isPrescription ? 'rx' : 'exam';
 
   @override
   void initState() {
     super.initState();
-    // Exame anexado direto da lista ("Fotografar exame"/"Enviar PDF"): lê
-    // os valores sozinho, como na escolha de arquivo dentro do formulário.
-    if (!_isPrescription && widget.initialFile != null) {
+    // Exame ou receita anexados direto da lista ("Fotografar exame"/"Enviar
+    // PDF"): lê sozinho, como na escolha de arquivo dentro do formulário.
+    if (widget.initialFile != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _readWithAi(auto: true);
       });
@@ -454,7 +464,8 @@ class _DocumentFormScreenState extends State<DocumentFormScreen> {
       return;
     }
     if (_added.isEmpty && _kept.isEmpty) return;
-    final ok = await ensureAiConsent(context, deps, sending: 'A foto ou o PDF deste exame, para ler os valores');
+    final ok = await ensureAiConsent(context, deps,
+        sending: _isPrescription ? 'A foto ou o PDF desta receita, para ler médico, datas e remédios' : 'A foto ou o PDF deste exame, para ler os valores');
     if (!ok || !mounted) return;
     setState(() {
       _reading = true;
@@ -467,6 +478,11 @@ class _DocumentFormScreenState extends State<DocumentFormScreen> {
       for (final f in _kept) {
         final bytes = await deps.documentFiles.readBytes(f.storedName);
         if (bytes != null) parts.add(AiPart.file(bytes, f.mimeType));
+      }
+      if (_isPrescription) {
+        final rx = await readPrescription(await deps.ai.client(), parts);
+        if (mounted) _applyPrescription(rx);
+        return;
       }
       final reading = await readExam(await deps.ai.client(), parts);
       if (!mounted) return;
@@ -504,6 +520,56 @@ class _DocumentFormScreenState extends State<DocumentFormScreen> {
     }
   }
 
+  /// Preenche o formulário com o que a IA leu da receita (estimativa). Só
+  /// completa campo vazio de texto; remédio já cadastrado com o mesmo nome
+  /// é vinculado aqui no aparelho.
+  void _applyPrescription(PrescriptionReading rx) {
+    final meds = widget.deps.medicationRepository.listAll();
+    setState(() {
+      if (_title.text.trim().isEmpty && rx.doctor != null) _title.text = rx.doctor!;
+      if (_specialty.text.trim().isEmpty && rx.specialty != null) _specialty.text = rx.specialty!;
+      if (rx.date != null) _date = LocalDate.fromDateTime(rx.date!);
+      if (rx.validUntil != null) _validUntil = LocalDate.fromDateTime(rx.validUntil!);
+      _readMeds
+        ..clear()
+        ..addAll(rx.medicines);
+      _readLinks.clear();
+      for (var i = 0; i < _readMeds.length; i++) {
+        final known = matchMedication(meds, _readMeds[i].name);
+        if (known != null) {
+          _readLinks[i] = known.id;
+          _linked.add(known.id);
+        }
+      }
+      _estimate = true;
+      _reading = false;
+      if (rx.medicines.isEmpty) _readError = 'A IA não achou remédios neste arquivo. Confira ou preencha à mão.';
+    });
+  }
+
+  Future<void> _registerReadMedicine(int i) async {
+    final r = _readMeds[i];
+    final saved = await Navigator.of(context).push<Medication>(MaterialPageRoute(
+      builder: (_) => MedicationFormScreen(
+        deps: widget.deps,
+        draft: MedicationDraft(
+          name: r.name,
+          doseAmount: r.doseAmount,
+          doseUnit: r.doseUnit,
+          form: r.form == null ? null : MedicationForm.fromWireValue(r.form!),
+          intervalHours: r.intervalHours,
+          durationDays: r.continuous ? null : r.durationDays,
+          notes: r.instructions,
+        ),
+      ),
+    ));
+    if (saved == null || !mounted) return;
+    setState(() {
+      _readLinks[i] = saved.id;
+      _linked.add(saved.id);
+    });
+  }
+
   @override
   void dispose() {
     _title.dispose();
@@ -517,7 +583,7 @@ class _DocumentFormScreenState extends State<DocumentFormScreen> {
       final p = await pick();
       if (p != null && mounted) {
         setState(() => _added.add(p));
-        if (!_isPrescription) await _readWithAi(auto: true);
+        await _readWithAi(auto: true);
       }
     } catch (e) {
       if (mounted) showRltError(context, 'Não foi possível abrir: $e');
@@ -598,23 +664,25 @@ class _DocumentFormScreenState extends State<DocumentFormScreen> {
       builder: (context, hasKey, _) {
         if (_reading) {
           return Padding(
-            key: const Key('exam_reading'),
+            key: Key('${_k}_reading'),
             padding: const EdgeInsets.only(top: RltSpace.m),
             child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
               const LinearProgressIndicator(),
               const SizedBox(height: RltSpace.xs),
-              Text('Lendo os valores com o Gemini…', style: t.bodySmall),
+              Text(_isPrescription ? 'Lendo a receita com o Gemini…' : 'Lendo os valores com o Gemini…', style: t.bodySmall),
             ]),
           );
         }
         if (!hasKey) {
           return Card(
-            key: const Key('exam_ai_hint'),
+            key: Key('${_k}_ai_hint'),
             margin: const EdgeInsets.only(top: RltSpace.m),
             child: ListTile(
               leading: const Icon(Icons.auto_awesome_outlined),
-              title: const Text('Ler os valores sozinho'),
-              subtitle: const Text('Ative a IA com a sua chave e o app preenche nome, data e valores a partir da foto ou do PDF.'),
+              title: Text(_isPrescription ? 'Ler a receita sozinho' : 'Ler os valores sozinho'),
+              subtitle: Text(_isPrescription
+                  ? 'Ative a IA com a sua chave e o app preenche médico, datas e remédios a partir da foto ou do PDF.'
+                  : 'Ative a IA com a sua chave e o app preenche nome, data e valores a partir da foto ou do PDF.'),
               onTap: () => _readWithAi(),
             ),
           );
@@ -623,13 +691,15 @@ class _DocumentFormScreenState extends State<DocumentFormScreen> {
           padding: const EdgeInsets.only(top: RltSpace.s),
           child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
             if (_readError != null)
-              Text(_readError!, key: const Key('exam_read_error'), style: t.bodyMedium?.copyWith(color: c.error)),
+              Text(_readError!, key: Key('${_k}_read_error'), style: t.bodyMedium?.copyWith(color: c.error)),
             if (hasFiles)
               TextButton.icon(
-                key: const Key('exam_read_ai'),
+                key: Key('${_k}_read_ai'),
                 onPressed: () => _readWithAi(),
                 icon: const Icon(Icons.auto_awesome_outlined),
-                label: Text(_estimate || _readError != null ? 'Ler de novo com a IA' : 'Ler valores com a IA'),
+                label: Text(_estimate || _readError != null
+                    ? 'Ler de novo com a IA'
+                    : (_isPrescription ? 'Ler receita com a IA' : 'Ler valores com a IA')),
               ),
           ]),
         );
@@ -660,6 +730,36 @@ class _DocumentFormScreenState extends State<DocumentFormScreen> {
         child: Text(value == null ? 'Sem data' : _fmtDate(value)),
       ),
     );
+  }
+
+  List<Widget> _readMedsSection(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    final c = RltColors.of(context);
+    return [
+      const RltSectionHeader('Remédios lidos da receita'),
+      const Align(alignment: Alignment.centerLeft, child: RltBadge(RltBadgeKind.estimate, key: Key('rx_estimate'))),
+      const SizedBox(height: RltSpace.xs),
+      Text('Confira cada um com o papel. Cadastrar abre o formulário preenchido com o que a receita diz; nada é salvo sem você.',
+          style: t.bodySmall),
+      for (var i = 0; i < _readMeds.length; i++)
+        ListTile(
+          key: Key('rx_med_$i'),
+          contentPadding: EdgeInsets.zero,
+          title: Text(_readMeds[i].name),
+          subtitle: Text([
+            if (_readMeds[i].doseAmount != null) '${formatNumber(_readMeds[i].doseAmount!, decimals: _readMeds[i].doseAmount! % 1 == 0 ? 0 : 1)} ${_readMeds[i].doseUnit} por vez',
+            ?_readMeds[i].instructions,
+            if (_readMeds[i].continuous) 'Uso contínuo',
+          ].join(' · ')),
+          trailing: _readLinks.containsKey(i)
+              ? Row(mainAxisSize: MainAxisSize.min, key: Key('rx_med_linked_$i'), children: [
+                  Icon(Icons.link, size: 18, color: c.success),
+                  const SizedBox(width: 4),
+                  Text('Vinculado', style: t.labelMedium?.copyWith(color: c.success)),
+                ])
+              : TextButton(key: Key('rx_med_add_$i'), onPressed: () => _registerReadMedicine(i), child: const Text('Cadastrar')),
+        ),
+    ];
   }
 
   @override
@@ -715,7 +815,7 @@ class _DocumentFormScreenState extends State<DocumentFormScreen> {
           padding: const EdgeInsets.only(top: RltSpace.xs),
           child: Text('Os arquivos ficam só no seu celular.', style: t.bodySmall),
         ),
-        if (!_isPrescription) _aiReadingPanel(context),
+        _aiReadingPanel(context),
         const SizedBox(height: RltSpace.l),
         TextField(
           key: const Key('document_title'),
@@ -734,6 +834,7 @@ class _DocumentFormScreenState extends State<DocumentFormScreen> {
           _dateField('Data da receita', _date, (v) => _date = v),
           const SizedBox(height: RltSpace.m),
           _dateField('Válida até (opcional)', _validUntil, (v) => _validUntil = v, key: const Key('document_valid_until'), clearable: true),
+          if (_readMeds.isNotEmpty) ..._readMedsSection(context),
           const RltSectionHeader('Remédios desta receita'),
           if (meds.isEmpty)
             Text('Nenhum remédio cadastrado. Cadastre em Saúde › Remédios e vincule depois.', style: t.bodyMedium)
