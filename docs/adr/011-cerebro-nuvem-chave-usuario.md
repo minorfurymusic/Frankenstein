@@ -136,6 +136,12 @@ API**, com a chave do próprio usuário.
   volta a transcrição, que o app mostra para conferir. O áudio não é
   guardado (decisão pendente em `docs/DECISOES-PENDENTES.md`). Anexos (foto
   do prato, receita, exame) seguem o mesmo consentimento.
+- **Contexto da conversa (2026-10-06):** cada mensagem pode levar as
+  últimas falas da **mesma** conversa (texto da pessoa, respostas e o
+  estado dos cartões, até ~3.000 letras) para a IA entender referências
+  ("pode salvar a dipirona"). É o que a própria pessoa disse naquela
+  conversa — não é dado guardado de outra área. Decisão pendente de
+  confirmação em `docs/DECISOES-PENDENTES.md`.
 - **Não verificado:** PDF enviado direto em `inlineData` (os exemplos do SDK
   mostram PDF por URI; imagem por bytes). Confirmar no primeiro teste no
   aparelho; se o provedor recusar, o app mostra o erro e a pessoa pode

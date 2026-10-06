@@ -26,6 +26,34 @@ Responda pelo número (ex.: "1: ok; 2: B").
    exercícios no celular. Exercício que não está na biblioteca entra como
    "livre" com o nome dito. Confere?
 
+## Do ciclo B — conversas do Cérebro (2026-10-06)
+
+8. **"Desfazer" no cartão confirmado** (prancheta CerebroCartoesEstados):
+   **não fiz** — é decisão de arquitetura de dados. O banco de saúde só
+   acrescenta (nunca apaga); desfazer exigiria um registro de "anulação" e
+   que **todas** as telas (Início, Nutrição, metas, gráficos, exportação)
+   passassem a ignorar o que foi anulado. Opções: **A** criar isso numa ADR
+   nova (recomendo; é o jeito certo e vale para corrigir qualquer registro,
+   não só do Cérebro); **B** deixar sem desfazer (a pessoa corrige na tela
+   da área).
+9. **Contexto da conversa vai junto para a IA.** Para entender "pode
+   salvar a dipirona" ou "foi às 9h mesmo", cada mensagem leva as últimas
+   falas **desta conversa** (o que a pessoa disse, as respostas e se cada
+   cartão foi confirmado ou descartado), até ~3.000 letras. Nada de fora da
+   conversa vai. Opções: **A (feito)** manter; **B** mandar só a mensagem
+   atual (a IA deixa de entender referências ao que veio antes).
+10. **Conversas guardadas no celular** (lista "Conversas"), entram na
+    exportação e saem em "apagar todos os dados". Apagar uma conversa não
+    apaga o que foi confirmado nela. Cartão sem resposta ao sair fica como
+    "Descartado — nada foi salvo". Confere?
+11. **Remédio novo pela conversa** ("comecei a tomar vitamina D"): só vira
+    cartão de cadastro quando **você** diz nome, dose e horário; senão a IA
+    pergunta. As respostas rápidas oferecem só horários — o app joga fora
+    qualquer sugestão que pareça dose. Confere?
+12. **"Como foi minha semana?"** (prancheta CerebroConversas): **não
+    fiz** — hoje o Cérebro só responde o resumo do dia, calculado no
+    celular. Um resumo da semana seria outra tela/cálculo. Quer?
+
 ## Pendentes de antes
 
 5. **Especificação de nutrição** (`docs/specs/nutricao.md`): posso incluir

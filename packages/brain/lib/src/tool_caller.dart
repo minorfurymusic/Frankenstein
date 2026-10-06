@@ -26,7 +26,11 @@ abstract class ToolCaller {
 class ToolCallPlan {
   final List<ToolCallDecision> calls;
   final List<String> messages;
-  const ToolCallPlan({this.calls = const [], this.messages = const []});
+
+  /// Respostas curtas que a pessoa pode tocar (só texto; tocar = mandar a
+  /// mensagem). Nunca gravam nada sozinhas.
+  final List<String> suggestions;
+  const ToolCallPlan({this.calls = const [], this.messages = const [], this.suggestions = const []});
 }
 
 /// Passo 2 do pipeline (`.claude/rules/brain.md`): a IA, só para o que o

@@ -23,7 +23,18 @@ branco: navegação Resumo/Chat de verdade, ligada aos pacotes reais, com
 compartilhamento de treino/corrida funcionando de ponta a ponta. Detalhe
 completo em `docs/HISTORICO.md`.
 
-**Ciclo mais recente (2026-10-06, feito sozinho a pedido): voz no
+**Ciclo mais recente (2026-10-06, feito sozinho a pedido): conversas do
+Cérebro.** Cada conversa fica guardada no celular (lista "Conversas" com
+título, "N itens salvos · área" e quando; reabrir continua de onde parou;
+apagar a conversa não apaga o que foi salvo; entra na exportação). A IA
+recebe as últimas falas da mesma conversa para entender "pode salvar a
+dipirona". Respostas rápidas (horários; nunca dose). "Comecei a tomar X"
+vira cadastro de remédio só com nome, dose e horário ditos. Antes de
+confirmar dá para editar intensidade e hora do sintoma e os ml da água.
+"Desfazer" ficou para decisão (o banco só acrescenta; ver
+`docs/DECISOES-PENDENTES.md`, item 8).
+
+**Ciclo anterior (2026-10-06, feito sozinho a pedido): voz no
 Cérebro + treino por voz/texto.** Com a IA ativa, o campo do Cérebro vira o
 completo da prancheta: "+" para anexos, câmera do prato e microfone
 (segurar para gravar, arrastar para a esquerda cancela). O áudio (AAC,

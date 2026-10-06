@@ -17,6 +17,7 @@ import 'ai/brain_ai.dart';
 import 'ai/voice_recorder.dart';
 import 'card_image_capturer.dart';
 import 'data/activity_read_model.dart';
+import 'data/brain_conversations.dart';
 import 'data/day_read_model.dart';
 import 'data/health_read_model.dart';
 import 'data/meal_plan.dart';
@@ -100,6 +101,9 @@ class AppDependencies {
 
   /// Plano de refeições (montado, importado ou sugerido pela IA).
   late final MealPlanStore mealPlans = MealPlanStore(profileRepository);
+
+  /// Conversas do Cérebro, só no celular.
+  late final BrainConversationStore conversations = BrainConversationStore(profileRepository);
   final WorkoutLogger workoutLogger;
   final ActivityLogger activityLogger;
   final ActivityReadModel activityRead;

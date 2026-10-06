@@ -14,6 +14,7 @@ import '../../ai/brain_ai.dart';
 import '../../ai/voice_recorder.dart';
 import '../../app_dependencies.dart';
 import '../../confirmation_gate.dart';
+import '../../data/brain_conversations.dart';
 import '../../data/nutrition_store.dart';
 import '../../documents/document_files.dart';
 import '../../format.dart';
@@ -24,13 +25,20 @@ import '../../widgets/message_composer.dart';
 import '../../widgets/proposal_card.dart';
 import '../health/documents_screens.dart';
 import '../nutrition/plate_photo_screen.dart';
+import 'brain_conversations_screen.dart';
 import 'brain_text.dart';
 
-sealed class _Msg {}
+/// Cada mensagem sabe virar o JSON guardado na conversa
+/// (`BrainConversation`) e voltar dele.
+sealed class _Msg {
+  Map<String, dynamic> toJson();
+}
 
 class _UserMsg extends _Msg {
   final String text;
   _UserMsg(this.text);
+  @override
+  Map<String, dynamic> toJson() => {'t': 'user', 'text': text};
 }
 
 class _BotMsg extends _Msg {
@@ -39,6 +47,18 @@ class _BotMsg extends _Msg {
   /// Resposta da IA: leva o aviso de que o app não diagnostica nem prescreve.
   final bool fromAi;
   _BotMsg(this.text, {this.fromAi = false});
+  @override
+  Map<String, dynamic> toJson() => {'t': 'bot', 'text': text, 'ai': fromAi};
+}
+
+/// Respostas rápidas da IA (prancheta CerebroCartoesEstados: "08:00 |
+/// 12:00 | 20:00 | Outro horário"). Tocar manda o texto como mensagem.
+class _SuggestMsg extends _Msg {
+  final List<String> items;
+  bool used;
+  _SuggestMsg(this.items, {this.used = false});
+  @override
+  Map<String, dynamic> toJson() => {'t': 'suggest', 'items': items, 'used': used};
 }
 
 /// O que a pessoa anexou no Cérebro.
@@ -57,12 +77,18 @@ enum AttachKind {
 class _VoiceMsg extends _Msg {
   final Duration duration;
   _VoiceMsg(this.duration);
+  @override
+  Map<String, dynamic> toJson() => {'t': 'voice', 'ms': duration.inMilliseconds};
 }
 
+/// Na conversa guardada fica só o nome e o tipo do anexo; o arquivo em si só
+/// fica no celular se for salvo (Galeria, Receitas, Exames).
 class _AttachMsg extends _Msg {
   final AttachKind kind;
   final PickedDocument file;
   _AttachMsg(this.kind, this.file);
+  @override
+  Map<String, dynamic> toJson() => {'t': 'attach', 'kind': kind.name, 'name': file.name, 'mime': file.mimeType, 'label': kind.label};
 }
 
 /// Receita ou exame lido: resumo e "Revisar e salvar" (abre o formulário já
@@ -73,8 +99,13 @@ class _DocMsg extends _Msg {
   final String summary;
   final ExamReading? exam;
   final PrescriptionReading? prescription;
-  bool saved = false;
-  _DocMsg(this.kind, this.file, this.summary, {this.exam, this.prescription});
+  bool saved;
+
+  /// Reaberta de uma conversa antiga: sem o arquivo nem a leitura.
+  final bool restored;
+  _DocMsg(this.kind, this.file, this.summary, {this.exam, this.prescription, this.saved = false, this.restored = false});
+  @override
+  Map<String, dynamic> toJson() => {'t': 'doc', 'kind': kind.name, 'summary': summary, 'saved': saved};
 }
 
 class _ProposalMsg extends _Msg {
@@ -85,17 +116,66 @@ class _ProposalMsg extends _Msg {
   final Map<String, dynamic> params;
   final Completer<bool> decision = Completer();
   ProposalState state = ProposalState.pending;
+
+  /// Onde ficou salvo ("Nutrição › Água"), para o resumo da conversa.
+  String? savedIn;
+
+  /// Edição: gramas por alimento (refeição estimada) ou ml (água).
   List<TextEditingController>? gramFields;
+  TextEditingController? amountField;
+
+  /// Edição de sintoma: intensidade e quando.
+  int? intensity;
+  DateTime? when;
   _ProposalMsg(this.tool, this.params);
 
-  bool get editable => tool == 'log_estimated_meal';
+  bool get editable => const {'log_estimated_meal', 'log_water', 'log_symptom'}.contains(tool);
 
   void disposeFields() {
     for (final c in gramFields ?? const <TextEditingController>[]) {
       c.dispose();
     }
     gramFields = null;
+    amountField?.dispose();
+    amountField = null;
   }
+
+  @override
+  Map<String, dynamic> toJson() => {
+        't': 'card',
+        'tool': tool,
+        'params': params,
+        // Cartão que ficou sem resposta não volta a valer: nada foi salvo.
+        'state': state == ProposalState.confirmed ? 'confirmed' : 'discarded',
+        'saved_in': savedIn,
+      };
+}
+
+/// Mensagem guardada → mensagem da tela.
+_Msg? _msgFromJson(Map<String, dynamic> m) {
+  AttachKind kind() => AttachKind.values.where((k) => k.name == m['kind']).firstOrNull ?? AttachKind.plate;
+  switch (m['t']) {
+    case 'user':
+      return _UserMsg(m['text'] as String);
+    case 'bot':
+      return _BotMsg(m['text'] as String, fromAi: m['ai'] == true);
+    case 'suggest':
+      return _SuggestMsg([for (final x in m['items'] as List) x as String], used: true);
+    case 'voice':
+      return _VoiceMsg(Duration(milliseconds: (m['ms'] as num).toInt()));
+    case 'attach':
+      return _AttachMsg(kind(), PickedDocument(bytes: Uint8List(0), name: m['name'] as String, mimeType: m['mime'] as String));
+    case 'doc':
+      return _DocMsg(kind(), PickedDocument(bytes: Uint8List(0), name: '', mimeType: ''), m['summary'] as String,
+          saved: m['saved'] == true, restored: true);
+    case 'card':
+      final c = _ProposalMsg(m['tool'] as String, Map<String, dynamic>.from(m['params'] as Map))
+        ..state = m['state'] == 'confirmed' ? ProposalState.confirmed : ProposalState.discarded
+        ..savedIn = m['saved_in'] as String?;
+      c.decision.complete(c.state == ProposalState.confirmed);
+      return c;
+  }
+  return null;
 }
 
 /// Cérebro (pranchetas CerebroChat, CerebroEstados): conversa em que cada
@@ -114,6 +194,9 @@ class BrainScreen extends StatefulWidget {
 
 class _BrainScreenState extends State<BrainScreen> {
   final _messages = <_Msg>[];
+
+  /// A conversa atual, guardada no celular a cada mudança.
+  BrainConversation _conv = BrainConversation.start();
   final _scroll = ScrollController();
   /// Esperando a IA responder. Cartões pendentes não travam o campo: a
   /// pessoa pode mandar outra mensagem e decidir os cartões depois.
@@ -121,11 +204,50 @@ class _BrainScreenState extends State<BrainScreen> {
 
   static const _examples = ['registrar água 500ml', 'resumo de hoje', 'quantos passos hoje', 'buscar alimento arroz'];
   static const _aiExamples = [
+    'Bebi 500 ml de água',
     'bebi 2 L de água, comi 3 ovos e tomei dipirona às 9h',
-    'pressão 12 por 8 agora de manhã',
-    'pesei 81,4 kg hoje',
+    'fiz 3 séries de supino com 30 kg',
     'resumo de hoje',
   ];
+
+  /// Muda a tela e guarda a conversa (conversa vazia não é guardada).
+  void _changed(VoidCallback fn) {
+    if (!mounted) return;
+    setState(fn);
+    _conv.messages
+      ..clear()
+      ..addAll(_messages.map((m) => m.toJson()));
+    widget.deps.conversations.save(_conv);
+  }
+
+  /// O que já foi dito nesta conversa, para a IA entender a mensagem nova
+  /// ("pode salvar", "foi às 9h mesmo"). Só esta conversa; a última
+  /// mensagem (a que está indo agora) fica de fora.
+  String _historyText() {
+    final lines = <String>[];
+    for (final m in _messages.take(_messages.length - 1)) {
+      final line = switch (m) {
+        _UserMsg(:final text) => 'Pessoa: $text',
+        _BotMsg(:final text) => 'Cérebro: $text',
+        _AttachMsg(:final kind) => 'Pessoa anexou: ${kind.label}',
+        _DocMsg(:final summary) => 'Cérebro leu: $summary',
+        final _ProposalMsg c => () {
+            final v = describeProposal(widget.deps, c.tool, c.params);
+            final st = switch (c.state) {
+              ProposalState.confirmed => 'confirmado',
+              ProposalState.discarded => 'descartado',
+              _ => 'esperando confirmação',
+            };
+            return 'Cartão $st: ${v.title}${v.detail == null ? '' : ' (${v.detail})'}${v.when == null ? '' : ', ${v.when}'}';
+          }(),
+        _VoiceMsg() || _SuggestMsg() => null,
+      };
+      if (line != null) lines.add(line);
+    }
+    final recent = lines.length > 20 ? lines.sublist(lines.length - 20) : lines;
+    final text = recent.join('\n');
+    return text.length > 3000 ? text.substring(text.length - 3000) : text;
+  }
 
   AppConfirmationGate? get _gate {
     final g = widget.deps.confirmationGate;
@@ -153,7 +275,7 @@ class _BrainScreenState extends State<BrainScreen> {
 
   Future<bool> _present(ToolSpec spec, Map<String, dynamic> params) {
     final msg = _ProposalMsg(spec.name, params);
-    setState(() => _messages.add(msg));
+    _changed(() => _messages.add(msg));
     _scrollToEnd();
     return msg.decision.future;
   }
@@ -162,47 +284,122 @@ class _BrainScreenState extends State<BrainScreen> {
     if (m.decision.isCompleted) return;
     if (ok && m.state == ProposalState.editing && !_applyEdit(m)) return;
     m.disposeFields();
-    setState(() => m.state = ok ? ProposalState.confirmed : ProposalState.discarded);
+    _changed(() {
+      m.state = ok ? ProposalState.confirmed : ProposalState.discarded;
+      if (ok) m.savedIn = describeProposal(widget.deps, m.tool, m.params).savedIn;
+    });
     m.decision.complete(ok);
   }
 
   void _startEdit(_ProposalMsg m) {
-    final items = (m.params['items'] as List).cast<Map<String, dynamic>>();
-    setState(() {
-      m.gramFields = [for (final i in items) TextEditingController(text: formatNumber(i['grams'] as num))];
+    _changed(() {
+      switch (m.tool) {
+        case 'log_estimated_meal':
+          final items = (m.params['items'] as List).cast<Map<String, dynamic>>();
+          m.gramFields = [for (final i in items) TextEditingController(text: formatNumber(i['grams'] as num))];
+        case 'log_water':
+          m.amountField = TextEditingController(text: formatNumber(m.params['amount_ml'] as num));
+        case 'log_symptom':
+          m.intensity = m.params['intensity'] as int?;
+          final at = m.params['at'] as String?;
+          m.when = at == null ? null : DateTime.parse(at).toLocal();
+      }
       m.state = ProposalState.editing;
     });
   }
 
   void _cancelEdit(_ProposalMsg m) {
     m.disposeFields();
-    setState(() => m.state = ProposalState.pending);
+    _changed(() => m.state = ProposalState.pending);
   }
 
-  /// Novas gramas: kcal e macros acompanham na proporção (são estimativa
-  /// para a porção). Item com 0 g sai da refeição.
+  double? _parse(String text) => double.tryParse(text.trim().replaceAll('.', '').replaceAll(',', '.'));
+
+  /// Aplica a edição aos parâmetros do cartão; o registro valida de novo
+  /// antes de gravar.
   bool _applyEdit(_ProposalMsg m) {
-    final items = (m.params['items'] as List).cast<Map<String, dynamic>>();
-    final grams = [for (final c in m.gramFields!) double.tryParse(c.text.trim().replaceAll(',', '.'))];
-    if (grams.any((g) => g == null || g < 0) || grams.every((g) => g == 0)) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Informe as gramas de cada alimento (0 tira o item).')));
-      return false;
+    void warn(String text) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
+    switch (m.tool) {
+      case 'log_estimated_meal':
+        // Novas gramas: kcal e macros acompanham na proporção (são
+        // estimativa para a porção). Item com 0 g sai da refeição.
+        final items = (m.params['items'] as List).cast<Map<String, dynamic>>();
+        final grams = [for (final c in m.gramFields!) double.tryParse(c.text.trim().replaceAll(',', '.'))];
+        if (grams.any((g) => g == null || g < 0) || grams.every((g) => g == 0)) {
+          warn('Informe as gramas de cada alimento (0 tira o item).');
+          return false;
+        }
+        final next = <Map<String, dynamic>>[];
+        for (var i = 0; i < items.length; i++) {
+          final g = grams[i]!;
+          if (g == 0) continue;
+          final f = g / (items[i]['grams'] as num).toDouble();
+          next.add({
+            ...items[i],
+            'grams': g,
+            for (final k in const ['kcal', 'protein_g', 'carbs_g', 'fat_g'])
+              if (items[i][k] is num) k: (items[i][k] as num) * f,
+          });
+        }
+        m.params['items'] = next;
+      case 'log_water':
+        final ml = _parse(m.amountField!.text);
+        if (ml == null || ml <= 0 || ml > 5000) {
+          warn('Informe a água em ml (até 5.000).');
+          return false;
+        }
+        m.params['amount_ml'] = ml;
+      case 'log_symptom':
+        if (m.intensity != null) m.params['intensity'] = m.intensity;
+        if (m.when != null) m.params['at'] = m.when!.toUtc().toIso8601String();
     }
-    final next = <Map<String, dynamic>>[];
-    for (var i = 0; i < items.length; i++) {
-      final g = grams[i]!;
-      if (g == 0) continue;
-      final old = (items[i]['grams'] as num).toDouble();
-      final f = g / old;
-      next.add({
-        ...items[i],
-        'grams': g,
-        for (final k in const ['kcal', 'protein_g', 'carbs_g', 'fat_g'])
-          if (items[i][k] is num) k: (items[i][k] as num) * f,
-      });
-    }
-    m.params['items'] = next;
     return true;
+  }
+
+  Widget _editor(_ProposalMsg m) {
+    final t = Theme.of(context).textTheme;
+    switch (m.tool) {
+      case 'log_water':
+        return TextField(
+          key: const Key('proposal_ml'),
+          controller: m.amountField,
+          keyboardType: TextInputType.number,
+          inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
+          decoration: const InputDecoration(labelText: 'Água', suffixText: 'ml', isDense: true),
+        );
+      case 'log_symptom':
+        final w = m.when;
+        String two(int v) => v.toString().padLeft(2, '0');
+        return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Intensidade${m.intensity == null ? '' : ': ${m.intensity} de 10'}', style: t.labelLarge),
+          Slider(
+            key: const Key('proposal_intensity'),
+            value: (m.intensity ?? 5).toDouble(),
+            min: 0,
+            max: 10,
+            divisions: 10,
+            label: '${m.intensity ?? 5}',
+            onChanged: (v) => _changed(() => m.intensity = v.round()),
+          ),
+          Text('Quando', style: t.labelLarge),
+          TextButton.icon(
+            key: const Key('proposal_when'),
+            onPressed: () async {
+              final base = m.when ?? DateTime.now();
+              final picked = await showTimePicker(context: context, initialTime: TimeOfDay.fromDateTime(base));
+              if (picked == null) return;
+              var at = DateTime(base.year, base.month, base.day, picked.hour, picked.minute);
+              // Hora que ainda não chegou hoje = ontem.
+              if (at.isAfter(DateTime.now())) at = at.subtract(const Duration(days: 1));
+              _changed(() => m.when = at);
+            },
+            icon: const Icon(Icons.schedule, size: 18),
+            label: Text(w == null ? 'Agora' : '${two(w.hour)}:${two(w.minute)}'),
+          ),
+        ]);
+      default:
+        return _gramsEditor(m);
+    }
   }
 
   void _scrollToEnd() {
@@ -214,7 +411,7 @@ class _BrainScreenState extends State<BrainScreen> {
   Future<void> _send(String text) async {
     if (_thinking) return;
     final deps = widget.deps;
-    setState(() => _messages.add(_UserMsg(text)));
+    _changed(() => _messages.add(_UserMsg(text)));
     _scrollToEnd();
 
     // Passo 1: o roteador determinístico, sem rede. Só o que ele não
@@ -235,17 +432,18 @@ class _BrainScreenState extends State<BrainScreen> {
   Future<void> _askAi(String sending, Future<ToolCallPlan> Function(AiToolCaller caller) ask) async {
     final deps = widget.deps;
     if (!await ensureAiConsent(context, deps, sending: sending)) {
-      if (mounted) setState(() => _messages.add(_BotMsg('Ok, não enviei nada.')));
+      if (mounted) _changed(() => _messages.add(_BotMsg('Ok, não enviei nada.')));
       return;
     }
     if (!mounted) return;
-    setState(() => _thinking = true);
+    _changed(() => _thinking = true);
     ToolCallPlan plan;
     try {
-      plan = await ask(AiToolCaller(client: deps.ai.client, medications: deps.medicationRepository.listAll));
+      final history = _historyText();
+      plan = await ask(AiToolCaller(client: deps.ai.client, medications: deps.medicationRepository.listAll, history: () => history));
     } catch (e) {
       if (!mounted) return;
-      setState(() {
+      _changed(() {
         _thinking = false;
         _messages.add(_BotMsg(e is AiException && e.failure == AiFailure.invalidOutput
             ? 'Não entendi. Tente uma frase por registro, como "bebi 500 ml de água" ou "comi 2 ovos no café".'
@@ -255,11 +453,12 @@ class _BrainScreenState extends State<BrainScreen> {
       return;
     }
     if (!mounted) return;
-    setState(() {
+    _changed(() {
       _thinking = false;
       for (final m in plan.messages) {
         _messages.add(_BotMsg(m, fromAi: true));
       }
+      if (plan.suggestions.isNotEmpty) _messages.add(_SuggestMsg(plan.suggestions));
     });
     _scrollToEnd();
     // Cada cartão segue sozinho: a resposta de uma pergunta aparece na hora,
@@ -283,7 +482,7 @@ class _BrainScreenState extends State<BrainScreen> {
       if (!ok) ok = await rec.requestPermission();
       if (!ok) {
         if (mounted) {
-          setState(() => _messages.add(_BotMsg('Para falar com o Cérebro, permita o microfone. '
+          _changed(() => _messages.add(_BotMsg('Para falar com o Cérebro, permita o microfone. '
               'Você pode mudar isso em Conta › Permissões.')));
         }
         return false;
@@ -299,10 +498,10 @@ class _BrainScreenState extends State<BrainScreen> {
     final audio = await widget.deps.voiceRecorder.stop();
     if (!mounted) return;
     if (audio == null || audio.duration < const Duration(milliseconds: 800)) {
-      setState(() => _messages.add(_BotMsg('Segure o botão do microfone enquanto fala.')));
+      _changed(() => _messages.add(_BotMsg('Segure o botão do microfone enquanto fala.')));
       return;
     }
-    setState(() => _messages.add(_VoiceMsg(audio.duration)));
+    _changed(() => _messages.add(_VoiceMsg(audio.duration)));
     _scrollToEnd();
     await _askAi('o áudio que você gravou',
         (caller) => caller.planVoice(audio.bytes, RecordedAudio.mimeType, widget.deps.registry.specs));
@@ -365,14 +564,14 @@ class _BrainScreenState extends State<BrainScreen> {
   /// salvar".
   Future<void> _readAttachment(AttachKind kind, PickedDocument file) async {
     final deps = widget.deps;
-    setState(() => _messages.add(_AttachMsg(kind, file)));
+    _changed(() => _messages.add(_AttachMsg(kind, file)));
     _scrollToEnd();
     if (!await ensureAiConsent(context, deps, sending: kind.sending)) {
-      if (mounted) setState(() => _messages.add(_BotMsg('Ok, não enviei nada.')));
+      if (mounted) _changed(() => _messages.add(_BotMsg('Ok, não enviei nada.')));
       return;
     }
     if (!mounted) return;
-    setState(() => _thinking = true);
+    _changed(() => _thinking = true);
     try {
       final client = await deps.ai.client();
       final part = AiPart.file(file.bytes, file.mimeType);
@@ -380,26 +579,26 @@ class _BrainScreenState extends State<BrainScreen> {
         case AttachKind.plate:
           final estimate = await estimatePlate(client, part);
           if (!mounted) return;
-          setState(() => _thinking = false);
+          _changed(() => _thinking = false);
           await _proposePlate(file, estimate);
         case AttachKind.prescription:
           final rx = await readPrescription(client, [part]);
           if (!mounted) return;
-          setState(() {
+          _changed(() {
             _thinking = false;
             _messages.add(_DocMsg(kind, file, describePrescriptionReading(rx), prescription: rx));
           });
         case AttachKind.exam:
           final exam = await readExam(client, [part]);
           if (!mounted) return;
-          setState(() {
+          _changed(() {
             _thinking = false;
             _messages.add(_DocMsg(kind, file, describeExamReading(exam), exam: exam));
           });
       }
     } catch (e) {
       if (!mounted) return;
-      setState(() {
+      _changed(() {
         _thinking = false;
         _messages.add(_BotMsg(aiFailureMessage(e)));
       });
@@ -410,7 +609,7 @@ class _BrainScreenState extends State<BrainScreen> {
   Future<void> _proposePlate(PickedDocument photo, PlateEstimate estimate) async {
     final deps = widget.deps;
     if (estimate.items.isEmpty) {
-      setState(() => _messages.add(_BotMsg('Não reconheci alimentos nesta foto. Tente de cima, com o prato inteiro e boa luz.', fromAi: true)));
+      _changed(() => _messages.add(_BotMsg('Não reconheci alimentos nesta foto. Tente de cima, com o prato inteiro e boa luz.', fromAi: true)));
       return;
     }
     final now = DateTime.now();
@@ -452,12 +651,12 @@ class _BrainScreenState extends State<BrainScreen> {
     if (!mounted) return;
     final kind = m.kind == AttachKind.exam ? HealthDocumentKind.exam : HealthDocumentKind.prescription;
     final saved = widget.deps.documents.list(kind).any((d) => d.files.any((f) => f.originalName == m.file.name));
-    if (saved) setState(() => m.saved = true);
+    if (saved) _changed(() => m.saved = true);
   }
 
   void _showResults(List<PipelineResult> results) {
     widget.deps.notifyDataChanged();
-    setState(() {
+    _changed(() {
       for (final r in results) {
         final answer = describeOutcome(widget.deps, r);
         // Escrita confirmada: o próprio cartão já diz "Salvo em …".
@@ -474,8 +673,31 @@ class _BrainScreenState extends State<BrainScreen> {
         m.disposeFields();
       }
     }
-    setState(_messages.clear);
+    setState(() {
+      _messages.clear();
+      _conv = BrainConversation.start();
+    });
   }
+
+  /// Abre uma conversa guardada para continuar (lista de conversas).
+  void _openConversation(BrainConversation c) {
+    _newConversation();
+    setState(() {
+      _conv = c;
+      _messages.addAll([for (final m in c.messages) ?_msgFromJson(m)]);
+    });
+    _scrollToEnd();
+  }
+
+  Future<void> _showConversations() async {
+    final picked = await Navigator.of(context).push<BrainConversation>(
+      MaterialPageRoute(builder: (_) => BrainConversationsScreen(deps: widget.deps, currentId: _conv.id)),
+    );
+    if (picked == null || !mounted) return;
+    if (picked.id == _conv.id) return;
+    picked.isEmpty ? _newConversation() : _openConversation(picked);
+  }
+
 
   Widget _proposal(_ProposalMsg m) {
     final view = describeProposal(widget.deps, m.tool, m.params);
@@ -502,8 +724,26 @@ class _BrainScreenState extends State<BrainScreen> {
           // disse — se estiver errado, descarta e escreve de novo.
           onEdit: m.editable ? () => _startEdit(m) : null,
           onCancelEdit: () => _cancelEdit(m),
-          editor: m.state == ProposalState.editing ? _gramsEditor(m) : null,
+          editor: m.state == ProposalState.editing ? _editor(m) : null,
         ),
+      ]),
+    );
+  }
+
+  Widget _suggestions(_SuggestMsg m) {
+    if (m.used) return const SizedBox.shrink();
+    return Padding(
+      padding: const EdgeInsets.only(bottom: RltSpace.s),
+      child: Wrap(spacing: RltSpace.s, runSpacing: RltSpace.s, children: [
+        for (final x in m.items)
+          ActionChip(
+            key: Key('brain_reply_$x'),
+            label: Text(x),
+            onPressed: () {
+              _changed(() => m.used = true);
+              _send(x);
+            },
+          ),
       ]),
     );
   }
@@ -529,7 +769,9 @@ class _BrainScreenState extends State<BrainScreen> {
           Text('Confira com o papel antes de salvar. O RLT registra; não diagnostica nem prescreve.',
               style: t.bodySmall?.copyWith(color: c.onSurfaceVariant)),
           const SizedBox(height: RltSpace.s),
-          if (m.saved)
+          if (m.restored && !m.saved)
+            Text('Não foi salvo. Anexe de novo para revisar e salvar.', style: t.bodySmall)
+          else if (m.saved)
             Row(children: [
               Icon(Icons.check, size: 18, color: c.success),
               const SizedBox(width: 6),
@@ -598,6 +840,12 @@ class _BrainScreenState extends State<BrainScreen> {
                     style: t.bodySmall,
                   ),
           ),
+          IconButton(
+            key: const Key('brain_history'),
+            tooltip: 'Conversas',
+            onPressed: _showConversations,
+            icon: const Icon(Icons.forum_outlined),
+          ),
           if (_messages.isNotEmpty)
             TextButton(key: const Key('brain_new'), onPressed: _newConversation, child: const Text('Nova conversa')),
         ]),
@@ -605,14 +853,34 @@ class _BrainScreenState extends State<BrainScreen> {
       Expanded(
         child: _messages.isEmpty
             ? ListView(padding: const EdgeInsets.all(RltSpace.l), children: [
-                Text('O que você quer registrar?', style: t.titleLarge),
+                Text(aiOn ? 'Conte o que aconteceu' : 'O que você quer registrar?', style: t.titleLarge),
                 const SizedBox(height: RltSpace.s),
-                Text(aiOn ? 'Escreva do seu jeito: cada registro vira um cartão para você conferir.' : 'Toque num exemplo ou escreva um comando.',
+                Text(
+                    aiOn
+                        ? 'Escreva, fale ou mande foto ou PDF. Eu mostro o que entendi e você confirma antes de salvar.'
+                        : 'Toque num exemplo ou escreva um comando.',
                     style: t.bodyMedium),
                 const SizedBox(height: RltSpace.m),
                 Wrap(spacing: RltSpace.s, runSpacing: RltSpace.s, children: [
                   for (final e in examples)
                     ActionChip(key: Key('brain_example_$e'), label: Text(e), onPressed: () => _send(e)),
+                  if (aiOn) ...[
+                    ActionChip(
+                      key: const Key('brain_example_plate'),
+                      avatar: const Icon(Icons.photo_camera_outlined, size: 18),
+                      label: const Text('Fotografar meu prato'),
+                      onPressed: _plateCamera,
+                    ),
+                    ActionChip(
+                      key: const Key('brain_example_prescription'),
+                      avatar: const Icon(Icons.description_outlined, size: 18),
+                      label: const Text('Ler uma receita médica'),
+                      onPressed: () async {
+                        final file = await widget.deps.documentPicker.pickImage();
+                        if (file != null && mounted) await _readAttachment(AttachKind.prescription, file);
+                      },
+                    ),
+                  ],
                 ]),
                 const SizedBox(height: RltSpace.xl),
                 const HealthDisclaimer(),
@@ -627,6 +895,7 @@ class _BrainScreenState extends State<BrainScreen> {
                   _BotMsg(:final text, :final fromAi) => _Bubble(text: text, mine: false, disclaimer: fromAi),
                   _AttachMsg(:final kind, :final file) => _AttachBubble(kind: kind, file: file),
                   _VoiceMsg(:final duration) => _VoiceBubble(duration: duration),
+                  final _SuggestMsg m => _suggestions(m),
                   final _DocMsg m => _docCard(m),
                   final _ProposalMsg m => _proposal(m),
                 },

@@ -216,11 +216,32 @@ ToolCallPlan planFromReading(ChatReading r, {required List<Medication> medicatio
     };
     calls.add(ToolCallDecision(tool, {'date': date}));
   }
+  for (final m in r.newMedications) {
+    final known = matchMedication(medications, m.name);
+    if (known != null) {
+      messages.add('${known.name} já está em Saúde › Remédios.');
+      continue;
+    }
+    calls.add(ToolCallDecision('add_medication', {
+      'name': m.name,
+      'dose_amount': m.doseAmount,
+      'dose_unit': m.doseUnit,
+      'times': m.times,
+      'start_date': date,
+    }));
+  }
   if (calls.isEmpty && messages.isEmpty) {
     messages.add('Não encontrei nada para registrar nessa mensagem.');
   }
-  return ToolCallPlan(calls: calls, messages: messages);
+  return ToolCallPlan(
+    calls: calls,
+    messages: messages,
+    // Resposta rápida nunca oferece dose (o RLT não sugere dose).
+    suggestions: [for (final x in r.suggestions) if (!_looksLikeDose.hasMatch(x)) x],
+  );
 }
+
+final _looksLikeDose = RegExp(r'\d\s*(mg|mcg|µg|g|ml|ui|gotas?|comprimidos?|c[aá]psulas?|unidades?)\b', caseSensitive: false);
 
 /// Passo 2 do cérebro com o Gemini (ADR-11). Vai **só** o texto da
 /// mensagem e a hora atual; remédios cadastrados são casados aqui no
@@ -230,7 +251,10 @@ class AiToolCaller implements PlanningToolCaller {
   final List<Medication> Function() medications;
   final DateTime Function() clock;
 
-  AiToolCaller({required this.client, required this.medications, DateTime Function()? clock})
+  /// O que já foi dito nesta conversa (para "pode salvar", "foi às 9h").
+  final String Function()? history;
+
+  AiToolCaller({required this.client, required this.medications, this.history, DateTime Function()? clock})
       : clock = clock ?? DateTime.now;
 
   @override
@@ -243,12 +267,13 @@ class AiToolCaller implements PlanningToolCaller {
 
   Future<ToolCallPlan> _plan(String userInput, List<ToolSpec> availableTools, {AiPart? audio}) async {
     final now = clock();
-    final reading = await readChatMessage(await client(), userInput, now: now, audio: audio);
+    final reading = await readChatMessage(await client(), userInput, now: now, audio: audio, history: history?.call());
     final plan = planFromReading(reading, medications: medications(), now: now);
     final names = {for (final t in availableTools) t.name};
     return ToolCallPlan(
       calls: [for (final c in plan.calls) if (names.contains(c.toolName)) c],
       messages: plan.messages,
+      suggestions: plan.suggestions,
     );
   }
 }

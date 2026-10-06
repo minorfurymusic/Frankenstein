@@ -143,6 +143,7 @@ Map<String, dynamic> buildFullExport(AppDependencies deps, {DateTime? now}) {
     'recipes': [for (final r in deps.nutrition.recipes()) r.toJson()],
     'diet_preferences': deps.nutrition.dietPreferences().toJson(),
     'meal_plan': deps.mealPlans.load()?.toJson(),
+    'brain_conversations': [for (final c in deps.conversations.list()) c.toJson()],
     'plate_photos': [
       for (final p in deps.nutrition.platePhotos()) {...p.toJson(), 'path_in_export': '$exportFilesDir/${p.storedName}'},
     ],
