@@ -10,6 +10,7 @@ import 'account/preferences_screen.dart';
 import 'account/profile_screen.dart';
 import 'home/reminders_screen.dart';
 import '../theme/rlt_theme.dart';
+import 'account/about_screen.dart';
 
 /// Conta e Configurações, aberta pelo avatar do Início (prancheta Conta).
 /// Cada seção abre a sua tela; "Sobre" abre versão e licenças.
@@ -84,16 +85,9 @@ class AccountScreen extends StatelessWidget {
             key: const Key('account_about'),
             leading: Icon(Icons.info_outline, color: c.onSurfaceVariant),
             title: Text('Sobre', style: t.titleSmall),
-            subtitle: const Text('Versão, licenças de código aberto'),
+            subtitle: const Text('Versão, licenças, privacidade e termos'),
             trailing: const Icon(Icons.chevron_right),
-            onTap: () => showLicensePage(
-              context: context,
-              applicationName: 'RLT — Real Life Track',
-              applicationLegalese:
-                  'Código aberto (copyleft). Sem anúncios, sem telemetria.\n\n'
-                  'O RLT não faz diagnóstico nem prescrição. Em caso de dúvida ou sintoma '
-                  'preocupante, procure um profissional de saúde.',
-            ),
+            onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const AboutScreen())),
           ),
         ],
       ),

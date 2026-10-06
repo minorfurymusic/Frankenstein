@@ -65,15 +65,31 @@ Responda pelo número (ex.: "1: ok; 3: B; 9: A").
     dia de hoje; em dia anterior aparece o aviso "Você está vendo um dia
     anterior" (como na prancheta). Confere?
 
+## Ciclos D, E e F — estados e acabamentos (2026-10-06)
+
+12. **Política de privacidade e termos de uso**: a tela Sobre mostra os
+    nossos compromissos em linguagem simples e avisa "O texto completo será
+    publicado antes do lançamento". **Não escrevi texto jurídico** (LGPD
+    pede revisão de advogado). Quem escreve? **A** você traz o texto
+    revisado · **B** eu faço um rascunho para o advogado revisar.
+13. **"Fotografar tabela nutricional"** (prancheta CodigoBarras, produto não
+    encontrado): **não fiz** — seria a IA lendo o rótulo para cadastrar o
+    produto. Hoje a pessoa digita os valores. **A** fazer (mesmo padrão da
+    leitura de exame, com consentimento) · **B** deixar como está.
+14. **"Conectar prontuário de hospital · Premium"** (prancheta
+    ExamesEstados): **não mostrei** no vazio de Exames, porque depende do
+    servidor e da assinatura (ADR-7/ADR-14). Entra quando o servidor
+    existir. Confere?
+
 ## Pendentes de antes
 
-12. **Especificação de nutrição** (`docs/specs/nutricao.md`): posso incluir
+15. **Especificação de nutrição** (`docs/specs/nutricao.md`): posso incluir
     "foto do prato" e "texto/voz no Cérebro" como formas de registrar
     refeição? Hoje a refeição estimada pela IA é gravada por uma
     ferramenta do app, porque o pacote de nutrição só muda depois da
     especificação (regra de sala limpa).
-13. **Avaliação ao vivo com a sua chave.** Rodar
+16. **Avaliação ao vivo com a sua chave.** Rodar
     `GEMINI_API_KEY=sua_chave dart test test/live_eval_test.dart` dentro de
     `packages/ai` mostra quanto o Gemini acerta nos 12 exemplos reais
     (gasta 12 chamadas).
-14. **Ícone do app**: você disse que mandaria depois.
+17. **Ícone do app**: você disse que mandaria depois.

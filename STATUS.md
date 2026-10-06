@@ -23,7 +23,17 @@ branco: navegação Resumo/Chat de verdade, ligada aos pacotes reais, com
 compartilhamento de treino/corrida funcionando de ponta a ponta. Detalhe
 completo em `docs/HISTORICO.md`.
 
-**Ciclo mais recente (2026-10-06): estados da Saúde** (pranchetas
+**Ciclo mais recente (2026-10-06): acabamentos.** Conta › Sobre
+(prancheta ContaSobre): nome, versão (constante conferida contra o
+`pubspec.yaml` por teste, sem biblioteca), aviso de saúde, licenças,
+política e termos (por ora, os compromissos do app; texto jurídico
+pendente — `TODO(frankstein)` e item 12 de `docs/DECISOES-PENDENTES.md`).
+Adição rápida com "Salvar como item meu". Código de barras: "Produto não
+encontrado" (Cadastrar produto / Ler outro código) e câmera sem permissão
+no texto da prancheta. Teste com a fonte do sistema em 160% nas cinco abas,
+sem quebrar o layout.
+
+**Ciclo anterior (2026-10-06): estados da Saúde** (pranchetas
 SaudeEstados, RemediosEstados, VitaisEstados, CorpoEstados,
 HistoricoEstados, ReceitasEstados, ExamesEstados). Erro com "Tentar de
 novo" (`GuardedView`, agora também com barra de título) na aba Saúde,

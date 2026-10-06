@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_zxing/flutter_zxing.dart';
 
 import '../../theme/rlt_theme.dart';
+import '../../widgets/state_views.dart';
 
 /// Formatos de rótulo de alimento (EAN/UPC). QR e afins ficam de fora para
 /// não ler o código errado da embalagem.
@@ -52,16 +53,20 @@ class _BarcodeScannerScreenState extends State<BarcodeScannerScreen> {
       body: Column(children: [
         Expanded(
           child: _cameraError
-              ? Center(
-                  child: Padding(
-                    padding: const EdgeInsets.all(RltSpace.xl),
-                    child: Text(
-                      'Não deu para usar a câmera. Libere a câmera para o RLT nas configurações do Android ou digite o código.',
-                      style: t.bodyLarge,
-                      textAlign: TextAlign.center,
-                    ),
+              // Prancheta CodigoBarras, "Câmera sem permissão".
+              ? ListView(padding: const EdgeInsets.all(RltSpace.l), children: [
+                  StateCard(
+                    key: const Key('barcode_camera_denied'),
+                    icon: Icons.no_photography_outlined,
+                    tone: StateTone.permission,
+                    title: 'Permita o uso da câmera',
+                    message: 'A câmera é usada só para ler o código. Nada é gravado. Se o Android não perguntar de novo, '
+                        'libere a câmera para o RLT nas configurações.',
+                    actionLabel: 'Permitir câmera',
+                    // Abrir o leitor de novo faz o Android perguntar outra vez.
+                    onAction: () => setState(() => _cameraError = false),
                   ),
-                )
+                ])
               : ReaderWidget(
                   codeFormat: kFoodBarcodeFormats,
                   tryHarder: true,

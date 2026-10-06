@@ -171,12 +171,16 @@ class NutritionStore {
   /// Adição rápida (`docs/specs/nutricao.md`, "Adição rápida"): nome + kcal
   /// (macros opcionais) de **uma porção**. Vira alimento próprio cuja
   /// "porção de 100 g" é a porção informada — registrar 100 g = 1 porção.
+  ///
+  /// [saveAsMine] (prancheta AdicaoRapida, "Salvar como item meu"): entra em
+  /// "Meus itens" para adicionar com um toque depois.
   Food createQuickItem({
     required String name,
     required double kcal,
     double protein = 0,
     double carbs = 0,
     double fat = 0,
+    bool saveAsMine = true,
   }) {
     if (name.trim().isEmpty) throw ArgumentError('dê um nome ao item');
     if (kcal <= 0) throw ArgumentError('calorias precisam ser maiores que zero');
@@ -190,7 +194,7 @@ class NutritionStore {
       fatPer100g: fat,
     );
     foods.insertCustomFood(food);
-    _addMyItem(food.id);
+    if (saveAsMine) _addMyItem(food.id);
     return food;
   }
 

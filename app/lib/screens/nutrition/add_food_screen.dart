@@ -9,6 +9,7 @@ import '../../format.dart';
 import '../../theme/rlt_colors.dart';
 import '../../theme/rlt_theme.dart';
 import '../../widgets/common.dart';
+import '../../widgets/state_views.dart';
 import 'barcode_scanner_screen.dart';
 import 'food_detail_screen.dart';
 import 'meal_labels.dart';
@@ -61,6 +62,13 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
     final food = widget.deps.foodRepository.findByBarcode(code);
     if (food != null) {
       _open(food, method: MealItemInputMethod.barcode);
+      return;
+    }
+    // Prancheta CodigoBarras, "Não encontrado": cadastrar ou ler outro.
+    final next = await Navigator.of(context).push<_NotFoundChoice>(MaterialPageRoute(builder: (_) => _BarcodeNotFoundScreen(code: code)));
+    if (!mounted || next == null) return;
+    if (next == _NotFoundChoice.scanAgain) {
+      await _barcode();
       return;
     }
     final created = await Navigator.of(context).push<Food>(MaterialPageRoute(
@@ -261,6 +269,7 @@ class _QuickAddScreenState extends State<QuickAddScreen> {
   final _p = TextEditingController();
   final _c = TextEditingController();
   final _f = TextEditingController();
+  bool _saveAsMine = true;
 
   @override
   void dispose() {
@@ -280,7 +289,7 @@ class _QuickAddScreenState extends State<QuickAddScreen> {
     try {
       final store = widget.deps.nutrition;
       final food = widget.barcode == null
-          ? store.createQuickItem(name: _name.text, kcal: kcal, protein: opt(_p), carbs: opt(_c), fat: opt(_f))
+          ? store.createQuickItem(name: _name.text, kcal: kcal, protein: opt(_p), carbs: opt(_c), fat: opt(_f), saveAsMine: _saveAsMine)
           : store.createBarcodeItem(
               barcode: widget.barcode!,
               name: _name.text,
@@ -327,6 +336,45 @@ class _QuickAddScreenState extends State<QuickAddScreen> {
           const SizedBox(width: RltSpace.s),
           Expanded(child: TextField(controller: _f, keyboardType: numeric, decoration: const InputDecoration(labelText: 'Gordura', suffixText: 'g'))),
         ]),
+        if (widget.barcode == null) ...[
+          const SizedBox(height: RltSpace.m),
+          SwitchListTile(
+            key: const Key('quick_save_mine'),
+            contentPadding: EdgeInsets.zero,
+            value: _saveAsMine,
+            onChanged: (v) => setState(() => _saveAsMine = v),
+            title: const Text('Salvar como item meu'),
+            subtitle: const Text('Para adicionar com um toque depois'),
+          ),
+        ],
+      ]),
+    );
+  }
+}
+
+enum _NotFoundChoice { register, scanAgain }
+
+class _BarcodeNotFoundScreen extends StatelessWidget {
+  final String code;
+  const _BarcodeNotFoundScreen({required this.code});
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      appBar: AppBar(title: const Text('Ler código de barras')),
+      body: ListView(padding: const EdgeInsets.all(RltSpace.l), children: [
+        StateCard(
+          key: const Key('barcode_not_found'),
+          icon: Icons.search_off,
+          title: 'Produto não encontrado',
+          message: 'O código $code não está no catálogo. Cadastre a partir da tabela nutricional da embalagem.',
+          actionLabel: 'Cadastrar produto',
+          actionIcon: Icons.add,
+          onAction: () => Navigator.of(context).pop(_NotFoundChoice.register),
+          secondaryLabel: 'Ler outro código',
+          secondaryIcon: Icons.qr_code_scanner,
+          onSecondary: () => Navigator.of(context).pop(_NotFoundChoice.scanAgain),
+        ),
       ]),
     );
   }
