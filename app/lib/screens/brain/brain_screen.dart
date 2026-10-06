@@ -4,19 +4,25 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:frankstein_ai/ai.dart';
 import 'package:frankstein_brain/brain.dart';
+import 'package:frankstein_health_records/health_records.dart';
+import 'package:frankstein_nutrition/nutrition.dart';
 import 'package:frankstein_tool_registry/tool_registry.dart';
 
 import '../../ai/ai_consent.dart';
 import '../../ai/ai_settings.dart';
 import '../../ai/brain_ai.dart';
 import '../../app_dependencies.dart';
-import '../../format.dart';
 import '../../confirmation_gate.dart';
+import '../../data/nutrition_store.dart';
+import '../../documents/document_files.dart';
+import '../../format.dart';
 import '../../theme/rlt_colors.dart';
 import '../../theme/rlt_theme.dart';
 import '../../widgets/badges.dart';
 import '../../widgets/message_composer.dart';
 import '../../widgets/proposal_card.dart';
+import '../health/documents_screens.dart';
+import '../nutrition/plate_photo_screen.dart';
 import 'brain_text.dart';
 
 sealed class _Msg {}
@@ -32,6 +38,36 @@ class _BotMsg extends _Msg {
   /// Resposta da IA: leva o aviso de que o app não diagnostica nem prescreve.
   final bool fromAi;
   _BotMsg(this.text, {this.fromAi = false});
+}
+
+/// O que a pessoa anexou no Cérebro.
+enum AttachKind {
+  plate('Foto do prato', 'a foto do prato, para estimar alimentos e calorias', Icons.restaurant_outlined),
+  prescription('Receita médica', 'a foto ou o PDF da receita, para ler médico, datas e remédios', Icons.description_outlined),
+  exam('Exame', 'a foto ou o PDF do exame, para ler os valores', Icons.science_outlined);
+
+  final String label;
+  final String sending;
+  final IconData icon;
+  const AttachKind(this.label, this.sending, this.icon);
+}
+
+class _AttachMsg extends _Msg {
+  final AttachKind kind;
+  final PickedDocument file;
+  _AttachMsg(this.kind, this.file);
+}
+
+/// Receita ou exame lido: resumo e "Revisar e salvar" (abre o formulário já
+/// preenchido; nada é salvo sem o "Salvar" de lá).
+class _DocMsg extends _Msg {
+  final AttachKind kind;
+  final PickedDocument file;
+  final String summary;
+  final ExamReading? exam;
+  final PrescriptionReading? prescription;
+  bool saved = false;
+  _DocMsg(this.kind, this.file, this.summary, {this.exam, this.prescription});
 }
 
 class _ProposalMsg extends _Msg {
@@ -222,6 +258,141 @@ class _BrainScreenState extends State<BrainScreen> {
     ]);
   }
 
+  Future<void> _attach() async {
+    final picked = await showModalBottomSheet<(AttachKind, PickedDocument?)>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheet) {
+        final picker = widget.deps.documentPicker;
+        Widget source(AttachKind kind, String id, String label, IconData icon, Future<PickedDocument?> Function() pick) =>
+            OutlinedButton.icon(
+              key: Key('attach_${kind.name}_$id'),
+              onPressed: () async {
+                final file = await pick();
+                if (sheet.mounted) Navigator.of(sheet).pop((kind, file));
+              },
+              icon: Icon(icon, size: 18),
+              label: Text(label),
+            );
+        return SafeArea(
+          child: ListView(shrinkWrap: true, padding: const EdgeInsets.fromLTRB(RltSpace.l, 0, RltSpace.l, RltSpace.l), children: [
+            Text('Anexar ao Cérebro', style: Theme.of(sheet).textTheme.titleMedium),
+            const SizedBox(height: RltSpace.xs),
+            Text('O arquivo só vai à IA depois que você escolher. Nada é salvo sem você conferir.',
+                style: Theme.of(sheet).textTheme.bodySmall),
+            for (final kind in AttachKind.values) ...[
+              const SizedBox(height: RltSpace.m),
+              Row(children: [Icon(kind.icon, size: 20), const SizedBox(width: RltSpace.s), Text(kind.label)]),
+              const SizedBox(height: RltSpace.xs),
+              Wrap(spacing: RltSpace.s, runSpacing: RltSpace.s, children: [
+                source(kind, 'camera', 'Câmera', Icons.photo_camera_outlined, picker.takePhoto),
+                source(kind, 'gallery', 'Galeria', Icons.photo_library_outlined, picker.pickImage),
+                if (kind != AttachKind.plate) source(kind, 'pdf', 'PDF', Icons.picture_as_pdf_outlined, picker.pickPdf),
+              ]),
+            ],
+          ]),
+        );
+      },
+    );
+    if (picked == null || picked.$2 == null || !mounted) return;
+    await _readAttachment(picked.$1, picked.$2!);
+  }
+
+  /// Lê o anexo com a IA (só depois do consentimento). Prato vira cartão de
+  /// refeição estimada; receita e exame viram um resumo com "Revisar e
+  /// salvar".
+  Future<void> _readAttachment(AttachKind kind, PickedDocument file) async {
+    final deps = widget.deps;
+    setState(() => _messages.add(_AttachMsg(kind, file)));
+    _scrollToEnd();
+    if (!await ensureAiConsent(context, deps, sending: kind.sending)) {
+      if (mounted) setState(() => _messages.add(_BotMsg('Ok, não enviei nada.')));
+      return;
+    }
+    if (!mounted) return;
+    setState(() => _thinking = true);
+    try {
+      final client = await deps.ai.client();
+      final part = AiPart.file(file.bytes, file.mimeType);
+      switch (kind) {
+        case AttachKind.plate:
+          final estimate = await estimatePlate(client, part);
+          if (!mounted) return;
+          setState(() => _thinking = false);
+          await _proposePlate(file, estimate);
+        case AttachKind.prescription:
+          final rx = await readPrescription(client, [part]);
+          if (!mounted) return;
+          setState(() {
+            _thinking = false;
+            _messages.add(_DocMsg(kind, file, describePrescriptionReading(rx), prescription: rx));
+          });
+        case AttachKind.exam:
+          final exam = await readExam(client, [part]);
+          if (!mounted) return;
+          setState(() {
+            _thinking = false;
+            _messages.add(_DocMsg(kind, file, describeExamReading(exam), exam: exam));
+          });
+      }
+    } catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _thinking = false;
+        _messages.add(_BotMsg(aiFailureMessage(e)));
+      });
+    }
+    _scrollToEnd();
+  }
+
+  Future<void> _proposePlate(PickedDocument photo, PlateEstimate estimate) async {
+    final deps = widget.deps;
+    if (estimate.items.isEmpty) {
+      setState(() => _messages.add(_BotMsg('Não reconheci alimentos nesta foto. Tente de cima, com o prato inteiro e boa luz.', fromAi: true)));
+      return;
+    }
+    final now = DateTime.now();
+    final meal = MealType.values.where((t) => t.name == estimate.mealType).firstOrNull ?? mealTypeForHour(now.hour);
+    final call = ToolCallDecision('log_estimated_meal', {
+      'meal_type': meal.wireValue,
+      'items': [
+        for (final i in estimate.items)
+          {'name': i.name, 'grams': i.grams, 'kcal': i.kcal, 'protein_g': i.proteinGrams, 'carbs_g': i.carbsGrams, 'fat_g': i.fatGrams},
+      ],
+    });
+    final results = await deps.pipeline.runPlan(ToolCallPlan(calls: [call]));
+    final r = results.single;
+    final eventId = r.toolResult?.data?['event_id'] as String?;
+    if (r.outcome == PipelineOutcome.executed && r.toolResult!.success && eventId != null) {
+      // Confirmado: a foto vai para a Galeria, como na tela Foto do prato.
+      final stored = await deps.documentFiles.store(photo);
+      deps.nutrition.addPlatePhoto(PlatePhoto(
+        mealEventId: eventId,
+        storedName: stored.storedName,
+        mealType: MealType.fromWireValue(call.params['meal_type'] as String),
+        atUtc: now.toUtc(),
+        tzOffsetMinutes: now.timeZoneOffset.inMinutes,
+      ));
+    }
+    if (mounted) _showResults(results);
+  }
+
+  Future<void> _reviewDocument(_DocMsg m) async {
+    await Navigator.of(context).push<void>(MaterialPageRoute(
+      builder: (_) => DocumentFormScreen(
+        deps: widget.deps,
+        kind: m.kind == AttachKind.exam ? HealthDocumentKind.exam : HealthDocumentKind.prescription,
+        initialFile: m.file,
+        examReading: m.exam,
+        prescriptionReading: m.prescription,
+      ),
+    ));
+    if (!mounted) return;
+    final kind = m.kind == AttachKind.exam ? HealthDocumentKind.exam : HealthDocumentKind.prescription;
+    final saved = widget.deps.documents.list(kind).any((d) => d.files.any((f) => f.originalName == m.file.name));
+    if (saved) setState(() => m.saved = true);
+  }
+
   void _showResults(List<PipelineResult> results) {
     widget.deps.notifyDataChanged();
     setState(() {
@@ -272,6 +443,49 @@ class _BrainScreenState extends State<BrainScreen> {
           editor: m.state == ProposalState.editing ? _gramsEditor(m) : null,
         ),
       ]),
+    );
+  }
+
+  Widget _docCard(_DocMsg m) {
+    final t = Theme.of(context).textTheme;
+    final c = RltColors.of(context);
+    return Card(
+      key: Key('brain_doc_${m.kind.name}'),
+      margin: const EdgeInsets.symmetric(vertical: RltSpace.s),
+      child: Padding(
+        padding: const EdgeInsets.all(RltSpace.l),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Icon(m.kind.icon, size: 20),
+            const SizedBox(width: RltSpace.s),
+            Expanded(child: Text(m.kind.label.toUpperCase(), style: t.labelSmall?.copyWith(letterSpacing: 0.6))),
+            const RltBadge(RltBadgeKind.estimate),
+          ]),
+          const SizedBox(height: RltSpace.s),
+          Text(m.summary, key: Key('brain_doc_summary_${m.kind.name}'), style: t.bodyMedium),
+          const SizedBox(height: RltSpace.s),
+          Text('Confira com o papel antes de salvar. O RLT registra; não diagnostica nem prescreve.',
+              style: t.bodySmall?.copyWith(color: c.onSurfaceVariant)),
+          const SizedBox(height: RltSpace.s),
+          if (m.saved)
+            Row(children: [
+              Icon(Icons.check, size: 18, color: c.success),
+              const SizedBox(width: 6),
+              Text(m.kind == AttachKind.exam ? 'Salvo em Saúde › Exames' : 'Salvo em Saúde › Receitas médicas',
+                  style: t.labelLarge?.copyWith(fontSize: 14, color: c.success)),
+            ])
+          else
+            Align(
+              alignment: Alignment.centerRight,
+              child: FilledButton.icon(
+                key: Key('brain_doc_review_${m.kind.name}'),
+                onPressed: () => _reviewDocument(m),
+                icon: const Icon(Icons.edit_note, size: 18),
+                label: const Text('Revisar e salvar'),
+              ),
+            ),
+        ]),
+      ),
     );
   }
 
@@ -349,6 +563,8 @@ class _BrainScreenState extends State<BrainScreen> {
                 itemBuilder: (context, i) => switch (_messages[i]) {
                   _UserMsg(:final text) => _Bubble(text: text, mine: true),
                   _BotMsg(:final text, :final fromAi) => _Bubble(text: text, mine: false, disclaimer: fromAi),
+                  _AttachMsg(:final kind, :final file) => _AttachBubble(kind: kind, file: file),
+                  final _DocMsg m => _docCard(m),
                   final _ProposalMsg m => _proposal(m),
                 },
               ),
@@ -359,6 +575,7 @@ class _BrainScreenState extends State<BrainScreen> {
       MessageComposer(
         mode: ComposerMode.basic,
         hint: aiOn ? 'Escreva o que comeu, bebeu, tomou ou sentiu' : null,
+        onAttach: aiOn && !_thinking ? _attach : null,
         fieldKey: const Key('chat_input'),
         sendKey: const Key('chat_send'),
         onSend: _send,
@@ -396,6 +613,43 @@ class _Bubble extends StatelessWidget {
               style: Theme.of(context).textTheme.bodySmall?.copyWith(color: c.onSurfaceVariant),
             ),
           ],
+        ]),
+      ),
+    );
+  }
+}
+
+class _AttachBubble extends StatelessWidget {
+  final AttachKind kind;
+  final PickedDocument file;
+  const _AttachBubble({required this.kind, required this.file});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = RltColors.of(context);
+    final isPdf = file.mimeType == 'application/pdf';
+    return Align(
+      alignment: Alignment.centerRight,
+      child: Container(
+        key: Key('brain_attached_${kind.name}'),
+        constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.7),
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.all(RltSpace.s),
+        decoration: BoxDecoration(color: c.primaryContainer, borderRadius: BorderRadius.circular(RltRadius.card)),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.end, mainAxisSize: MainAxisSize.min, children: [
+          if (!isPdf)
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.memory(file.bytes, height: 140, fit: BoxFit.cover, errorBuilder: (_, _, _) => const SizedBox.shrink()),
+            ),
+          Padding(
+            padding: const EdgeInsets.only(top: 6),
+            child: Row(mainAxisSize: MainAxisSize.min, children: [
+              Icon(isPdf ? Icons.picture_as_pdf_outlined : kind.icon, size: 16, color: c.onPrimaryContainer),
+              const SizedBox(width: 6),
+              Flexible(child: Text('${kind.label} · ${file.name}', style: TextStyle(color: c.onPrimaryContainer))),
+            ]),
+          ),
         ]),
       ),
     );

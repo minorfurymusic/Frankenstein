@@ -1,9 +1,11 @@
+import 'package:frankstein_ai/ai.dart';
 import 'package:frankstein_brain/brain.dart';
 import 'package:frankstein_nutrition/nutrition.dart';
 
 import '../../app_dependencies.dart';
 import '../../format.dart';
 import '../../widgets/health_area.dart';
+import '../health/documents_screens.dart' show formatMarkerValue;
 
 /// Como um cartão de proposta mostra uma ferramenta de escrita: área de
 /// destino, título, detalhe e onde fica salvo depois de confirmado.
@@ -192,4 +194,28 @@ String describeOutcome(AppDependencies deps, PipelineResult r) {
       if (spec.write) return 'Pronto, salvo.';
       return describeReadResult(r.toolName!, t.data ?? const {});
   }
+}
+
+String _day(DateTime d) => '${d.day.toString().padLeft(2, '0')}/${d.month.toString().padLeft(2, '0')}/${d.year}';
+
+/// Resumo da receita lida, para o Cérebro.
+String describePrescriptionReading(PrescriptionReading r) {
+  if (r.medicines.isEmpty) return 'Não achei remédios nesta receita. Você pode revisar e preencher à mão.';
+  final who = [
+    r.doctor ?? 'médico não identificado',
+    if (r.date != null) _day(r.date!),
+  ].join(', ');
+  final count = r.medicines.length == 1 ? '1 remédio' : '${r.medicines.length} remédios';
+  final valid = r.validUntil == null ? '' : ' Válida até ${_day(r.validUntil!)}.';
+  return 'Receita de $who: $count — ${r.medicines.map((m) => m.name).join('; ')}.$valid';
+}
+
+/// Resumo do exame lido, para o Cérebro: os valores como estão no laudo,
+/// sem dizer se estão altos ou baixos.
+String describeExamReading(ExamReading r) {
+  if (r.markers.isEmpty) return 'Não achei valores numéricos neste exame. Você pode revisar e preencher à mão.';
+  final head = [r.title ?? 'Exame', if (r.date != null) _day(r.date!)].join(' de ');
+  final count = r.markers.length == 1 ? '1 valor lido' : '${r.markers.length} valores lidos';
+  final sample = r.markers.take(3).map((m) => '${m.name} ${formatMarkerValue(m.value)} ${m.unit}'.trim()).join(', ');
+  return '$head: $count ($sample${r.markers.length > 3 ? '…' : ''}).';
 }

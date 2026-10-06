@@ -404,7 +404,20 @@ class DocumentFormScreen extends StatefulWidget {
   final HealthDocumentKind kind;
   final HealthDocument? existing;
   final PickedDocument? initialFile;
-  const DocumentFormScreen({super.key, required this.deps, required this.kind, this.existing, this.initialFile});
+
+  /// Leitura já feita pela IA (ex.: anexo no Cérebro): preenche o
+  /// formulário sem chamar a IA de novo.
+  final ExamReading? examReading;
+  final PrescriptionReading? prescriptionReading;
+  const DocumentFormScreen({
+    super.key,
+    required this.deps,
+    required this.kind,
+    this.existing,
+    this.initialFile,
+    this.examReading,
+    this.prescriptionReading,
+  });
 
   @override
   State<DocumentFormScreen> createState() => _DocumentFormScreenState();
@@ -443,7 +456,15 @@ class _DocumentFormScreenState extends State<DocumentFormScreen> {
     super.initState();
     // Exame ou receita anexados direto da lista ("Fotografar exame"/"Enviar
     // PDF"): lê sozinho, como na escolha de arquivo dentro do formulário.
-    if (widget.initialFile != null) {
+    final exam = widget.examReading;
+    final rx = widget.prescriptionReading;
+    if (exam != null || rx != null) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        if (exam != null) _applyExam(exam);
+        if (rx != null) _applyPrescription(rx);
+      });
+    } else if (widget.initialFile != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted) _readWithAi(auto: true);
       });
@@ -485,31 +506,7 @@ class _DocumentFormScreenState extends State<DocumentFormScreen> {
         return;
       }
       final reading = await readExam(await deps.ai.client(), parts);
-      if (!mounted) return;
-      setState(() {
-        if (_title.text.trim().isEmpty && reading.title != null) _title.text = reading.title!;
-        if (reading.date != null) _date = LocalDate.fromDateTime(reading.date!);
-        final cat = ExamCategory.values.where((c) => c.wireValue == reading.category).firstOrNull;
-        if (cat != null) _category = cat;
-        final known = {for (final m in _markers) m.key};
-        for (final r in reading.markers) {
-          try {
-            final m = ExamMarker(
-              name: r.name,
-              value: r.value,
-              unit: r.unit,
-              referenceLow: r.referenceLow,
-              referenceHigh: r.referenceHigh,
-            );
-            if (known.add(m.key)) _markers.add(m);
-          } on ArgumentError {
-            // valor que não passa na validação fica de fora
-          }
-        }
-        _estimate = true;
-        _reading = false;
-        if (reading.markers.isEmpty) _readError = 'A IA não achou valores numéricos neste arquivo. Confira ou preencha à mão.';
-      });
+      if (mounted) _applyExam(reading);
     } catch (e) {
       if (mounted) {
         setState(() {
@@ -518,6 +515,34 @@ class _DocumentFormScreenState extends State<DocumentFormScreen> {
         });
       }
     }
+  }
+
+  /// Preenche o formulário com os valores lidos do exame (estimativa).
+  void _applyExam(ExamReading reading) {
+    setState(() {
+      if (_title.text.trim().isEmpty && reading.title != null) _title.text = reading.title!;
+      if (reading.date != null) _date = LocalDate.fromDateTime(reading.date!);
+      final cat = ExamCategory.values.where((c) => c.wireValue == reading.category).firstOrNull;
+      if (cat != null) _category = cat;
+      final known = {for (final m in _markers) m.key};
+      for (final r in reading.markers) {
+        try {
+          final m = ExamMarker(
+            name: r.name,
+            value: r.value,
+            unit: r.unit,
+            referenceLow: r.referenceLow,
+            referenceHigh: r.referenceHigh,
+          );
+          if (known.add(m.key)) _markers.add(m);
+        } on ArgumentError {
+          // valor que não passa na validação fica de fora
+        }
+      }
+      _estimate = true;
+      _reading = false;
+      if (reading.markers.isEmpty) _readError = 'A IA não achou valores numéricos neste arquivo. Confira ou preencha à mão.';
+    });
   }
 
   /// Preenche o formulário com o que a IA leu da receita (estimativa). Só

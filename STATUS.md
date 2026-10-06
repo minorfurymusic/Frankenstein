@@ -23,7 +23,22 @@ branco: navegação Resumo/Chat de verdade, ligada aos pacotes reais, com
 compartilhamento de treino/corrida funcionando de ponta a ponta. Detalhe
 completo em `docs/HISTORICO.md`.
 
-**Ciclo mais recente (2026-10-05): Cérebro conversando com o Gemini +
+**Ciclo mais recente (2026-10-06): anexos no Cérebro + 12 exemplos reais.**
+Com a IA ativa, o clipe no campo do Cérebro anexa **foto do prato**
+(câmera/galeria), **receita** ou **exame** (câmera/galeria/PDF). Só vai à IA
+depois do consentimento. Prato vira cartão de refeição estimada (editável;
+ao confirmar, a foto vai para a Galeria). Receita e exame viram um resumo
+com "Revisar e salvar", que abre o formulário já preenchido sem chamar a
+IA de novo. Exemplos reais com licença livre e gabarito em
+`packages/ai/test/fixtures/real_examples/` (FONTES.md): 4 pratos do
+Nutrition5k (CC BY 4.0, calorias medidas), 3 receitas sintéticas do
+xdiag-privacy (Apache-2.0) + 1 foto simulada de uma delas, 4 laudos
+sintéticos do Exames-de-Sangue (MIT). `app/test/brain_attachments_test.dart`
+anexa os 12 pelo Cérebro; `packages/ai/test/live_eval_test.dart` manda os 12
+ao Gemini de verdade só com `GEMINI_API_KEY` no ambiente (não rodou aqui:
+rede sem acesso ao Google).
+
+**Ciclo anterior (2026-10-05): Cérebro conversando com o Gemini +
 leitura de receita.** (1) Com a chave ativa, frase livre ("bebi 2 L de
 água, comi 3 ovos e tomei dipirona às 9h") vira **vários cartões**, um por
 registro, decididos um a um (água, refeição estimada e editável em gramas,

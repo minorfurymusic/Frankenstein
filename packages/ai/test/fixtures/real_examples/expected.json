@@ -1,0 +1,905 @@
+{
+ "pratos": [
+  {
+   "file": "pratos/dish_1565640812.jpg",
+   "mime": "image/jpeg",
+   "meal_type": "lunch",
+   "truth": {
+    "kcal": 297.9,
+    "grams": 234,
+    "ingredients": [
+     "black beans",
+     "mixed greens",
+     "chicken"
+    ]
+   },
+   "ai_reply": {
+    "meal_type": "lunch",
+    "items": [
+     {
+      "name": "Feijão preto",
+      "grams": 43,
+      "kcal": 56.8,
+      "protein_g": 3.8,
+      "carbs_g": 10.2,
+      "fat_g": 0.2
+     },
+     {
+      "name": "Folhas verdes",
+      "grams": 54,
+      "kcal": 15.1,
+      "protein_g": 1.2,
+      "carbs_g": 2.9,
+      "fat_g": 0.2
+     },
+     {
+      "name": "Frango grelhado",
+      "grams": 137,
+      "kcal": 226.1,
+      "protein_g": 42.5,
+      "carbs_g": 0,
+      "fat_g": 4.9
+     }
+    ]
+   }
+  },
+  {
+   "file": "pratos/dish_1560455090.jpg",
+   "mime": "image/jpeg",
+   "meal_type": "lunch",
+   "truth": {
+    "kcal": 60.2,
+    "grams": 155,
+    "ingredients": [
+     "celery",
+     "chicken",
+     "cucumbers",
+     "cherry tomatoes",
+     "baby carrots"
+    ]
+   },
+   "ai_reply": {
+    "meal_type": "lunch",
+    "items": [
+     {
+      "name": "Salsão",
+      "grams": 31,
+      "kcal": 5.0,
+      "protein_g": 0.2,
+      "carbs_g": 1.1,
+      "fat_g": 0.1
+     },
+     {
+      "name": "Frango",
+      "grams": 21,
+      "kcal": 34.6,
+      "protein_g": 6.5,
+      "carbs_g": 0,
+      "fat_g": 0.8
+     },
+     {
+      "name": "Pepino",
+      "grams": 29,
+      "kcal": 2.9,
+      "protein_g": 0.3,
+      "carbs_g": 0.6,
+      "fat_g": 0
+     },
+     {
+      "name": "Tomate-cereja",
+      "grams": 55,
+      "kcal": 9.9,
+      "protein_g": 0.5,
+      "carbs_g": 2.1,
+      "fat_g": 0.1
+     },
+     {
+      "name": "Cenoura ralada",
+      "grams": 19,
+      "kcal": 7.8,
+      "protein_g": 0.2,
+      "carbs_g": 1.9,
+      "fat_g": 0
+     }
+    ]
+   }
+  },
+  {
+   "file": "pratos/dish_1563900150.jpg",
+   "mime": "image/jpeg",
+   "meal_type": "breakfast",
+   "truth": {
+    "kcal": 202.3,
+    "grams": 154,
+    "ingredients": [
+     "sweet potato",
+     "olive oil",
+     "scrambled eggs"
+    ]
+   },
+   "ai_reply": {
+    "meal_type": "breakfast",
+    "items": [
+     {
+      "name": "Ovos mexidos",
+      "grams": 105,
+      "kcal": 155.4,
+      "protein_g": 10.5,
+      "carbs_g": 1.7,
+      "fat_g": 11.6
+     },
+     {
+      "name": "Batata-doce assada",
+      "grams": 48,
+      "kcal": 36.3,
+      "protein_g": 0.5,
+      "carbs_g": 8.6,
+      "fat_g": 0
+     },
+     {
+      "name": "Azeite",
+      "grams": 1,
+      "kcal": 10.6,
+      "protein_g": 0,
+      "carbs_g": 0,
+      "fat_g": 1.2
+     }
+    ]
+   }
+  },
+  {
+   "file": "pratos/dish_1562691032.jpg",
+   "mime": "image/jpeg",
+   "meal_type": "breakfast",
+   "truth": {
+    "kcal": 419.7,
+    "grams": 415,
+    "ingredients": [
+     "berries",
+     "olive oil",
+     "pineapple",
+     "scrambled eggs",
+     "roasted potatoes",
+     "broccoli"
+    ]
+   },
+   "ai_reply": {
+    "meal_type": "breakfast",
+    "items": [
+     {
+      "name": "Ovos mexidos",
+      "grams": 147,
+      "kcal": 217.6,
+      "protein_g": 14.7,
+      "carbs_g": 2.4,
+      "fat_g": 16.2
+     },
+     {
+      "name": "Batata assada",
+      "grams": 66,
+      "kcal": 93.1,
+      "protein_g": 1.4,
+      "carbs_g": 11.9,
+      "fat_g": 4.5
+     },
+     {
+      "name": "Brócolis",
+      "grams": 36,
+      "kcal": 12.6,
+      "protein_g": 0.9,
+      "carbs_g": 2.5,
+      "fat_g": 0.1
+     },
+     {
+      "name": "Morango e mirtilo",
+      "grams": 85,
+      "kcal": 48.5,
+      "protein_g": 0.6,
+      "carbs_g": 11.9,
+      "fat_g": 0.3
+     },
+     {
+      "name": "Abacaxi",
+      "grams": 80,
+      "kcal": 40,
+      "protein_g": 0.4,
+      "carbs_g": 10.4,
+      "fat_g": 0.1
+     },
+     {
+      "name": "Azeite",
+      "grams": 1,
+      "kcal": 8,
+      "protein_g": 0,
+      "carbs_g": 0,
+      "fat_g": 0.9
+     }
+    ]
+   }
+  }
+ ],
+ "receitas": [
+  {
+   "file": "receitas/receituario_07.png",
+   "mime": "image/png",
+   "ai_reply": {
+    "doctor": "Dr. Roberto Mendes Carvalho",
+    "date": "2026-04-28",
+    "medicines": [
+     {
+      "name": "Losartana potássica 50 mg",
+      "dose_amount": 1,
+      "dose_unit": "unidade",
+      "form": "tablet",
+      "instructions": "Tomar 1 comprimido pela manhã, em jejum, por 30 dias.",
+      "interval_hours": 24,
+      "duration_days": 30
+     },
+     {
+      "name": "Atorvastatina 20 mg",
+      "dose_amount": 1,
+      "dose_unit": "unidade",
+      "form": "tablet",
+      "instructions": "Tomar 1 comprimido à noite, após o jantar, por 30 dias.",
+      "interval_hours": 24,
+      "duration_days": 30
+     },
+     {
+      "name": "Ácido acetilsalicílico 100 mg",
+      "dose_amount": 1,
+      "dose_unit": "unidade",
+      "form": "tablet",
+      "instructions": "Tomar 1 comprimido após o almoço, uso contínuo.",
+      "interval_hours": 24,
+      "continuous": true
+     },
+     {
+      "name": "Omeprazol 20 mg",
+      "dose_amount": 1,
+      "dose_unit": "unidade",
+      "form": "capsule",
+      "instructions": "Tomar 1 cápsula em jejum, por 14 dias.",
+      "interval_hours": 24,
+      "duration_days": 14
+     }
+    ]
+   },
+   "truth": {
+    "doctor": "Dr. Roberto Mendes Carvalho",
+    "date": "2026-04-28",
+    "medicines": [
+     "Losartana",
+     "Atorvastatina",
+     "Ácido",
+     "Omeprazol"
+    ]
+   }
+  },
+  {
+   "file": "receitas/receituario_07_foto.jpg",
+   "mime": "image/jpeg",
+   "ai_reply": {
+    "doctor": "Dr. Roberto Mendes Carvalho",
+    "date": "2026-04-28",
+    "medicines": [
+     {
+      "name": "Losartana potássica 50 mg",
+      "dose_amount": 1,
+      "dose_unit": "unidade",
+      "form": "tablet",
+      "instructions": "Tomar 1 comprimido pela manhã, em jejum, por 30 dias.",
+      "interval_hours": 24,
+      "duration_days": 30
+     },
+     {
+      "name": "Atorvastatina 20 mg",
+      "dose_amount": 1,
+      "dose_unit": "unidade",
+      "form": "tablet",
+      "instructions": "Tomar 1 comprimido à noite, após o jantar, por 30 dias.",
+      "interval_hours": 24,
+      "duration_days": 30
+     },
+     {
+      "name": "Ácido acetilsalicílico 100 mg",
+      "dose_amount": 1,
+      "dose_unit": "unidade",
+      "form": "tablet",
+      "instructions": "Tomar 1 comprimido após o almoço, uso contínuo.",
+      "interval_hours": 24,
+      "continuous": true
+     },
+     {
+      "name": "Omeprazol 20 mg",
+      "dose_amount": 1,
+      "dose_unit": "unidade",
+      "form": "capsule",
+      "instructions": "Tomar 1 cápsula em jejum, por 14 dias.",
+      "interval_hours": 24,
+      "duration_days": 14
+     }
+    ]
+   },
+   "truth": {
+    "doctor": "Dr. Roberto Mendes Carvalho",
+    "date": "2026-04-28",
+    "medicines": [
+     "Losartana",
+     "Atorvastatina",
+     "Ácido",
+     "Omeprazol"
+    ]
+   }
+  },
+  {
+   "file": "receitas/receituario_assinado_17.png",
+   "mime": "image/png",
+   "ai_reply": {
+    "doctor": "Dr. Joao Carlos Pereira",
+    "date": "2026-05-12",
+    "medicines": [
+     {
+      "name": "Nitrofurantoína 100 mg",
+      "dose_amount": 1,
+      "dose_unit": "unidade",
+      "form": "capsule",
+      "instructions": "Tomar 1 cápsula de 6 em 6 horas, por 7 dias.",
+      "interval_hours": 6,
+      "duration_days": 7
+     },
+     {
+      "name": "Dipirona 500 mg",
+      "dose_amount": 1,
+      "dose_unit": "unidade",
+      "form": "tablet",
+      "instructions": "Tomar 1 comprimido se dor, até 4 vezes ao dia."
+     }
+    ]
+   },
+   "truth": {
+    "doctor": "Dr. Joao Carlos Pereira",
+    "date": "2026-05-12",
+    "medicines": [
+     "Nitrofurantoína",
+     "Dipirona"
+    ]
+   }
+  },
+  {
+   "file": "receitas/receita_controle_especial_08.png",
+   "mime": "image/png",
+   "ai_reply": {
+    "doctor": "Dra. Camila Furtado Reis",
+    "date": "2026-05-05",
+    "medicines": [
+     {
+      "name": "Clonazepam 2 mg",
+      "dose_amount": 1,
+      "dose_unit": "unidade",
+      "form": "tablet",
+      "instructions": "Tomar 1 comprimido à noite, ao deitar, por 30 dias.",
+      "interval_hours": 24,
+      "duration_days": 30
+     }
+    ]
+   },
+   "truth": {
+    "doctor": "Dra. Camila Furtado Reis",
+    "date": "2026-05-05",
+    "medicines": [
+     "Clonazepam"
+    ]
+   }
+  }
+ ],
+ "exames": [
+  {
+   "file": "exames/laudo-blocos.pdf",
+   "mime": "application/pdf",
+   "ai_reply": {
+    "title": "Hemograma e bioquímica",
+    "date": "2026-05-22",
+    "category": "blood",
+    "markers": [
+     {
+      "name": "Hemácias",
+      "value": 4980000,
+      "unit": "/mm3",
+      "reference_low": 4500000,
+      "reference_high": 5500000
+     },
+     {
+      "name": "Hemoglobina",
+      "value": 15.1,
+      "unit": "g/dl",
+      "reference_low": 13.0,
+      "reference_high": 17.5
+     },
+     {
+      "name": "Hematócrito",
+      "value": 45.0,
+      "unit": "%",
+      "reference_low": 40.0,
+      "reference_high": 50.0
+     },
+     {
+      "name": "Leucócitos",
+      "value": 7200,
+      "unit": "/mm3",
+      "reference_low": 4000,
+      "reference_high": 11000
+     },
+     {
+      "name": "Plaquetas",
+      "value": 265000,
+      "unit": "/mm3",
+      "reference_low": 150000,
+      "reference_high": 450000
+     },
+     {
+      "name": "Glicose",
+      "value": 118,
+      "unit": "mg/dL",
+      "reference_low": 70,
+      "reference_high": 99
+     },
+     {
+      "name": "Hemoglobina glicada (A1C)",
+      "value": 6.0,
+      "unit": "%"
+     },
+     {
+      "name": "Potássio",
+      "value": 6.2,
+      "unit": "mEq/L",
+      "reference_low": 3.5,
+      "reference_high": 5.1
+     },
+     {
+      "name": "Transaminase pirúvica",
+      "value": 62,
+      "unit": "U/L"
+     },
+     {
+      "name": "Colesterol total",
+      "value": 232,
+      "unit": "mg/dL"
+     },
+     {
+      "name": "Colesterol HDL",
+      "value": 38,
+      "unit": "mg/dL"
+     },
+     {
+      "name": "Colesterol LDL",
+      "value": 158,
+      "unit": "mg/dL"
+     },
+     {
+      "name": "Triglicérides",
+      "value": 180,
+      "unit": "mg/dL"
+     },
+     {
+      "name": "TSH ultra sensível",
+      "value": 6.8,
+      "unit": "microUI/mL",
+      "reference_low": 0.48,
+      "reference_high": 5.6
+     },
+     {
+      "name": "T4 livre",
+      "value": 1.1,
+      "unit": "ng/dL",
+      "reference_low": 0.89,
+      "reference_high": 1.61
+     },
+     {
+      "name": "25-hidroxivitamina D",
+      "value": 18.0,
+      "unit": "ng/mL"
+     },
+     {
+      "name": "Creatinina",
+      "value": 1.1,
+      "unit": "mg/dL"
+     }
+    ]
+   },
+   "truth": {
+    "date": "2026-05-22",
+    "markers": {
+     "Hemácias": [
+      4980000,
+      "/mm3"
+     ],
+     "Hemoglobina": [
+      15.1,
+      "g/dl"
+     ],
+     "Hematócrito": [
+      45.0,
+      "%"
+     ],
+     "Leucócitos": [
+      7200,
+      "/mm3"
+     ],
+     "Plaquetas": [
+      265000,
+      "/mm3"
+     ],
+     "Glicose": [
+      118,
+      "mg/dL"
+     ],
+     "Hemoglobina glicada (A1C)": [
+      6.0,
+      "%"
+     ],
+     "Potássio": [
+      6.2,
+      "mEq/L"
+     ],
+     "Transaminase pirúvica": [
+      62,
+      "U/L"
+     ],
+     "Colesterol total": [
+      232,
+      "mg/dL"
+     ],
+     "Colesterol HDL": [
+      38,
+      "mg/dL"
+     ],
+     "Colesterol LDL": [
+      158,
+      "mg/dL"
+     ],
+     "Triglicérides": [
+      180,
+      "mg/dL"
+     ],
+     "TSH ultra sensível": [
+      6.8,
+      "microUI/mL"
+     ],
+     "T4 livre": [
+      1.1,
+      "ng/dL"
+     ],
+     "25-hidroxivitamina D": [
+      18.0,
+      "ng/mL"
+     ],
+     "Creatinina": [
+      1.1,
+      "mg/dL"
+     ]
+    }
+   }
+  },
+  {
+   "file": "exames/laudo-tabela.pdf",
+   "mime": "application/pdf",
+   "ai_reply": {
+    "title": "Hemograma completo e bioquímica",
+    "date": "2026-03-14",
+    "category": "blood",
+    "markers": [
+     {
+      "name": "Eritrócitos",
+      "value": 4.5,
+      "unit": "milhões/mm³",
+      "reference_low": 3.9,
+      "reference_high": 5.4
+     },
+     {
+      "name": "Hemoglobina",
+      "value": 10.4,
+      "unit": "g/dL",
+      "reference_low": 12.0,
+      "reference_high": 15.5
+     },
+     {
+      "name": "Hematócrito",
+      "value": 32.6,
+      "unit": "%",
+      "reference_low": 35.0,
+      "reference_high": 47.0
+     },
+     {
+      "name": "V.C.M.",
+      "value": 72.4,
+      "unit": "fL",
+      "reference_low": 80.0,
+      "reference_high": 100.0
+     },
+     {
+      "name": "Ferritina",
+      "value": 6.2,
+      "unit": "ng/mL",
+      "reference_low": 15.0,
+      "reference_high": 150.0
+     },
+     {
+      "name": "Ferro sérico",
+      "value": 21,
+      "unit": "µg/dL",
+      "reference_low": 37,
+      "reference_high": 145
+     },
+     {
+      "name": "Glicose",
+      "value": 88,
+      "unit": "mg/dL",
+      "reference_low": 70,
+      "reference_high": 99
+     },
+     {
+      "name": "Creatinina",
+      "value": 0.71,
+      "unit": "mg/dL",
+      "reference_low": 0.5,
+      "reference_high": 0.9
+     },
+     {
+      "name": "TSH",
+      "value": 2.14,
+      "unit": "µUI/mL",
+      "reference_low": 0.4,
+      "reference_high": 4.0
+     },
+     {
+      "name": "25-OH-Vitamina D",
+      "value": 18.6,
+      "unit": "ng/mL"
+     },
+     {
+      "name": "Vitamina B12",
+      "value": 412,
+      "unit": "pg/mL",
+      "reference_low": 200,
+      "reference_high": 900
+     }
+    ]
+   },
+   "truth": {
+    "date": "2026-03-14",
+    "markers": {
+     "Eritrócitos": [
+      4.5,
+      "milhões/mm³"
+     ],
+     "Hemoglobina": [
+      10.4,
+      "g/dL"
+     ],
+     "Hematócrito": [
+      32.6,
+      "%"
+     ],
+     "V.C.M.": [
+      72.4,
+      "fL"
+     ],
+     "Ferritina": [
+      6.2,
+      "ng/mL"
+     ],
+     "Ferro sérico": [
+      21,
+      "µg/dL"
+     ],
+     "Glicose": [
+      88,
+      "mg/dL"
+     ],
+     "Creatinina": [
+      0.71,
+      "mg/dL"
+     ],
+     "TSH": [
+      2.14,
+      "µUI/mL"
+     ],
+     "25-OH-Vitamina D": [
+      18.6,
+      "ng/mL"
+     ],
+     "Vitamina B12": [
+      412,
+      "pg/mL"
+     ]
+    }
+   }
+  },
+  {
+   "file": "exames/laudo-bullets.pdf",
+   "mime": "application/pdf",
+   "ai_reply": {
+    "title": "Colesterol total e frações",
+    "date": "2024-08-14",
+    "category": "blood",
+    "markers": [
+     {
+      "name": "Colesterol total",
+      "value": 234,
+      "unit": "mg/dL"
+     },
+     {
+      "name": "Colesterol HDL",
+      "value": 32,
+      "unit": "mg/dL"
+     },
+     {
+      "name": "Colesterol VLDL",
+      "value": 42,
+      "unit": "mg/dL"
+     },
+     {
+      "name": "Colesterol LDL",
+      "value": 161,
+      "unit": "mg/dL"
+     },
+     {
+      "name": "Colesterol não-HDL",
+      "value": 203,
+      "unit": "mg/dL"
+     },
+     {
+      "name": "Triglicérides",
+      "value": 256,
+      "unit": "mg/dL"
+     }
+    ]
+   },
+   "truth": {
+    "date": "2024-08-14",
+    "markers": {
+     "Colesterol total": [
+      234,
+      "mg/dL"
+     ],
+     "Colesterol HDL": [
+      32,
+      "mg/dL"
+     ],
+     "Colesterol VLDL": [
+      42,
+      "mg/dL"
+     ],
+     "Colesterol LDL": [
+      161,
+      "mg/dL"
+     ],
+     "Colesterol não-HDL": [
+      203,
+      "mg/dL"
+     ],
+     "Triglicérides": [
+      256,
+      "mg/dL"
+     ]
+    }
+   }
+  },
+  {
+   "file": "exames/laudo-coagulacao.pdf",
+   "mime": "application/pdf",
+   "ai_reply": {
+    "title": "Coagulação, imunologia e tireoide",
+    "date": "2025-03-05",
+    "category": "blood",
+    "markers": [
+     {
+      "name": "Tempo de protrombina",
+      "value": 12.5,
+      "unit": "segundos"
+     },
+     {
+      "name": "Atividade de protrombina",
+      "value": 98,
+      "unit": "%",
+      "reference_low": 70,
+      "reference_high": 100
+     },
+     {
+      "name": "INR",
+      "value": 1.05,
+      "unit": "",
+      "reference_low": 0.8,
+      "reference_high": 1.2
+     },
+     {
+      "name": "TTPA",
+      "value": 41.3,
+      "unit": "segundos",
+      "reference_low": 25,
+      "reference_high": 35
+     },
+     {
+      "name": "Fibrinogênio",
+      "value": 4.6,
+      "unit": "g/L",
+      "reference_low": 2.0,
+      "reference_high": 4.0
+     },
+     {
+      "name": "Fator reumatoide",
+      "value": 28.4,
+      "unit": "UI/mL"
+     },
+     {
+      "name": "Imunoglobulina G",
+      "value": 1840,
+      "unit": "mg/dL",
+      "reference_low": 700,
+      "reference_high": 1600
+     },
+     {
+      "name": "TSH",
+      "value": 6.4,
+      "unit": "µUI/mL"
+     },
+     {
+      "name": "T4 livre",
+      "value": 0.82,
+      "unit": "ng/dL"
+     },
+     {
+      "name": "Anti-TPO",
+      "value": 212.0,
+      "unit": "UI/mL"
+     }
+    ]
+   },
+   "truth": {
+    "date": "2025-03-05",
+    "markers": {
+     "Tempo de protrombina": [
+      12.5,
+      "segundos"
+     ],
+     "Atividade de protrombina": [
+      98,
+      "%"
+     ],
+     "INR": [
+      1.05,
+      ""
+     ],
+     "TTPA": [
+      41.3,
+      "segundos"
+     ],
+     "Fibrinogênio": [
+      4.6,
+      "g/L"
+     ],
+     "Fator reumatoide": [
+      28.4,
+      "UI/mL"
+     ],
+     "Imunoglobulina G": [
+      1840,
+      "mg/dL"
+     ],
+     "TSH": [
+      6.4,
+      "µUI/mL"
+     ],
+     "T4 livre": [
+      0.82,
+      "ng/dL"
+     ],
+     "Anti-TPO": [
+      212.0,
+      "UI/mL"
+     ]
+    }
+   }
+  }
+ ]
+}

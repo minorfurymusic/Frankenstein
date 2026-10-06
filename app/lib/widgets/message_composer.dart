@@ -121,6 +121,15 @@ class _MessageComposerState extends State<MessageComposer> {
 
     if (widget.mode == ComposerMode.basic) {
       return _Bar(children: [
+        if (widget.onAttach != null) ...[
+          IconButton(
+            key: const Key('chat_attach'),
+            onPressed: widget.onAttach,
+            tooltip: 'Anexar foto ou PDF',
+            icon: const Icon(Icons.attach_file),
+          ),
+          const SizedBox(width: RltSpace.xs),
+        ],
         Expanded(child: _field(c, t, hint: widget.hint ?? 'Comando, ex.: registrar água 500ml', withCamera: false)),
         const SizedBox(width: RltSpace.s),
         IconButton.filledTonal(

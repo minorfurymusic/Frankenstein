@@ -108,12 +108,17 @@ void main() {
 
   testWidgets('corrida gravada: histórico, resumo e GPX pelo compartilhamento', (tester) async {
     giveProfile();
-    final start = DateTime.now().toUtc().subtract(const Duration(hours: 1));
+    // Uma hora atrás, mas sempre dentro do dia de hoje (perto da meia-noite,
+    // começa à 0h).
+    final now = DateTime.now();
+    final start = (now.hour >= 1 ? now.subtract(const Duration(hours: 1)) : DateTime(now.year, now.month, now.day)).toUtc();
     final points = [
       for (var i = 0; i <= 30; i++)
         RunPointInput(latitude: -23.0 + i * 100 / 111194.9, longitude: -46.0, accuracyMeters: 5, recordedAt: start.add(Duration(seconds: i * 36))),
     ]; // 3 km em 18 min = 10 km/h
-    final run = RunLogger(core: deps.core).logRun(points, occurredAtTzOffsetMinutes: -180);
+    // Fuso do próprio relógio: com -180 fixo o teste falhava entre 0h e 3h UTC
+    // (a corrida caía no dia local anterior ao "hoje" da máquina).
+    final run = RunLogger(core: deps.core).logRun(points, occurredAtTzOffsetMinutes: DateTime.now().timeZoneOffset.inMinutes);
     await openTab(tester);
     await tester.tap(find.text('Corrida e caminhada'));
     await tester.pumpAndSettle();
