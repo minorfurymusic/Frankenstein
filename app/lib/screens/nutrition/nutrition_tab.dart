@@ -12,6 +12,7 @@ import '../../format.dart';
 import '../../theme/rlt_colors.dart';
 import '../../theme/rlt_theme.dart';
 import '../../widgets/common.dart';
+import '../../widgets/goal_calendar.dart';
 import '../../widgets/weight_target.dart';
 import '../../widgets/line_chart.dart';
 import '../../widgets/progress.dart';
@@ -361,94 +362,22 @@ class DiaryView extends StatefulWidget {
 }
 
 class _DiaryViewState extends State<DiaryView> {
-  DateTime _month = DateTime(DateTime.now().year, DateTime.now().month);
-
   @override
   Widget build(BuildContext context) {
     final deps = widget.deps;
-    final c = RltColors.of(context);
-    final t = Theme.of(context).textTheme;
-    final profile = deps.profileRepository.load();
-    final today = DateTime.now();
-    final days = DateTime(_month.year, _month.month + 1, 0).day;
-    final leading = DateTime(_month.year, _month.month, 1).weekday % 7; // domingo = 0
-    const names = ['D', 'S', 'T', 'Q', 'Q', 'S', 'S'];
-    var inGoal = 0, outGoal = 0;
-
-    Widget cell(int d) {
-      final date = DateTime(_month.year, _month.month, d);
-      final future = date.isAfter(today);
-      final totals = future ? null : deps.dayRead.totals(date);
-      final goals = future || profile == null ? null : deps.goals.goalsFor(date);
-      bool? hit;
-      if (totals != null && totals.mealCount > 0 && goals != null) {
-        hit = metCalorieGoal(goals.objective, consumedKcal: totals.energyKcal, goalKcal: goals.caloriesKcal);
-        hit ? inGoal++ : outGoal++;
-      }
-      final color = hit == null ? null : (hit ? c.successContainer : c.errorContainer);
-      return InkWell(
-        key: Key('diary_day_$d'),
-        borderRadius: BorderRadius.circular(RltRadius.chip),
-        onTap: future
-            ? null
-            : () => Navigator.of(context).push(MaterialPageRoute<void>(
-                  builder: (_) => Scaffold(
-                    appBar: AppBar(title: Text('${ddmm(date)}/${date.year}')),
-                    body: NutritionDayView(deps: deps, initialDay: date),
-                  ),
-                )),
-        child: Container(
-          margin: const EdgeInsets.all(2),
-          decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(RltRadius.chip)),
-          alignment: Alignment.center,
-          child: Text('$d', style: t.bodyMedium?.copyWith(color: future ? c.outline : null)),
-        ),
-      );
-    }
-
-    final cells = [for (var i = 0; i < leading; i++) const SizedBox(), for (var d = 1; d <= days; d++) cell(d)];
     return ListView(padding: const EdgeInsets.all(RltSpace.l), children: [
-      Row(children: [
-        IconButton(
-          tooltip: 'Mês anterior',
-          onPressed: () => setState(() => _month = DateTime(_month.year, _month.month - 1)),
-          icon: const Icon(Icons.chevron_left),
-        ),
-        Expanded(child: Text('${monthShort(_month.month)} de ${_month.year}', textAlign: TextAlign.center, style: t.titleMedium)),
-        IconButton(
-          tooltip: 'Próximo mês',
-          onPressed: _month.year == today.year && _month.month == today.month
-              ? null
-              : () => setState(() => _month = DateTime(_month.year, _month.month + 1)),
-          icon: const Icon(Icons.chevron_right),
-        ),
-      ]),
-      Row(children: [for (final n in names) Expanded(child: Center(child: Text(n, style: t.labelMedium)))]),
-      GridView.count(crossAxisCount: 7, shrinkWrap: true, physics: const NeverScrollableScrollPhysics(), children: cells),
-      const SizedBox(height: RltSpace.m),
-      Wrap(spacing: 16, children: [
-        _Legend(color: c.successContainer, label: 'Dentro da meta ($inGoal)'),
-        _Legend(color: c.errorContainer, label: 'Fora da meta ($outGoal)'),
-      ]),
-      if (profile == null) ...[
-        const SizedBox(height: RltSpace.m),
-        Text('Preencha o perfil para marcar os dias contra a meta.', style: t.bodySmall),
-      ],
+      MonthGoalCalendar(
+        deps: deps,
+        keyPrefix: 'diary',
+        onOpenDay: (date) => Navigator.of(context).push(MaterialPageRoute<void>(
+          builder: (_) => Scaffold(
+            appBar: AppBar(title: Text('${ddmm(date)}/${date.year}')),
+            body: NutritionDayView(deps: deps, initialDay: date),
+          ),
+        )),
+      ),
     ]);
   }
-}
-
-class _Legend extends StatelessWidget {
-  final Color color;
-  final String label;
-  const _Legend({required this.color, required this.label});
-
-  @override
-  Widget build(BuildContext context) => Row(mainAxisSize: MainAxisSize.min, children: [
-        Container(width: 14, height: 14, decoration: BoxDecoration(color: color, borderRadius: BorderRadius.circular(4))),
-        const SizedBox(width: 6),
-        Text(label, style: Theme.of(context).textTheme.bodySmall),
-      ]);
 }
 
 /// Tendências (prancheta NutricaoTendencias; `docs/specs/nutricao.md`, tela

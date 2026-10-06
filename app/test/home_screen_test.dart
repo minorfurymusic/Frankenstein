@@ -8,6 +8,7 @@ import 'package:frankstein/share_sheet.dart';
 import 'package:frankstein_health_core/health_core.dart';
 import 'package:frankstein_health_records/health_records.dart';
 import 'package:frankstein_nutrition/nutrition.dart';
+import 'package:frankstein_profile/profile.dart';
 
 import 'support/fonts.dart';
 
@@ -107,5 +108,34 @@ void main() {
     await tester.tap(find.byKey(const Key('shortcut_brain')));
     await tester.pumpAndSettle();
     expect(find.byKey(const Key('chat_input')), findsOneWidget);
+  });
+
+  testWidgets('ver outro dia: calendário com dias dentro/fora da meta, aviso de dia anterior e voltar para hoje', (tester) async {
+    deps.profileRepository.save(Profile(sex: BiologicalSex.male, birthDate: DateTime(1990), heightMeters: 1.75));
+    deps.bodyLogger.weight(kg: 70, occurredAt: DateTime.now().toUtc(), occurredAtTzOffsetMinutes: 0);
+    final yesterday = DateTime.now().subtract(const Duration(days: 1));
+    logBanana(at: yesterday); // 100 g de banana: bem abaixo da meta de quem mantém o peso
+    await openHome(tester);
+    expect(find.byKey(const Key('home_past_banner')), findsNothing);
+
+    await tester.tap(find.byKey(const Key('home_calendar')));
+    await tester.pumpAndSettle();
+    expect(find.text('Ver outro dia'), findsOneWidget);
+    if (yesterday.month != DateTime.now().month) {
+      await tester.tap(find.byTooltip('Mês anterior'));
+      await tester.pumpAndSettle();
+    }
+    expect(find.text('Fora da meta (1)'), findsOneWidget);
+    expect(find.text('Hoje'), findsOneWidget);
+    await tester.tap(find.byKey(Key('home_cal_day_${yesterday.day}')));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Você está vendo um dia anterior.'), findsOneWidget);
+    expect(find.textContaining('Banana prata'), findsOneWidget);
+    expect(find.byKey(const Key('home_streak')), findsNothing);
+    await tester.tap(find.byKey(const Key('home_back_today')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('home_past_banner')), findsNothing);
+    expect(find.textContaining('Hoje,'), findsOneWidget);
   });
 }

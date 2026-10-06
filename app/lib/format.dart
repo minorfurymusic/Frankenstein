@@ -17,6 +17,14 @@ String ddmmyyyy(DateTime local) => '${two(local.day)}/${two(local.month)}/${loca
 
 String monthShort(int month) => _months[month - 1];
 
+const _monthsLong = [
+  'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', //
+  'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro',
+];
+
+/// "Outubro" (prancheta InicioCalendario: "Outubro de 2026").
+String monthLong(int month) => _monthsLong[month - 1];
+
 String weekdayInitial(DateTime local) => _weekdaysShort[local.weekday - 1];
 
 /// Instante UTC gravado + fuso gravado junto (`.claude/rules/00-inviolaveis.md`:

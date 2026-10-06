@@ -11,6 +11,7 @@ import '../../step_tracking_controller.dart';
 import '../../theme/rlt_colors.dart';
 import '../../theme/rlt_theme.dart';
 import '../../widgets/common.dart';
+import '../../widgets/goal_calendar.dart';
 import '../../widgets/health_area.dart';
 import '../../widgets/medication_dose_card.dart';
 import '../../widgets/progress.dart';
@@ -67,6 +68,33 @@ class _HomeScreenState extends State<HomeScreen> {
     if (h < 12) return 'Bom dia';
     if (h < 18) return 'Boa tarde';
     return 'Boa noite';
+  }
+
+  /// "Ver outro dia" (prancheta InicioCalendario): o mês com os dias
+  /// dentro/fora da meta; tocar abre o dia no Início.
+  Future<void> _pickDay() async {
+    final picked = await showModalBottomSheet<DateTime>(
+      context: context,
+      isScrollControlled: true,
+      showDragHandle: true,
+      builder: (sheet) => SafeArea(
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.fromLTRB(RltSpace.l, 0, RltSpace.l, RltSpace.l),
+          child: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+            Text('Ver outro dia', style: Theme.of(sheet).textTheme.titleMedium),
+            const SizedBox(height: RltSpace.s),
+            MonthGoalCalendar(
+              deps: widget.deps,
+              keyPrefix: 'home_cal',
+              initialMonth: _day,
+              selected: _day,
+              onOpenDay: (d) => Navigator.of(sheet).pop(d),
+            ),
+          ]),
+        ),
+      ),
+    );
+    if (picked != null && mounted) setState(() => _day = DateTime(picked.year, picked.month, picked.day));
   }
 
   int _streak() {
@@ -253,10 +281,7 @@ class _HomeScreenState extends State<HomeScreen> {
           Expanded(
             child: TextButton.icon(
               key: const Key('home_calendar'),
-              onPressed: () async {
-                final d = await showDatePicker(context: context, initialDate: _day, firstDate: DateTime(2020), lastDate: _today());
-                if (d != null) setState(() => _day = DateTime(d.year, d.month, d.day));
-              },
+              onPressed: _pickDay,
               icon: const Icon(Icons.calendar_today_outlined, size: 18),
               label: Text(dateLabel, overflow: TextOverflow.ellipsis),
             ),
@@ -267,7 +292,26 @@ class _HomeScreenState extends State<HomeScreen> {
             icon: const Icon(Icons.chevron_right),
           ),
         ]),
-        if (streak > 0)
+        if (!_isToday)
+          Container(
+            key: const Key('home_past_banner'),
+            margin: const EdgeInsets.only(bottom: RltSpace.m),
+            padding: const EdgeInsets.fromLTRB(RltSpace.m, RltSpace.xs, RltSpace.xs, RltSpace.xs),
+            decoration: BoxDecoration(color: c.secondaryContainer, borderRadius: BorderRadius.circular(RltRadius.icon)),
+            child: Row(children: [
+              Icon(Icons.history, size: 18, color: c.onSecondaryContainer),
+              const SizedBox(width: RltSpace.s),
+              Expanded(
+                child: Text('Você está vendo um dia anterior.', style: t.bodyMedium?.copyWith(color: c.onSecondaryContainer)),
+              ),
+              TextButton(
+                key: const Key('home_back_today'),
+                onPressed: () => setState(() => _day = _today()),
+                child: const Text('Voltar para hoje'),
+              ),
+            ]),
+          ),
+        if (streak > 0 && _isToday)
           Align(
             alignment: Alignment.centerLeft,
             child: Container(
