@@ -138,20 +138,27 @@ class RunsScreen extends StatelessWidget {
       appBar: AppBar(title: const Text('Corrida e caminhada')),
       body: ValueListenableBuilder<int>(
         valueListenable: deps.dataVersion,
-        builder: (context, _, _) => _history(context),
+        builder: (context, _, _) => GuardedView(
+          errorTitle: 'Não foi possível carregar o histórico',
+          errorMessage: 'Tente de novo.',
+          builder: _history,
+        ),
       ),
     );
   }
 
   Widget _history(BuildContext context) {
-    final t = Theme.of(context).textTheme;
     final runs = deps.core.queryByType(HealthEventType.gpsTrack).reversed.toList();
     return ListView(padding: const EdgeInsets.all(RltSpace.l), children: [
         RunRecorderCard(deps: deps),
         const RltSectionHeader('Histórico'),
         if (runs.isEmpty)
-          Text('Nenhuma corrida ainda. Toque em iniciar e saia: o RLT grava a rota, o ritmo e as parciais — mesmo com a tela bloqueada.',
-              style: t.bodyMedium),
+          const StateCard(
+            key: Key('runs_empty'),
+            icon: Icons.directions_run,
+            title: 'Nenhuma corrida ainda',
+            message: 'Toque em iniciar e saia. O RLT grava a rota, o ritmo e as parciais — mesmo com a tela bloqueada.',
+          ),
         for (final r in runs)
           ListTile(
             contentPadding: EdgeInsets.zero,

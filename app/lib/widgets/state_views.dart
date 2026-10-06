@@ -3,9 +3,10 @@ import 'package:flutter/material.dart';
 import '../theme/rlt_colors.dart';
 import '../theme/rlt_theme.dart';
 
-/// Tom do estado: vazio (neutro, ícone em verde-claro) ou sem permissão
-/// (ícone em terciária-clara), como na prancheta Componentes.
-enum StateTone { empty, permission }
+/// Tom do estado: vazio (neutro, ícone em verde-claro), sem permissão
+/// (ícone em terciária-clara) ou erro (ícone em vermelho-claro), como nas
+/// pranchetas Componentes e *Estados.
+enum StateTone { empty, permission, error }
 
 /// Estado vazio / sem permissão: ícone grande, título, texto e uma ação.
 class StateCard extends StatelessWidget {
@@ -32,9 +33,11 @@ class StateCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = RltColors.of(context);
     final t = Theme.of(context).textTheme;
-    final (Color bg, Color fg) = tone == StateTone.empty
-        ? (c.secondaryContainer, c.onSecondaryContainer)
-        : (c.tertiaryContainer, c.onTertiaryContainer);
+    final (Color bg, Color fg) = switch (tone) {
+      StateTone.empty => (c.secondaryContainer, c.onSecondaryContainer),
+      StateTone.permission => (c.tertiaryContainer, c.onTertiaryContainer),
+      StateTone.error => (c.errorContainer, c.onErrorContainer),
+    };
     return Container(
       padding: const EdgeInsets.all(RltSpace.l),
       decoration: BoxDecoration(color: c.surfaceContainerLow, borderRadius: BorderRadius.circular(RltRadius.card)),
@@ -127,5 +130,49 @@ class LoadingCard extends StatelessWidget {
         ],
       ),
     );
+  }
+}
+
+/// Monta [builder]; se ler os dados der erro (banco indisponível, registro
+/// corrompido), mostra o estado de erro das pranchetas *Estados — "Não foi
+/// possível…", "Seus registros continuam salvos no celular" e "Tentar de
+/// novo" — em vez de quebrar a tela. Nada é apagado nem escondido: tentar de
+/// novo só monta a tela outra vez.
+class GuardedView extends StatefulWidget {
+  final WidgetBuilder builder;
+  final String errorTitle;
+  final String errorMessage;
+  const GuardedView({
+    super.key,
+    required this.builder,
+    required this.errorTitle,
+    this.errorMessage = 'Seus registros continuam salvos no celular. Tente de novo.',
+  });
+
+  @override
+  State<GuardedView> createState() => _GuardedViewState();
+}
+
+class _GuardedViewState extends State<GuardedView> {
+  @override
+  Widget build(BuildContext context) {
+    try {
+      return widget.builder(context);
+    } catch (e) {
+      // Só no console de desenvolvimento; nada sai do celular (sem telemetria).
+      debugPrint('RLT: falha ao montar a tela: $e');
+      return ListView(padding: const EdgeInsets.all(RltSpace.l), children: [
+        StateCard(
+          key: const Key('state_error'),
+          tone: StateTone.error,
+          icon: Icons.error_outline,
+          title: widget.errorTitle,
+          message: widget.errorMessage,
+          actionLabel: 'Tentar de novo',
+          actionIcon: Icons.refresh,
+          onAction: () => setState(() {}),
+        ),
+      ]);
+    }
   }
 }

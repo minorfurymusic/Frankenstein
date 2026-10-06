@@ -8,6 +8,8 @@ import '../../data/activity_read_model.dart';
 import '../../format.dart';
 import '../../theme/rlt_colors.dart';
 import '../../theme/rlt_theme.dart';
+import '../../widgets/state_views.dart';
+import '../../widgets/steps_status_card.dart';
 import '../../widgets/common.dart';
 import '../../widgets/health_area.dart';
 import '../../widgets/progress.dart';
@@ -41,7 +43,7 @@ class ExerciseTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return ValueListenableBuilder<int>(
       valueListenable: deps.dataVersion,
-      builder: (context, _, _) {
+      builder: (context, _, _) => GuardedView(errorTitle: 'Não foi possível carregar os exercícios', builder: (context) {
         final c = RltColors.of(context);
         final t = Theme.of(context).textTheme;
         final today = DateTime.now();
@@ -96,6 +98,7 @@ class ExerciseTab extends StatelessWidget {
                     ]),
                   ),
                 ),
+                StepsStatusCard(deps: deps, keyPrefix: 'exercise'),
                 const SizedBox(height: RltSpace.m),
                 Row(children: [
                   Expanded(
@@ -133,6 +136,18 @@ class ExerciseTab extends StatelessWidget {
                         label: const Text('Começar agora'),
                       ),
                     ]),
+                  ),
+                ],
+                if (next == null) ...[
+                  const SizedBox(height: RltSpace.m),
+                  StateCard(
+                    key: const Key('exercise_no_plan'),
+                    icon: Icons.fitness_center_outlined,
+                    title: 'Nenhum treino planejado',
+                    message: 'Monte seu primeiro plano de academia.',
+                    actionLabel: 'Criar plano de treino',
+                    actionIcon: Icons.add,
+                    onAction: () => _open(context, PlanFormScreen(deps: deps)),
                   ),
                 ],
                 if (activities.isNotEmpty) ...[
@@ -187,7 +202,7 @@ class ExerciseTab extends StatelessWidget {
             ),
           ],
         );
-      },
+      }),
     );
   }
 }

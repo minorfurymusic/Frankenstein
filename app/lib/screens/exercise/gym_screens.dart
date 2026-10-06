@@ -45,7 +45,9 @@ class _PlansTab extends StatelessWidget {
   const _PlansTab({required this.deps});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => GuardedView(errorTitle: 'Não foi possível carregar os planos', errorMessage: 'Tente de novo.', builder: _build);
+
+  Widget _build(BuildContext context) {
     final t = Theme.of(context).textTheme;
     final plans = deps.workoutRepository.listPlans();
     return ListView(padding: const EdgeInsets.all(RltSpace.l), children: [
@@ -53,7 +55,7 @@ class _PlansTab extends StatelessWidget {
         const StateCard(
           icon: Icons.fitness_center_outlined,
           title: 'Nenhum plano de treino',
-          message: 'Monte seu treino com os exercícios da biblioteca — ou comece um treino livre.',
+          message: 'Monte um plano com exercícios, séries, repetições e carga. Ou conte ao Cérebro o que você fez.',
         ),
       for (final p in plans)
         Card(

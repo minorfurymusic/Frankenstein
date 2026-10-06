@@ -23,7 +23,19 @@ branco: navegação Resumo/Chat de verdade, ligada aos pacotes reais, com
 compartilhamento de treino/corrida funcionando de ponta a ponta. Detalhe
 completo em `docs/HISTORICO.md`.
 
-**Ciclo mais recente (2026-10-06, feito sozinho a pedido): calendário do
+**Ciclo mais recente (2026-10-06): estados de Início, Nutrição e
+Exercícios** (pranchetas *Estados). Novo `GuardedView`: se ler os dados
+falhar, a tela mostra "Não foi possível…", "Seus registros continuam
+salvos no celular" e "Tentar de novo", em vez de quebrar (nada é apagado).
+Aplicado em Início, Nutrição › Hoje, Exercícios, Academia › Planos e
+Corrida › Histórico. Vazios com os textos das pranchetas ("Nenhuma
+refeição hoje" com "Adicionar alimento", "Nenhum treino planejado" com
+"Criar plano de treino", "Nenhuma corrida ainda"). Passos sem permissão e
+aparelho sem sensor viraram um componente só (`StepsStatusCard`), no Início
+e em Exercícios. Estimativa (2026-10-06): ~4–6 ciclos até o app completo
+para a rodada de teste no aparelho; ~12–20 com login e servidor.
+
+**Ciclo anterior (2026-10-06, feito sozinho a pedido): calendário do
 Início.** "Ver outro dia" abre o mês (prancheta InicioCalendario) com cada
 dia pintado dentro/fora da meta de calorias e o dia de hoje marcado;
 tocar abre o dia no Início, com o aviso "Você está vendo um dia anterior" e

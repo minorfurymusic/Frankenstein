@@ -7,7 +7,6 @@ import '../../app_dependencies.dart';
 import '../../data/activity_read_model.dart';
 import '../../data/health_read_model.dart';
 import '../../format.dart';
-import '../../step_tracking_controller.dart';
 import '../../theme/rlt_colors.dart';
 import '../../theme/rlt_theme.dart';
 import '../../widgets/common.dart';
@@ -17,6 +16,7 @@ import '../../widgets/medication_dose_card.dart';
 import '../../widgets/progress.dart';
 import '../../widgets/rlt_navigation_bar.dart';
 import '../../widgets/state_views.dart';
+import '../../widgets/steps_status_card.dart';
 import '../../widgets/timeline_item.dart';
 import '../account/goals_screen.dart';
 import '../exercise/activity_screens.dart';
@@ -196,7 +196,11 @@ class _HomeScreenState extends State<HomeScreen> {
   Widget build(BuildContext context) {
     return ValueListenableBuilder<int>(
       valueListenable: widget.deps.dataVersion,
-      builder: (context, _, _) => _build(context),
+      builder: (context, _, _) => GuardedView(
+        errorTitle: 'Não foi possível abrir os dados de hoje',
+        errorMessage: 'Seus registros continuam salvos no celular. Tente abrir de novo — se continuar, reinicie o app.',
+        builder: _build,
+      ),
     );
   }
 
@@ -376,28 +380,7 @@ class _HomeScreenState extends State<HomeScreen> {
           ),
         ),
         if (_isToday)
-          ValueListenableBuilder<StepTrackingStatus>(
-            valueListenable: deps.stepTracking.status,
-            builder: (context, status, _) => switch (status) {
-              StepTrackingStatus.permissionDenied => Padding(
-                  padding: const EdgeInsets.only(top: RltSpace.m),
-                  child: StateCard(
-                    key: const Key('home_steps_permission'),
-                    icon: Icons.directions_walk_outlined,
-                    title: 'Contagem de passos desligada',
-                    message: 'Permita "atividade física" para contar passos.',
-                    actionLabel: 'Permitir contagem de passos',
-                    tone: StateTone.permission,
-                    onAction: () => deps.stepTracking.start(),
-                  ),
-                ),
-              StepTrackingStatus.noSensor => Padding(
-                  padding: const EdgeInsets.only(top: RltSpace.m),
-                  child: Text('Este aparelho não tem sensor de passos. Passos podem vir de uma pulseira.', style: t.bodySmall),
-                ),
-              _ => const SizedBox.shrink(),
-            },
-          ),
+          StepsStatusCard(deps: deps, keyPrefix: 'home'),
         if (doses.isNotEmpty) ...[
           RltSectionHeader(
             'Remédios de hoje',

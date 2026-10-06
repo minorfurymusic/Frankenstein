@@ -11,6 +11,7 @@ import '../../data/day_read_model.dart';
 import '../../format.dart';
 import '../../theme/rlt_colors.dart';
 import '../../theme/rlt_theme.dart';
+import '../../widgets/state_views.dart';
 import '../../widgets/common.dart';
 import '../../widgets/goal_calendar.dart';
 import '../../widgets/weight_target.dart';
@@ -136,7 +137,13 @@ class _NutritionDayViewState extends State<NutritionDayView> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => GuardedView(
+        errorTitle: 'Não foi possível carregar as refeições',
+        errorMessage: 'Seus registros estão salvos no celular. Tente de novo.',
+        builder: _build,
+      );
+
+  Widget _build(BuildContext context) {
     final deps = widget.deps;
     final c = RltColors.of(context);
     final t = Theme.of(context).textTheme;
@@ -270,6 +277,21 @@ class _NutritionDayViewState extends State<NutritionDayView> {
             ]),
           ),
         ),
+        if (totals.mealCount == 0)
+          Padding(
+            padding: const EdgeInsets.only(bottom: RltSpace.m),
+            child: StateCard(
+              key: const Key('nutrition_empty'),
+              icon: Icons.restaurant_outlined,
+              title: _isToday ? 'Nenhuma refeição hoje' : 'Nenhuma refeição neste dia',
+              message: 'Busque um alimento, leia o código de barras ou fotografe o prato.',
+              actionLabel: 'Adicionar alimento',
+              actionIcon: Icons.add,
+              onAction: () => Navigator.of(context).push(
+                MaterialPageRoute<void>(builder: (_) => AddFoodScreen(deps: deps, mealType: mealTypeForHour(DateTime.now().hour), day: _day)),
+              ),
+            ),
+          ),
         for (final type in MealType.values) _MealSection(deps: deps, day: _day, type: type, events: byMeal[type] ?? const []),
         const SizedBox(height: RltSpace.l),
         if (_isToday)
