@@ -131,6 +131,10 @@ class MainActivity : FlutterActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "rlt/run")
             .setMethodCallHandler { call, result -> RunBridge.handle(this, call, result) }
 
+        // Voz no Cérebro: grava no celular e devolve os bytes (VoiceBridge.kt).
+        MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "rlt/voice")
+            .setMethodCallHandler { call, result -> VoiceBridge.handle(this, call, result) }
+
         // Health Connect: só leitura de sono e batimentos (HealthConnectBridge.kt).
         HealthConnectBridge.noteLaunchIntent(intent)
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, "rlt/health_connect")
@@ -218,6 +222,7 @@ class MainActivity : FlutterActivity() {
     ) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults)
         if (RunBridge.onPermissionResult(this, requestCode)) return
+        if (VoiceBridge.onPermissionResult(this, requestCode)) return
         val granted = grantResults.isNotEmpty() && grantResults[0] == PackageManager.PERMISSION_GRANTED
         when (requestCode) {
             activityRecognitionRequestCode -> {

@@ -26,11 +26,27 @@ class ChatDose {
   const ChatDose({required this.name, this.doseAmount, this.doseUnit, this.status = 'taken', this.at});
 }
 
+/// Um exercício de academia que a pessoa disse ter feito ("3 séries de
+/// supino com 30 kg, 10 repetições"). O app casa o nome com a biblioteca de
+/// exercícios no aparelho.
+class ChatWorkout {
+  final String exercise;
+  final int sets;
+  final int reps;
+  final double loadKg;
+  final String? at;
+  const ChatWorkout({required this.exercise, required this.sets, required this.reps, this.loadKg = 0, this.at});
+}
+
 /// O que a IA entendeu de uma mensagem livre no Cérebro. Cada registro vira
 /// um cartão de proposta; nada é gravado aqui.
 class ChatReading {
   /// Resposta curta (pergunta quando falta algo, ou recusa educada).
   final String? reply;
+
+  /// Mensagem de voz: o que a pessoa falou, como a IA ouviu — o app mostra
+  /// para ela conferir.
+  final String? transcript;
 
   /// A mensagem descreve algo que pede atenção profissional (ex.: dor no
   /// peito, falta de ar). O app mostra o aviso fixo dele, não um texto da IA.
@@ -39,6 +55,7 @@ class ChatReading {
   final List<Map<String, dynamic>> water;
   final List<ChatMeal> meals;
   final List<ChatDose> doses;
+  final List<ChatWorkout> workouts;
 
   /// Já no formato dos parâmetros de `log_symptom`, `log_vital_sign` e
   /// `log_body_measurement` (com `at` em UTC).
@@ -52,10 +69,12 @@ class ChatReading {
 
   const ChatReading({
     this.reply,
+    this.transcript,
     this.seekCare = false,
     this.water = const [],
     this.meals = const [],
     this.doses = const [],
+    this.workouts = const [],
     this.symptoms = const [],
     this.vitalSigns = const [],
     this.bodyMeasurements = const [],
@@ -66,6 +85,7 @@ class ChatReading {
       water.isEmpty &&
       meals.isEmpty &&
       doses.isEmpty &&
+      workouts.isEmpty &&
       symptoms.isEmpty &&
       vitalSigns.isEmpty &&
       bodyMeasurements.isEmpty &&
@@ -78,6 +98,7 @@ const chatReadingSchema = <String, dynamic>{
   'type': 'object',
   'properties': {
     'reply': {'type': 'string'},
+    'transcript': {'type': 'string', 'description': 'Só para mensagem de voz: o que a pessoa falou.'},
     'seek_care': {'type': 'boolean'},
     'water': {
       'type': 'array',
@@ -131,6 +152,20 @@ const chatReadingSchema = <String, dynamic>{
           'at': _at,
         },
         'required': ['name', 'status'],
+      },
+    },
+    'workouts': {
+      'type': 'array',
+      'items': {
+        'type': 'object',
+        'properties': {
+          'exercise': {'type': 'string'},
+          'sets': {'type': 'integer'},
+          'reps': {'type': 'integer'},
+          'load_kg': {'type': 'number'},
+          'at': _at,
+        },
+        'required': ['exercise', 'sets', 'reps'],
       },
     },
     'symptoms': {
@@ -200,6 +235,7 @@ Regras:
 - Água em mililitros (1 copo = 250 ml, 1 garrafa pequena = 500 ml, 1 L = 1000 ml).
 - Refeição: um item por alimento, com gramas estimadas pela quantidade dita (1 ovo ≈ 50 g) e kcal, protein_g, carbs_g e fat_g estimados para essas gramas. meal_type pelo que a pessoa disse ou pela hora.
 - Remédio: copie o nome e, SÓ se a pessoa disse, a dose e a unidade. Nunca complete, sugira ou corrija dose. "Esqueci/pulei" = skipped.
+- Treino de academia: um item por exercício, com o nome em português (ex.: "Supino reto", "Agachamento livre", "Leg press"), séries, repetições e carga em kg (0 se for peso do corpo). Corrida e caminhada não entram aqui.
 - Sintoma: nome curto; intensidade de 0 a 10 só se a pessoa deu. Não interprete nem dê diagnóstico.
 - Sinais vitais: pressão "12 por 8" = 120/80 mmHg; temperatura em °C; glicemia em mg/dL; saturação em %; frequência em bpm.
 - Medidas: peso em kg, gordura em %, circunferências em cm.
@@ -207,6 +243,7 @@ Regras:
 - Perguntas sobre os próprios dados ("quantos passos dei?", "resumo do dia", "que remédios tenho hoje?") vão em questions; não responda você.
 - Nunca diagnostique, prescreva ou recomende remédio, dose, dieta ou tratamento. Se pedirem, diga em reply que o app só registra e que um profissional pode orientar.
 - seek_care = true se a pessoa descreve algo que pede atenção profissional rápida (dor no peito, falta de ar, desmaio, sangramento forte, pensamentos de se machucar, febre muito alta, pressão ou glicemia muito altas ou baixas).
+- Mensagem de voz (áudio anexo): escreva em transcript o que a pessoa falou e entenda o áudio como a mensagem.
 - reply: uma frase curta em português. Se faltar algo essencial para registrar, pergunte. Não repita os valores dos itens.
 ''';
 
@@ -227,7 +264,6 @@ String? _text(Object? v) => v is String && v.trim().isNotEmpty ? v.trim() : null
 ChatReading parseChatReading(Map<String, dynamic> json) {
   List<Map<String, dynamic>> list(String key) => [for (final e in (json[key] as List? ?? const [])) e as Map<String, dynamic>];
 
-
   final meals = <ChatMeal>[];
   for (final m in list('meals')) {
     final items = <PlateItem>[];
@@ -241,6 +277,16 @@ ChatReading parseChatReading(Map<String, dynamic> json) {
     }
     if (items.isEmpty) continue;
     meals.add(ChatMeal(mealType: m['meal_type'] as String, at: _iso(m['at']), items: items));
+  }
+
+  final workouts = <ChatWorkout>[];
+  for (final w in list('workouts')) {
+    final name = _text(w['exercise']);
+    final sets = w['sets'];
+    final reps = w['reps'];
+    if (name == null || sets is! int || reps is! int || sets < 1 || sets > 20 || reps < 1 || reps > 200) continue;
+    final load = (w['load_kg'] as num?)?.toDouble() ?? 0;
+    workouts.add(ChatWorkout(exercise: name, sets: sets, reps: reps, loadKg: load.isFinite && load >= 0 ? load : 0, at: _iso(w['at'])));
   }
 
   final doses = <ChatDose>[];
@@ -284,6 +330,7 @@ ChatReading parseChatReading(Map<String, dynamic> json) {
 
   return ChatReading(
     reply: _text(json['reply']),
+    transcript: _text(json['transcript']),
     seekCare: json['seek_care'] == true,
     water: [
       for (final w in list('water'))
@@ -291,6 +338,7 @@ ChatReading parseChatReading(Map<String, dynamic> json) {
     ],
     meals: meals,
     doses: doses,
+    workouts: workouts,
     symptoms: symptoms,
     vitalSigns: vitals,
     bodyMeasurements: body,
@@ -310,12 +358,15 @@ String describeNow(DateTime local) {
       '$sign${two(abs.inHours)}:${two(abs.inMinutes % 60)} (${days[local.weekday - 1]})';
 }
 
-/// Envia **só o texto que a pessoa escreveu** e a hora atual — nenhum dado
-/// guardado vai junto (`.claude/rules/brain.md`).
-Future<ChatReading> readChatMessage(GeminiClient client, String text, {required DateTime now}) async {
+/// Envia **só o que a pessoa mandou** — o texto ou o áudio gravado — e a
+/// hora atual; nenhum dado guardado vai junto (`.claude/rules/brain.md`).
+Future<ChatReading> readChatMessage(GeminiClient client, String text, {required DateTime now, AiPart? audio}) async {
   final json = await client.generateJson(
     system: chatReadingInstruction,
-    parts: [AiPart.text('Agora: ${describeNow(now)}\nMensagem: $text')],
+    parts: [
+      ?audio,
+      AiPart.text('Agora: ${describeNow(now)}\nMensagem: ${audio == null ? text : '(mensagem de voz no áudio anexo)'}'),
+    ],
     schema: chatReadingSchema,
   );
   return parseChatReading(json);

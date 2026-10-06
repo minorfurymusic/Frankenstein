@@ -263,8 +263,16 @@ class PermissionsScreen extends StatelessWidget {
               snap.data == null ? 'Verificando…' : (snap.data! ? 'Permitida' : 'O Android pergunta quando você inicia uma corrida'),
             ),
           ),
-          // TODO(frankstein): microfone (voz no Cérebro, depende da IA — ADR-11).
-          row(Icons.mic_none, 'Microfone', 'Falar com o Cérebro.', 'Ainda não usada pelo app'),
+          FutureBuilder<bool>(
+            key: const Key('permission_mic'),
+            future: deps.voiceRecorder.hasPermission(),
+            builder: (context, snap) => row(
+              Icons.mic_none,
+              'Microfone',
+              'Falar com o Cérebro (com a IA ativa). O áudio vai à IA só quando você solta o botão e não fica guardado.',
+              snap.data == null ? 'Verificando…' : (snap.data! ? 'Permitida' : 'O Android pergunta quando você segura o microfone no Cérebro'),
+            ),
+          ),
         ]),
       ),
     );

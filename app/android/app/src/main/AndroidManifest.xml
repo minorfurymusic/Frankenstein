@@ -19,10 +19,13 @@
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
     <!-- Leitor de código de barras (flutter_zxing → camera_android_camerax).
          A câmera é pedida em runtime só quando a pessoa abre o leitor. O
-         plugin de câmera também declara microfone e armazenamento (para
-         gravar vídeo); o app não grava vídeo, então essas saem do APK. -->
+         plugin de câmera também declara armazenamento (para gravar vídeo);
+         o app não grava vídeo, então essa sai do APK. -->
     <uses-permission android:name="android.permission.CAMERA"/>
-    <uses-permission android:name="android.permission.RECORD_AUDIO" tools:node="remove"/>
+    <!-- Voz no Cérebro (VoiceBridge.kt, ADR-11): microfone pedido em runtime
+         só na primeira vez que a pessoa segura o botão de gravar, com a IA
+         ativa. O áudio vai à IA só depois do consentimento e não é guardado. -->
+    <uses-permission android:name="android.permission.RECORD_AUDIO"/>
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" tools:node="remove"/>
     <uses-feature android:name="android.hardware.camera" android:required="false"/>
     <!-- Corrida/caminhada com GPS (ADR-9 revisão 1, RunRecorderService.kt):

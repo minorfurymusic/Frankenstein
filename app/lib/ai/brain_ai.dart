@@ -1,3 +1,6 @@
+import 'dart:typed_data';
+
+import 'package:frankstein_activity/activity.dart';
 import 'package:frankstein_ai/ai.dart';
 import 'package:frankstein_brain/brain.dart';
 import 'package:frankstein_health_records/health_records.dart';
@@ -114,6 +117,19 @@ Medication? matchMedication(List<Medication> registered, String said) {
   return starts.length == 1 ? starts.single : null;
 }
 
+/// Exercício da biblioteca com o mesmo nome (ou o único que começa pelo
+/// que foi dito). Sem par, vira exercício livre com o nome dito.
+CatalogExercise? matchExercise(String said) {
+  final s = _norm(said);
+  for (final e in exerciseCatalog) {
+    if (_norm(e.name) == s) return e;
+  }
+  final starts = [for (final e in exerciseCatalog) if (_norm(e.name).startsWith(s) || s.startsWith(_norm(e.name))) e];
+  return starts.length == 1 ? starts.single : null;
+}
+
+String _slug(String s) => _norm(s).replaceAll(RegExp(r'[^a-z0-9]+'), '-').replaceAll(RegExp(r'^-+|-+$'), '');
+
 String _todayIso(DateTime now) =>
     '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
 
@@ -123,6 +139,7 @@ String _todayIso(DateTime now) =>
 ToolCallPlan planFromReading(ChatReading r, {required List<Medication> medications, required DateTime now}) {
   final calls = <ToolCallDecision>[];
   final messages = <String>[];
+  if (r.transcript != null) messages.add('Transcrição: “${r.transcript}”');
   if (r.seekCare) messages.add(seekCareMessage);
   if (r.reply != null) messages.add(r.reply!);
 
@@ -163,6 +180,24 @@ ToolCallPlan planFromReading(ChatReading r, {required List<Medication> medicatio
       if (d.at != null) 'at': d.at,
     }));
   }
+  if (r.workouts.isNotEmpty) {
+    // Uma sessão por mensagem: os exercícios ditos juntos são o mesmo treino.
+    final sets = <Map<String, dynamic>>[];
+    for (final w in r.workouts) {
+      final known = matchExercise(w.exercise);
+      for (var n = 1; n <= w.sets; n++) {
+        sets.add({
+          'exercise_id': known?.id ?? 'livre-${_slug(w.exercise)}',
+          'exercise_name': known?.name ?? w.exercise,
+          'set_number': n,
+          'reps': w.reps,
+          'load_kg': w.loadKg,
+        });
+      }
+    }
+    final at = r.workouts.map((w) => w.at).whereType<String>().firstOrNull;
+    calls.add(ToolCallDecision('log_workout_session', {'sets': sets, 'at': ?at}));
+  }
   for (final s in r.symptoms) {
     calls.add(ToolCallDecision('log_symptom', Map.of(s)));
   }
@@ -199,9 +234,16 @@ class AiToolCaller implements PlanningToolCaller {
       : clock = clock ?? DateTime.now;
 
   @override
-  Future<ToolCallPlan> plan(String userInput, List<ToolSpec> availableTools) async {
+  Future<ToolCallPlan> plan(String userInput, List<ToolSpec> availableTools) => _plan(userInput, availableTools);
+
+  /// Mensagem de voz: vai o áudio gravado (e a hora); volta a transcrição
+  /// como primeira mensagem, para a pessoa conferir o que a IA ouviu.
+  Future<ToolCallPlan> planVoice(Uint8List audio, String mimeType, List<ToolSpec> availableTools) =>
+      _plan('', availableTools, audio: AiPart.file(audio, mimeType));
+
+  Future<ToolCallPlan> _plan(String userInput, List<ToolSpec> availableTools, {AiPart? audio}) async {
     final now = clock();
-    final reading = await readChatMessage(await client(), userInput, now: now);
+    final reading = await readChatMessage(await client(), userInput, now: now, audio: audio);
     final plan = planFromReading(reading, medications: medications(), now: now);
     final names = {for (final t in availableTools) t.name};
     return ToolCallPlan(

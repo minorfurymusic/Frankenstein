@@ -11,6 +11,7 @@ import 'package:frankstein_tool_registry/tool_registry.dart';
 import '../../ai/ai_consent.dart';
 import '../../ai/ai_settings.dart';
 import '../../ai/brain_ai.dart';
+import '../../ai/voice_recorder.dart';
 import '../../app_dependencies.dart';
 import '../../confirmation_gate.dart';
 import '../../data/nutrition_store.dart';
@@ -50,6 +51,12 @@ enum AttachKind {
   final String sending;
   final IconData icon;
   const AttachKind(this.label, this.sending, this.icon);
+}
+
+/// Mensagem de voz enviada (o áudio não fica guardado; só a duração).
+class _VoiceMsg extends _Msg {
+  final Duration duration;
+  _VoiceMsg(this.duration);
 }
 
 class _AttachMsg extends _Msg {
@@ -220,15 +227,22 @@ class _BrainScreenState extends State<BrainScreen> {
       return;
     }
 
-    if (!await ensureAiConsent(context, deps, sending: 'a sua mensagem')) {
+    await _askAi('a sua mensagem', (caller) => caller.plan(text, deps.registry.specs));
+  }
+
+  /// Consentimento, IA, mensagens dela e um cartão por registro — o mesmo
+  /// caminho para texto e voz.
+  Future<void> _askAi(String sending, Future<ToolCallPlan> Function(AiToolCaller caller) ask) async {
+    final deps = widget.deps;
+    if (!await ensureAiConsent(context, deps, sending: sending)) {
       if (mounted) setState(() => _messages.add(_BotMsg('Ok, não enviei nada.')));
       return;
     }
+    if (!mounted) return;
     setState(() => _thinking = true);
     ToolCallPlan plan;
     try {
-      final caller = AiToolCaller(client: deps.ai.client, medications: deps.medicationRepository.listAll);
-      plan = await caller.plan(text, deps.registry.specs);
+      plan = await ask(AiToolCaller(client: deps.ai.client, medications: deps.medicationRepository.listAll));
     } catch (e) {
       if (!mounted) return;
       setState(() {
@@ -256,6 +270,54 @@ class _BrainScreenState extends State<BrainScreen> {
           if (mounted) _showResults(r);
         }),
     ]);
+  }
+
+  // --- Voz (prancheta CerebroEntradas: segurar para gravar) ---------------
+
+  Future<bool>? _voiceStarting;
+
+  void _voiceStart() {
+    _voiceStarting = () async {
+      final rec = widget.deps.voiceRecorder;
+      var ok = await rec.hasPermission();
+      if (!ok) ok = await rec.requestPermission();
+      if (!ok) {
+        if (mounted) {
+          setState(() => _messages.add(_BotMsg('Para falar com o Cérebro, permita o microfone. '
+              'Você pode mudar isso em Conta › Permissões.')));
+        }
+        return false;
+      }
+      return rec.start();
+    }();
+  }
+
+  Future<void> _voiceEnd(Duration held) async {
+    final started = await (_voiceStarting ?? Future.value(false));
+    _voiceStarting = null;
+    if (!started) return;
+    final audio = await widget.deps.voiceRecorder.stop();
+    if (!mounted) return;
+    if (audio == null || audio.duration < const Duration(milliseconds: 800)) {
+      setState(() => _messages.add(_BotMsg('Segure o botão do microfone enquanto fala.')));
+      return;
+    }
+    setState(() => _messages.add(_VoiceMsg(audio.duration)));
+    _scrollToEnd();
+    await _askAi('o áudio que você gravou',
+        (caller) => caller.planVoice(audio.bytes, RecordedAudio.mimeType, widget.deps.registry.specs));
+  }
+
+  Future<void> _voiceCancel() async {
+    final started = await (_voiceStarting ?? Future.value(false));
+    _voiceStarting = null;
+    if (started) await widget.deps.voiceRecorder.cancel();
+  }
+
+  /// Câmera no campo: atalho para a foto do prato.
+  Future<void> _plateCamera() async {
+    final file = await widget.deps.documentPicker.takePhoto();
+    if (file != null && mounted) await _readAttachment(AttachKind.plate, file);
   }
 
   Future<void> _attach() async {
@@ -564,6 +626,7 @@ class _BrainScreenState extends State<BrainScreen> {
                   _UserMsg(:final text) => _Bubble(text: text, mine: true),
                   _BotMsg(:final text, :final fromAi) => _Bubble(text: text, mine: false, disclaimer: fromAi),
                   _AttachMsg(:final kind, :final file) => _AttachBubble(kind: kind, file: file),
+                  _VoiceMsg(:final duration) => _VoiceBubble(duration: duration),
                   final _DocMsg m => _docCard(m),
                   final _ProposalMsg m => _proposal(m),
                 },
@@ -573,8 +636,16 @@ class _BrainScreenState extends State<BrainScreen> {
       // decidir um cartão.
       if (_thinking) const LinearProgressIndicator(key: Key('brain_thinking'), minHeight: 2),
       MessageComposer(
-        mode: ComposerMode.basic,
-        hint: aiOn ? 'Escreva o que comeu, bebeu, tomou ou sentiu' : null,
+        // Com a IA: campo completo (anexos, câmera do prato e voz). Sem ela:
+        // só comandos de texto, sem rede.
+        mode: aiOn ? ComposerMode.ai : ComposerMode.basic,
+        hint: aiOn ? 'Escreva ou fale…' : null,
+        attachKey: const Key('chat_attach'),
+        micKey: const Key('chat_mic'),
+        onCamera: aiOn && !_thinking ? _plateCamera : null,
+        onRecordStart: aiOn && !_thinking ? _voiceStart : null,
+        onRecordEnd: _voiceEnd,
+        onRecordCancel: _voiceCancel,
         onAttach: aiOn && !_thinking ? _attach : null,
         fieldKey: const Key('chat_input'),
         sendKey: const Key('chat_send'),
@@ -650,6 +721,32 @@ class _AttachBubble extends StatelessWidget {
               Flexible(child: Text('${kind.label} · ${file.name}', style: TextStyle(color: c.onPrimaryContainer))),
             ]),
           ),
+        ]),
+      ),
+    );
+  }
+}
+
+class _VoiceBubble extends StatelessWidget {
+  final Duration duration;
+  const _VoiceBubble({required this.duration});
+
+  @override
+  Widget build(BuildContext context) {
+    final c = RltColors.of(context);
+    final secs = duration.inSeconds;
+    return Align(
+      alignment: Alignment.centerRight,
+      child: Container(
+        key: const Key('brain_voice_msg'),
+        margin: const EdgeInsets.symmetric(vertical: 4),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        decoration: BoxDecoration(color: c.primaryContainer, borderRadius: BorderRadius.circular(RltRadius.card)),
+        child: Row(mainAxisSize: MainAxisSize.min, children: [
+          Icon(Icons.graphic_eq, size: 20, color: c.onPrimaryContainer),
+          const SizedBox(width: 8),
+          Text('Mensagem de voz · ${secs ~/ 60}:${(secs % 60).toString().padLeft(2, '0')}',
+              style: TextStyle(color: c.onPrimaryContainer)),
         ]),
       ),
     );

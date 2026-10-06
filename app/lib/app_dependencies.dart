@@ -14,6 +14,7 @@ import 'package:flutter/material.dart' show ThemeMode, ValueNotifier;
 
 import 'ai/ai_settings.dart';
 import 'ai/brain_ai.dart';
+import 'ai/voice_recorder.dart';
 import 'card_image_capturer.dart';
 import 'data/activity_read_model.dart';
 import 'data/day_read_model.dart';
@@ -69,6 +70,9 @@ class AppDependencies {
 
   /// App OpenTracks instalado (ADR-9 revisão 2).
   final OpenTracksBridge openTracks;
+
+  /// Voz no Cérebro (VoiceBridge.kt).
+  final VoiceRecorder voiceRecorder;
 
   /// IA com a chave do usuário (ADR-11): Gemini. Sem chave, modo básico.
   final AiSettings ai;
@@ -138,6 +142,7 @@ class AppDependencies {
     required this.pdfRenderer,
     required this.runRecorder,
     required this.openTracks,
+    required this.voiceRecorder,
     required this.ai,
     required this.registry,
     required this.pipeline,
@@ -206,9 +211,11 @@ class AppDependencies {
     SecretStore? secretStore,
     AiTransport? aiTransport,
     OpenTracksBridge? openTracks,
+    VoiceRecorder? voiceRecorder,
   }) {
     return _build(
       openTracks: openTracks ?? defaultOpenTracksBridge(),
+      voiceRecorder: voiceRecorder ?? defaultVoiceRecorder(),
       secretStore: secretStore ?? defaultSecretStore(),
       aiTransport: aiTransport,
       reminderScheduler: reminderScheduler ?? defaultReminderScheduler(),
@@ -244,9 +251,11 @@ class AppDependencies {
     SecretStore? secretStore,
     AiTransport? aiTransport,
     OpenTracksBridge? openTracks,
+    VoiceRecorder? voiceRecorder,
   }) {
     return _build(
       openTracks: openTracks ?? FakeOpenTracksBridge(),
+      voiceRecorder: voiceRecorder ?? FakeVoiceRecorder(),
       secretStore: secretStore ?? MemorySecretStore(),
       aiTransport: aiTransport,
       reminderScheduler: reminderScheduler ?? NoopReminderScheduler(),
@@ -301,6 +310,7 @@ class AppDependencies {
 
   static AppDependencies _build({
     required OpenTracksBridge openTracks,
+    required VoiceRecorder voiceRecorder,
     required SecretStore secretStore,
     AiTransport? aiTransport,
     required ReminderScheduler reminderScheduler,
@@ -420,6 +430,7 @@ class AppDependencies {
       pdfRenderer: pdfRenderer,
       runRecorder: runRecorder,
       openTracks: openTracks,
+      voiceRecorder: voiceRecorder,
       ai: AiSettings(secrets: secretStore, settings: profileRepository, transport: aiTransport),
       registry: registry,
       pipeline: pipeline,

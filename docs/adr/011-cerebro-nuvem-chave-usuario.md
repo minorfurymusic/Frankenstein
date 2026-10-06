@@ -129,6 +129,13 @@ API**, com a chave do próprio usuário.
   cadastro, o app pergunta. Perguntas sobre os próprios dados são
   respondidas localmente. Sinal de alerta vira o aviso fixo do app
   ("procure atendimento… 192"), não texto da IA.
+- **Voz e anexos no Cérebro (2026-10-06):** segurar o microfone grava no
+  celular (`VoiceBridge.kt`, `MediaRecorder`, AAC `audio/aac` — formato
+  aceito pelo Gemini segundo a página "Audio understanding" da API), sem
+  biblioteca nova; ao soltar, depois do consentimento, vai o áudio e a hora;
+  volta a transcrição, que o app mostra para conferir. O áudio não é
+  guardado (decisão pendente em `docs/DECISOES-PENDENTES.md`). Anexos (foto
+  do prato, receita, exame) seguem o mesmo consentimento.
 - **Não verificado:** PDF enviado direto em `inlineData` (os exemplos do SDK
   mostram PDF por URI; imagem por bytes). Confirmar no primeiro teste no
   aparelho; se o provedor recusar, o app mostra o erro e a pessoa pode

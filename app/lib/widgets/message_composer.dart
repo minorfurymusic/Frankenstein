@@ -27,11 +27,15 @@ class MessageComposer extends StatefulWidget {
   final Key? fieldKey;
   final Key? sendKey;
 
-  /// Texto de ajuda do campo no modo básico.
+  /// Texto de ajuda do campo.
   final String? hint;
+  final Key? attachKey;
+  final Key? micKey;
 
   const MessageComposer({
     this.hint,
+    this.attachKey,
+    this.micKey,
     this.fieldKey,
     this.sendKey,
     super.key,
@@ -123,7 +127,7 @@ class _MessageComposerState extends State<MessageComposer> {
       return _Bar(children: [
         if (widget.onAttach != null) ...[
           IconButton(
-            key: const Key('chat_attach'),
+            key: widget.attachKey,
             onPressed: widget.onAttach,
             tooltip: 'Anexar foto ou PDF',
             icon: const Icon(Icons.attach_file),
@@ -170,16 +174,17 @@ class _MessageComposerState extends State<MessageComposer> {
 
     return _Bar(children: [
       IconButton(
+        key: widget.attachKey,
         onPressed: widget.onAttach,
         tooltip: 'Anexar foto, arquivo, áudio ou vídeo',
         icon: const Icon(Icons.add),
       ),
-      Expanded(child: _field(c, t, hint: 'Escreva ou fale…', withCamera: true)),
+      Expanded(child: _field(c, t, hint: widget.hint ?? 'Escreva ou fale…', withCamera: true)),
       const SizedBox(width: RltSpace.s),
       if (_hasText)
         IconButton.filled(key: widget.sendKey, onPressed: _send, tooltip: 'Enviar', icon: const Icon(Icons.send_outlined))
       else
-        Tooltip(message: 'Segure para gravar voz', child: _micButton(c, recording: false)),
+        Tooltip(message: 'Segure para gravar voz', child: KeyedSubtree(key: widget.micKey, child: _micButton(c, recording: false))),
     ]);
   }
 

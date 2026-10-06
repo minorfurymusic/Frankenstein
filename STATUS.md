@@ -23,7 +23,18 @@ branco: navegação Resumo/Chat de verdade, ligada aos pacotes reais, com
 compartilhamento de treino/corrida funcionando de ponta a ponta. Detalhe
 completo em `docs/HISTORICO.md`.
 
-**Ciclo mais recente (2026-10-06): anexos no Cérebro + 12 exemplos reais.**
+**Ciclo mais recente (2026-10-06, feito sozinho a pedido): voz no
+Cérebro + treino por voz/texto.** Com a IA ativa, o campo do Cérebro vira o
+completo da prancheta: "+" para anexos, câmera do prato e microfone
+(segurar para gravar, arrastar para a esquerda cancela). O áudio (AAC,
+gravado pelo `VoiceBridge.kt`) vai ao Gemini depois do consentimento e
+volta com a transcrição ("Transcrição: “…”") e os cartões; não fica
+guardado. Treino dito ("3 séries de supino com 30 kg, 10 repetições") vira
+cartão "Supino reto — 3 × 10 · 30 kg", casado com a biblioteca no celular.
+Conta › Permissões mostra o estado real do microfone. Decisões que tomei
+por você estão em `docs/DECISOES-PENDENTES.md`.
+
+**Ciclo anterior (2026-10-06): anexos no Cérebro + 12 exemplos reais.**
 Com a IA ativa, o clipe no campo do Cérebro anexa **foto do prato**
 (câmera/galeria), **receita** ou **exame** (câmera/galeria/PDF). Só vai à IA
 depois do consentimento. Prato vira cartão de refeição estimada (editável;

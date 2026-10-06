@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:frankstein_ai/ai.dart';
 import 'package:test/test.dart';
@@ -83,5 +84,25 @@ void main() {
   test('describeNow leva fuso e dia da semana', () {
     final s = describeNow(DateTime(2026, 10, 5, 9, 5));
     expect(s, matches(RegExp(r'^2026-10-05T09:05:00[+-]\d\d:\d\d \(segunda\)$')));
+  });
+
+  test('mensagem de voz: o áudio vai como anexo, volta a transcrição e o treino', () async {
+    final t = OneReply({
+      'reply': 'Anotei o treino.',
+      'transcript': 'fiz 3 séries de supino com 30 quilos, 10 repetições',
+      'workouts': [
+        {'exercise': 'Supino reto', 'sets': 3, 'reps': 10, 'load_kg': 30},
+        {'exercise': 'Prancha', 'sets': 0, 'reps': 1},
+        {'exercise': 'Flexão', 'sets': 3, 'reps': 15},
+      ],
+    });
+    final audio = AiPart.file(Uint8List.fromList([0xFF, 0xF1, 1, 2]), 'audio/aac');
+    final r = await readChatMessage(GeminiClient(apiKey: 'k', transport: t), '', now: DateTime(2026, 10, 6, 18, 40), audio: audio);
+    final parts = (t.sent!['contents'] as List).single['parts'] as List;
+    expect(parts.first['inlineData']['mimeType'], 'audio/aac');
+    expect(parts.last['text'], contains('mensagem de voz no áudio anexo'));
+    expect(r.transcript, 'fiz 3 séries de supino com 30 quilos, 10 repetições');
+    expect(r.workouts.map((w) => (w.exercise, w.sets, w.reps, w.loadKg)), [('Supino reto', 3, 10, 30.0), ('Flexão', 3, 15, 0.0)]);
+    expect(r.isEmpty, isFalse);
   });
 }

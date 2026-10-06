@@ -72,6 +72,9 @@ void main() {
 
   Future<void> send(WidgetTester tester, String text) async {
     await tester.enterText(find.byKey(const Key('chat_input')), text);
+    // Com a IA ativa o botão de enviar só aparece com texto no campo (no
+    // lugar do microfone).
+    await tester.pump();
     await tester.tap(find.byKey(const Key('chat_send')));
     await tester.pumpAndSettle();
   }

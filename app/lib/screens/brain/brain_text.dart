@@ -85,12 +85,31 @@ ProposalView describeProposal(AppDependencies deps, String tool, Map<String, dyn
       );
     case 'log_workout_session':
       final sets = (p['sets'] as List? ?? const []).cast<Map<String, dynamic>>();
+      // Agrupa por exercício, na ordem dita: "Supino reto — 3 × 10 · 30 kg".
+      final byExercise = <String, List<Map<String, dynamic>>>{};
+      for (final s in sets) {
+        byExercise.putIfAbsent('${s['exercise_name']}', () => []).add(s);
+      }
+      String load(Object? kg) => kg is num && kg > 0 ? '${n(kg, d: kg % 1 == 0 ? 0 : 1)} kg' : 'peso do corpo';
+      String line(String name, List<Map<String, dynamic>> ss) {
+        final reps = ss.map((s) => s['reps']).toSet();
+        final loads = ss.map((s) => s['load_kg']).toSet();
+        final shape = reps.length == 1 ? '${ss.length} × ${reps.single}' : '${ss.length} séries';
+        return '$name — $shape${loads.length == 1 ? ' · ${load(loads.single)}' : ''}';
+      }
+      if (byExercise.length == 1) {
+        final e = byExercise.entries.single;
+        final parts = line(e.key, e.value).split(' · ');
+        return ProposalView(HealthArea.workout, parts.first, parts.length > 1 ? '${parts[1]} · treino de hoje' : 'treino de hoje',
+            'Exercícios › Academia',
+            when: when ?? 'hoje, agora');
+      }
       return ProposalView(
         HealthArea.workout,
-        'Treino — ${sets.length} ${sets.length == 1 ? 'série' : 'séries'}',
-        sets.map((s) => '${s['exercise_name']} ${n(s['load_kg'], d: 1)} kg × ${s['reps']}').join(' · '),
+        'Treino — ${byExercise.length} exercícios',
+        byExercise.entries.map((e) => line(e.key, e.value)).join('\n'),
         'Exercícios › Academia',
-        when: when,
+        when: when ?? 'hoje, agora',
       );
     case 'add_medication':
       return ProposalView(HealthArea.medication, '${p['name']} ${n(p['dose_amount'])} ${p['dose_unit']}',
