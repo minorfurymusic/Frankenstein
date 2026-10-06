@@ -23,7 +23,20 @@ branco: navegação Resumo/Chat de verdade, ligada aos pacotes reais, com
 compartilhamento de treino/corrida funcionando de ponta a ponta. Detalhe
 completo em `docs/HISTORICO.md`.
 
-**Ciclo mais recente (2026-10-06): estados de Início, Nutrição e
+**Ciclo mais recente (2026-10-06): estados da Saúde** (pranchetas
+SaudeEstados, RemediosEstados, VitaisEstados, CorpoEstados,
+HistoricoEstados, ReceitasEstados, ExamesEstados). Erro com "Tentar de
+novo" (`GuardedView`, agora também com barra de título) na aba Saúde,
+Remédios, Sinais vitais, Corpo, Histórico, Receitas e Exames. Vazios com o
+texto e as duas ações das pranchetas (`StateCard` ganhou a ação
+secundária): "Seu histórico começa aqui", "Nenhuma medida ainda"
+(Registrar agora / Conectar pulseira), "Registre seu peso", "Nenhuma
+receita guardada" (Fotografar / Enviar PDF) etc. Remédios avisa
+"Notificações desligadas: os lembretes não vão tocar" com "Permitir". A
+aba Saúde mostra "N receitas válidas" e "N exames · último dd/mm". Câmera
+ou galeria negada mostra o texto da prancheta em vez do erro técnico.
+
+**Ciclo anterior (2026-10-06): estados de Início, Nutrição e
 Exercícios** (pranchetas *Estados). Novo `GuardedView`: se ler os dados
 falhar, a tela mostra "Não foi possível…", "Seus registros continuam
 salvos no celular" e "Tentar de novo", em vez de quebrar (nada é apagado).

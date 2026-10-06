@@ -9,6 +9,7 @@ import '../../widgets/badges.dart';
 import '../../widgets/common.dart';
 import '../../widgets/line_chart.dart';
 import '../../widgets/state_views.dart';
+import '../account/devices_screen.dart';
 
 /// Sinais vitais (prancheta Vitais): uma aba por tipo, última medida,
 /// gráfico de 7/30/90 dias e registros. Manual ou vindo da pulseira.
@@ -71,16 +72,36 @@ class _VitalTabState extends State<_VitalTab> {
   int _days = 7;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) => GuardedView(
+        errorTitle: 'Não foi possível carregar as medidas',
+        errorMessage: 'Seus registros estão salvos. Tente de novo.',
+        builder: _build,
+      );
+
+  Widget _build(BuildContext context) {
     final c = RltColors.of(context);
     final t = Theme.of(context).textTheme;
     final all = widget.deps.healthRead.vitals(widget.kind);
     if (all.isEmpty) {
       return ListView(padding: const EdgeInsets.all(RltSpace.l), children: [
         StateCard(
+          key: Key('vitals_empty_${widget.kind.name}'),
           icon: Icons.monitor_heart_outlined,
-          title: 'Nenhuma medida de ${widget.kind.label.toLowerCase()}',
-          message: 'Toque em "Registrar" ou conecte uma pulseira em Conta › Dispositivos.',
+          title: 'Nenhuma medida ainda',
+          message: widget.kind == VitalKind.bloodPressure
+              ? 'Registre a pressão manualmente ou conecte uma pulseira para receber os dados automaticamente.'
+              : 'Registre manualmente ou conecte uma pulseira para receber os dados automaticamente.',
+          actionLabel: 'Registrar agora',
+          actionIcon: Icons.add,
+          onAction: () => showModalBottomSheet<void>(
+            context: context,
+            isScrollControlled: true,
+            showDragHandle: true,
+            builder: (_) => VitalForm(deps: widget.deps, kind: widget.kind),
+          ),
+          secondaryLabel: 'Conectar pulseira',
+          secondaryIcon: Icons.watch_outlined,
+          onSecondary: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => DevicesScreen(deps: widget.deps))),
         ),
         const SizedBox(height: RltSpace.l),
         const HealthDisclaimer(),

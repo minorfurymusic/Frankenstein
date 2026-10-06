@@ -16,6 +16,11 @@ class StateCard extends StatelessWidget {
   final String? actionLabel;
   final IconData? actionIcon;
   final VoidCallback? onAction;
+
+  /// Segunda ação, em botão contornado (ex.: "Fotografar receita").
+  final String? secondaryLabel;
+  final IconData? secondaryIcon;
+  final VoidCallback? onSecondary;
   final StateTone tone;
 
   const StateCard({
@@ -26,6 +31,9 @@ class StateCard extends StatelessWidget {
     this.actionLabel,
     this.actionIcon,
     this.onAction,
+    this.secondaryLabel,
+    this.secondaryIcon,
+    this.onSecondary,
     this.tone = StateTone.empty,
   });
 
@@ -62,6 +70,15 @@ class StateCard extends StatelessWidget {
               child: actionIcon == null
                   ? FilledButton(onPressed: onAction, child: Text(actionLabel!))
                   : FilledButton.icon(onPressed: onAction, icon: Icon(actionIcon), label: Text(actionLabel!)),
+            ),
+          ],
+          if (secondaryLabel != null) ...[
+            const SizedBox(height: RltSpace.s),
+            SizedBox(
+              width: double.infinity,
+              child: secondaryIcon == null
+                  ? OutlinedButton(onPressed: onSecondary, child: Text(secondaryLabel!))
+                  : OutlinedButton.icon(onPressed: onSecondary, icon: Icon(secondaryIcon), label: Text(secondaryLabel!)),
             ),
           ],
         ],
@@ -142,11 +159,16 @@ class GuardedView extends StatefulWidget {
   final WidgetBuilder builder;
   final String errorTitle;
   final String errorMessage;
+
+  /// Tela inteira (com barra de título): o erro aparece com a barra e o
+  /// botão de voltar, como na prancheta.
+  final String? screenTitle;
   const GuardedView({
     super.key,
     required this.builder,
     required this.errorTitle,
     this.errorMessage = 'Seus registros continuam salvos no celular. Tente de novo.',
+    this.screenTitle,
   });
 
   @override
@@ -161,7 +183,7 @@ class _GuardedViewState extends State<GuardedView> {
     } catch (e) {
       // Só no console de desenvolvimento; nada sai do celular (sem telemetria).
       debugPrint('RLT: falha ao montar a tela: $e');
-      return ListView(padding: const EdgeInsets.all(RltSpace.l), children: [
+      final body = ListView(padding: const EdgeInsets.all(RltSpace.l), children: [
         StateCard(
           key: const Key('state_error'),
           tone: StateTone.error,
@@ -173,6 +195,8 @@ class _GuardedViewState extends State<GuardedView> {
           onAction: () => setState(() {}),
         ),
       ]);
+      final title = widget.screenTitle;
+      return title == null ? body : Scaffold(appBar: AppBar(title: Text(title)), body: body);
     }
   }
 }

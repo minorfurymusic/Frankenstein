@@ -225,7 +225,7 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
       final p = source == 'camera' ? await picker.takePhoto() : await picker.pickImage();
       if (p != null && mounted) setState(() => _photo = p);
     } catch (e) {
-      if (mounted) showRltError(context, 'Não foi possível abrir: $e');
+      if (mounted) showRltError(context, pickerErrorMessage(e));
     }
   }
 

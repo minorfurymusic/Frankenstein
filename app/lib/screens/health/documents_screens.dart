@@ -68,7 +68,7 @@ class _DocumentListScreenState extends State<_DocumentListScreen> {
     try {
       picked = await pick();
     } catch (e) {
-      if (mounted) showRltError(context, 'Não foi possível abrir: $e');
+      if (mounted) showRltError(context, pickerErrorMessage(e));
       return;
     }
     if (picked == null || !mounted) return;
@@ -95,7 +95,10 @@ class _DocumentListScreenState extends State<_DocumentListScreen> {
       ),
       body: ValueListenableBuilder<int>(
         valueListenable: widget.deps.dataVersion,
-        builder: (context, _, _) {
+        builder: (context, _, _) => GuardedView(
+          errorTitle: _isPrescription ? 'Não foi possível abrir as receitas' : 'Não foi possível abrir os exames',
+          errorMessage: 'Os arquivos continuam no celular. Tente de novo.',
+          builder: (context) {
           final docs = widget.deps.documents.list(widget.kind, category: _isPrescription ? null : _category);
           final meds = {for (final m in widget.deps.medicationRepository.listAll()) m.id: m.name};
           final anyAtAll = _category == null ? docs.isNotEmpty : widget.deps.documents.list(widget.kind).isNotEmpty;
@@ -115,14 +118,18 @@ class _DocumentListScreenState extends State<_DocumentListScreen> {
                 ]),
               if (!anyAtAll)
                 StateCard(
+                  key: const Key('documents_empty'),
                   icon: _isPrescription ? Icons.description_outlined : Icons.science_outlined,
                   title: _isPrescription ? 'Nenhuma receita guardada' : 'Nenhum exame ainda',
                   message: _isPrescription
                       ? 'Fotografe a receita ou envie o PDF. Você pode vincular os remédios depois.'
-                      : 'Envie uma foto ou PDF do exame. Fica guardado só no seu celular.',
+                      : 'Envie uma foto ou PDF. O Cérebro pode ler os valores para você conferir e acompanhar.',
                   actionLabel: _isPrescription ? 'Fotografar receita' : 'Fotografar exame',
                   actionIcon: Icons.photo_camera_outlined,
                   onAction: () => _add(picker.takePhoto),
+                  secondaryLabel: 'Enviar PDF',
+                  secondaryIcon: Icons.picture_as_pdf_outlined,
+                  onSecondary: () => _add(picker.pickPdf),
                 )
               else if (docs.isEmpty)
                 const Padding(padding: EdgeInsets.all(RltSpace.l), child: Text('Nada nesta categoria.'))
@@ -131,16 +138,6 @@ class _DocumentListScreenState extends State<_DocumentListScreen> {
                 if (!_isPrescription) const RltSectionHeader('Exames'),
                 for (final d in docs) _DocumentTile(deps: widget.deps, doc: d, medNames: meds),
               ],
-              if (!anyAtAll)
-                Padding(
-                  padding: const EdgeInsets.only(top: RltSpace.s),
-                  child: OutlinedButton.icon(
-                    key: const Key('document_empty_pdf'),
-                    onPressed: () => _add(picker.pickPdf),
-                    icon: const Icon(Icons.picture_as_pdf_outlined),
-                    label: const Text('Enviar PDF'),
-                  ),
-                ),
               if (!_isPrescription) ...[
                 const SizedBox(height: RltSpace.l),
                 Card(
@@ -157,7 +154,7 @@ class _DocumentListScreenState extends State<_DocumentListScreen> {
               const HealthDisclaimer(),
             ],
           );
-        },
+        }),
       ),
     );
   }
@@ -611,7 +608,7 @@ class _DocumentFormScreenState extends State<DocumentFormScreen> {
         await _readWithAi(auto: true);
       }
     } catch (e) {
-      if (mounted) showRltError(context, 'Não foi possível abrir: $e');
+      if (mounted) showRltError(context, pickerErrorMessage(e));
     }
   }
 

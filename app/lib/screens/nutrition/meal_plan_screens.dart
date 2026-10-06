@@ -86,7 +86,7 @@ class _MealPlanScreenState extends State<MealPlanScreen> {
         _ => await picker.pickPdf(),
       };
     } catch (e) {
-      if (mounted) showRltError(context, 'Não foi possível abrir: $e');
+      if (mounted) showRltError(context, pickerErrorMessage(e));
       return;
     }
     if (file == null || !mounted) return;

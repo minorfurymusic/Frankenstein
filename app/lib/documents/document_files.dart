@@ -210,3 +210,19 @@ class AndroidPdfPageRenderer implements PdfPageRenderer {
 }
 
 PdfPageRenderer defaultPdfPageRenderer() => !kIsWeb && Platform.isAndroid ? AndroidPdfPageRenderer() : NoopPdfPageRenderer();
+
+/// Texto para quando abrir a câmera, a galeria ou o seletor de arquivos
+/// falha (pranchetas ReceitasEstados e CodigoBarras: "Permita o uso da
+/// câmera"). O `image_picker` avisa a permissão negada pelos códigos
+/// `camera_access_denied` e `photo_access_denied`.
+String pickerErrorMessage(Object e) {
+  final code = e is PlatformException ? e.code : '';
+  if (code == 'camera_access_denied') {
+    return 'Permita o uso da câmera nas configurações do Android. A câmera é usada só para fotografar receitas, exames e '
+        'pratos. As fotos ficam no celular.';
+  }
+  if (code == 'photo_access_denied') {
+    return 'Permita o acesso às fotos nas configurações do Android para escolher da galeria.';
+  }
+  return 'Não foi possível abrir: $e';
+}

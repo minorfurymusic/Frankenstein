@@ -13,6 +13,7 @@ import '../../widgets/medication_dose_card.dart';
 import '../../widgets/progress.dart';
 import '../../widgets/state_views.dart';
 import 'medication_form_screen.dart';
+import 'documents_screens.dart';
 
 /// Nome da forma no layout (prancheta RemedioForm, chips de "Forma").
 String medicationFormLabel(MedicationForm f) => switch (f) {
@@ -64,7 +65,11 @@ class MedicationsScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return ValueListenableBuilder<int>(
       valueListenable: deps.dataVersion,
-      builder: (context, _, _) {
+      builder: (context, _, _) => GuardedView(
+        screenTitle: 'Remédios',
+        errorTitle: 'Não foi possível carregar seus remédios',
+        errorMessage: 'Nada foi perdido. Tente abrir de novo.',
+        builder: (context) {
         final read = deps.healthRead;
         final active = read.activeMedications();
         final ended = read.endedMedications();
@@ -89,7 +94,7 @@ class MedicationsScreen extends StatelessWidget {
             ]),
           ),
         );
-      },
+      }),
     );
   }
 }
@@ -105,12 +110,19 @@ class _ActiveTab extends StatelessWidget {
       return ListView(padding: const EdgeInsets.all(RltSpace.l), children: [
         StateCard(
           icon: Icons.medication_outlined,
+          key: const Key('medications_empty'),
           title: 'Nenhum remédio cadastrado',
-          message: 'Cadastre aqui ou mande a foto da receita para o Cérebro.',
-          actionLabel: 'Novo remédio',
+          message: 'Cadastre manualmente ou mande a foto da receita para o Cérebro — ele lê os remédios, doses e horários '
+              'para você conferir.',
+          actionLabel: 'Cadastrar remédio',
           actionIcon: Icons.add,
           onAction: () => Navigator.of(context).push(
             MaterialPageRoute<void>(builder: (_) => MedicationFormScreen(deps: deps)),
+          ),
+          secondaryLabel: 'Fotografar receita',
+          secondaryIcon: Icons.photo_camera_outlined,
+          onSecondary: () => Navigator.of(context).push(
+            MaterialPageRoute<void>(builder: (_) => PrescriptionsScreen(deps: deps)),
           ),
         ),
         const SizedBox(height: RltSpace.l),
@@ -125,6 +137,33 @@ class _ActiveTab extends StatelessWidget {
       key: const Key('medications_list'),
       padding: const EdgeInsets.fromLTRB(RltSpace.l, RltSpace.l, RltSpace.l, 96),
       children: [
+        // Prancheta RemediosEstados: sem notificação, os lembretes não tocam.
+        FutureBuilder<bool>(
+          future: deps.reminders.scheduler.hasPermission(),
+          builder: (context, snap) => snap.data != false
+              ? const SizedBox.shrink()
+              : Container(
+                  key: const Key('medications_no_notifications'),
+                  margin: const EdgeInsets.only(bottom: RltSpace.m),
+                  padding: const EdgeInsets.fromLTRB(RltSpace.m, RltSpace.xs, RltSpace.xs, RltSpace.xs),
+                  decoration: BoxDecoration(color: c.tertiaryContainer, borderRadius: BorderRadius.circular(RltRadius.icon)),
+                  child: Row(children: [
+                    Icon(Icons.notifications_off_outlined, size: 18, color: c.onTertiaryContainer),
+                    const SizedBox(width: RltSpace.s),
+                    Expanded(
+                      child: Text('Notificações desligadas: os lembretes não vão tocar.',
+                          style: t.bodyMedium?.copyWith(color: c.onTertiaryContainer)),
+                    ),
+                    TextButton(
+                      onPressed: () async {
+                        await deps.reminders.scheduler.requestPermission();
+                        deps.notifyDataChanged();
+                      },
+                      child: const Text('Permitir'),
+                    ),
+                  ]),
+                ),
+        ),
         if (adherence.ratio != null)
           Container(
             padding: const EdgeInsets.all(RltSpace.m),

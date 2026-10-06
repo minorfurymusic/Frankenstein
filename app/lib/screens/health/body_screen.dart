@@ -11,6 +11,7 @@ import '../../widgets/badges.dart';
 import '../../widgets/common.dart';
 import '../../widgets/weight_target.dart';
 import '../../widgets/line_chart.dart';
+import '../../widgets/state_views.dart';
 
 /// O que dá para registrar em Corpo, com rótulo e unidade da tela.
 enum BodyField {
@@ -72,7 +73,10 @@ class _BodyScreenState extends State<BodyScreen> {
       ),
       body: ValueListenableBuilder<int>(
         valueListenable: deps.dataVersion,
-        builder: (context, _, _) {
+        builder: (context, _, _) => GuardedView(
+          errorTitle: 'Não foi possível carregar suas medidas',
+          errorMessage: 'Tente de novo.',
+          builder: (context) {
           final c = RltColors.of(context);
           final t = Theme.of(context).textTheme;
           final weights = deps.healthRead.weights();
@@ -85,6 +89,30 @@ class _BodyScreenState extends State<BodyScreen> {
               : HealthFormulas.waistToHeight(waistMeters: waist.first.value / 100, heightMeters: height);
           final cutoff = DateTime.now().subtract(Duration(days: 30 * _months));
           final chartPoints = [for (final w in weights.where((w) => w.local.isAfter(cutoff))) ChartPoint(w.local, w.value)];
+          void openForm() => showModalBottomSheet<void>(
+                context: context,
+                isScrollControlled: true,
+                showDragHandle: true,
+                builder: (_) => BodyForm(deps: deps),
+              );
+          if (weights.isEmpty && fat.isEmpty && waist.isEmpty) {
+            return ListView(padding: const EdgeInsets.all(RltSpace.l), children: [
+              StateCard(
+                key: const Key('body_empty'),
+                icon: Icons.monitor_weight_outlined,
+                title: 'Registre seu peso',
+                message: 'Com o peso e as medidas, mostramos sua evolução e quando você deve chegar à meta.',
+                actionLabel: 'Registrar peso',
+                actionIcon: Icons.add,
+                onAction: openForm,
+                secondaryLabel: 'Adicionar medidas',
+                secondaryIcon: Icons.straighten,
+                onSecondary: openForm,
+              ),
+              const SizedBox(height: RltSpace.l),
+              const HealthDisclaimer(),
+            ]);
+          }
           return ListView(
             padding: const EdgeInsets.fromLTRB(RltSpace.l, RltSpace.s, RltSpace.l, 96),
             children: [
@@ -172,7 +200,7 @@ class _BodyScreenState extends State<BodyScreen> {
               const HealthDisclaimer(),
             ],
           );
-        },
+        }),
       ),
     );
   }

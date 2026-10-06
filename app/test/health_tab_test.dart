@@ -51,11 +51,14 @@ void main() {
     );
   }
 
-  testWidgets('aba Saúde vazia: resumos com traço, seções e aviso fixo de saúde', (tester) async {
+  testWidgets('aba Saúde vazia: convite da prancheta (SaudeEstados), seções e aviso fixo de saúde', (tester) async {
     await openHealthTab(tester);
     expect(find.text('Saúde'), findsWidgets);
-    expect(find.text('Próximo remédio'), findsOneWidget);
-    expect(find.text('Nenhum cadastrado'), findsOneWidget);
+    expect(find.byKey(const Key('health_empty')), findsOneWidget);
+    expect(find.text('Seu histórico começa aqui'), findsOneWidget);
+    expect(find.text('Cadastrar remédio'), findsOneWidget);
+    expect(find.text('Fotografar receita'), findsOneWidget);
+    expect(find.text('Próximo remédio'), findsNothing);
     for (final s in ['Remédios', 'Receitas médicas', 'Histórico médico', 'Exames e documentos', 'Sinais vitais', 'Corpo', 'Sono']) {
       expect(find.text(s), findsOneWidget, reason: s);
     }

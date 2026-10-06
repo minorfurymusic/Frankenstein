@@ -31,17 +31,24 @@ class SymptomsScreen extends StatelessWidget {
       ),
       body: ValueListenableBuilder<int>(
         valueListenable: deps.dataVersion,
-        builder: (context, _, _) {
+        builder: (context, _, _) => GuardedView(
+          errorTitle: 'Não foi possível carregar o histórico',
+          errorMessage: 'Nada foi perdido. Tente de novo.',
+          builder: (context) {
           final symptoms = deps.healthRead.symptoms();
           return ListView(
             padding: const EdgeInsets.fromLTRB(RltSpace.l, RltSpace.s, RltSpace.l, 96),
             children: [
               const RltSectionHeader('Diário de sintomas'),
               if (symptoms.isEmpty)
-                const StateCard(
+                StateCard(
+                  key: const Key('symptoms_empty'),
                   icon: Icons.sentiment_satisfied_outlined,
                   title: 'Nenhum sintoma registrado',
-                  message: 'Registre aqui ou conte para o Cérebro: "acordei com dor de cabeça".',
+                  message: 'Anote o que sentir, a intensidade e quando começou. Ajuda muito na hora da consulta.',
+                  actionLabel: 'Registrar sintoma',
+                  actionIcon: Icons.add,
+                  onAction: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => SymptomFormScreen(deps: deps))),
                 ),
               for (var i = 0; i < symptoms.length; i++)
                 TimelineItem(
@@ -89,7 +96,7 @@ class SymptomsScreen extends StatelessWidget {
               const HealthDisclaimer(),
             ],
           );
-        },
+        }),
       ),
     );
   }

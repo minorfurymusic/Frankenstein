@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:frankstein_health_records/health_records.dart';
 
 import '../../app_dependencies.dart';
+import '../../widgets/state_views.dart';
 import '../../data/health_read_model.dart';
 import '../../format.dart';
 import '../../theme/rlt_colors.dart';
@@ -13,6 +15,7 @@ import 'medications_screen.dart';
 import 'sleep_screen.dart';
 import 'symptoms_screen.dart';
 import 'vitals_screen.dart';
+import 'medication_form_screen.dart';
 
 /// Aba Saúde (prancheta Saude): resumo (próximo remédio, último sintoma,
 /// última pressão, peso atual), seções e o aviso fixo no rodapé.
@@ -27,7 +30,10 @@ class HealthTab extends StatelessWidget {
   Widget build(BuildContext context) {
     return ValueListenableBuilder<int>(
       valueListenable: deps.dataVersion,
-      builder: (context, _, _) {
+      builder: (context, _, _) => GuardedView(
+        errorTitle: 'Não foi possível carregar o resumo',
+        errorMessage: 'Seus dados estão salvos no celular. Tente de novo.',
+        builder: (context) {
         final c = RltColors.of(context);
         final read = deps.healthRead;
         final next = read.nextDose();
@@ -35,6 +41,12 @@ class HealthTab extends StatelessWidget {
         final pressure = read.vitals(VitalKind.bloodPressure, days: 90);
         final weights = read.weights();
         final active = read.activeMedications();
+        final today = LocalDate.fromDateTime(DateTime.now());
+        final prescriptions = deps.documents.list(HealthDocumentKind.prescription);
+        final valid = prescriptions.where((p) => p.validUntil == null || p.validUntil!.compareTo(today) >= 0).length;
+        final exams = deps.documents.list(HealthDocumentKind.exam);
+        final lastExam = exams.map((e) => e.date).whereType<LocalDate>().fold<LocalDate?>(null, (a, b) => a == null || b.compareTo(a) > 0 ? b : a);
+        final nothingYet = active.isEmpty && symptoms.isEmpty && pressure.isEmpty && weights.isEmpty && prescriptions.isEmpty && exams.isEmpty;
         return Column(
           children: [
             Expanded(
@@ -46,6 +58,20 @@ class HealthTab extends StatelessWidget {
                   Padding(
                     padding: const EdgeInsets.symmetric(horizontal: RltSpace.l),
                     child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+                      if (nothingYet)
+                        StateCard(
+                          key: const Key('health_empty'),
+                          icon: Icons.favorite_outline,
+                          title: 'Seu histórico começa aqui',
+                          message: 'Cadastre um remédio, registre a pressão ou mande a foto de uma receita para o Cérebro.',
+                          actionLabel: 'Cadastrar remédio',
+                          actionIcon: Icons.add,
+                          onAction: () => _open(context, MedicationFormScreen(deps: deps)),
+                          secondaryLabel: 'Fotografar receita',
+                          secondaryIcon: Icons.photo_camera_outlined,
+                          onSecondary: () => _open(context, PrescriptionsScreen(deps: deps)),
+                        )
+                      else
                       RltTwoColumnGrid(children: [
                         RltStatTile(
                           icon: Icons.medication_outlined,
@@ -100,7 +126,9 @@ class HealthTab extends StatelessWidget {
                         icon: Icons.description_outlined,
                         iconColor: c.protein,
                         title: 'Receitas médicas',
-                        subtitle: 'Foto ou PDF da receita',
+                        subtitle: prescriptions.isEmpty
+                            ? 'Foto ou PDF da receita'
+                            : '$valid ${valid == 1 ? 'receita válida' : 'receitas válidas'}',
                         onTap: () => _open(context, PrescriptionsScreen(deps: deps)),
                       ),
                       RltSectionTile(
@@ -116,7 +144,9 @@ class HealthTab extends StatelessWidget {
                         icon: Icons.science_outlined,
                         iconColor: c.protein,
                         title: 'Exames e documentos',
-                        subtitle: 'Foto ou PDF de exames',
+                        subtitle: exams.isEmpty
+                            ? 'Foto ou PDF de exames'
+                            : '${exams.length} ${exams.length == 1 ? 'exame' : 'exames'}${lastExam == null ? '' : ' · último ${two(lastExam.day)}/${two(lastExam.month)}'}',
                         onTap: () => _open(context, ExamsScreen(deps: deps)),
                       ),
                       RltSectionTile(
@@ -154,7 +184,7 @@ class HealthTab extends StatelessWidget {
             ),
           ],
         );
-      },
+      }),
     );
   }
 }
