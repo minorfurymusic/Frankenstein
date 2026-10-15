@@ -34,7 +34,11 @@ com os prints, num ciclo de correções. Prints em `docs/teste-aparelho/`.
 | 21 (fora do repositório) | Cérebro › exame em PDF | Laudo lido: "34 valores lidos", cartão com "Revisar e salvar" — parece ter funcionado |
 | `2026-10-15_22_cerebro-passos-km.jpg` | Cérebro › passos | "4,8 km dão 179 passos?": erro do provedor, depois "Hoje: 309 passos"; a IA explica que o valor vem do sensor |
 | 23–25 (fora do repositório) | Saúde › Novo exame (lista de valores) | Hemograma, leucograma, bioquímica, urina com referências do laboratório — parece ter funcionado |
+| 26 (fora do repositório) | Saúde › Seções | Peso atual aparece; Exames "1 exame · último 05/05" |
+| 27 (fora do repositório) | Cérebro › exame | Cartão do exame passou a "Salvo em Saúde › Exames" depois de revisar |
+| 28, 30 (fora do repositório) | Saúde › Novo exame | Fim da lista (urina, campo Anotações) e bioquímica; unidade "mL/mim/1,73m²" copiada do laudo como está |
+| 29 (fora do repositório) | Saúde › Exames e documentos | Marcadores acompanhados, 1 medição cada |
 
-Prints 21, 23, 24 e 25 mostram exame de sangue real do usuário. O
+Prints 21 e 23 a 30 mostram exame de sangue real do usuário. O
 repositório é público; por isso ficaram **fora** dele, só na sessão de
 trabalho, até o usuário decidir (ver regra de dado de saúde / LGPD).
