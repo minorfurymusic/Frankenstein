@@ -6,6 +6,8 @@ com os prints, num ciclo de correções. Prints em `docs/teste-aparelho/`.
 | # | Data | Onde | O que acontece | Esperado | Status |
 |---|---|---|---|---|---|
 | 1 | 2026-10-15 | Cérebro › mensagem enviada | Não dá para copiar o texto de uma mensagem que eu escrevi | Poder copiar (ex.: copiar, mudar algo e mandar de novo) | aberto |
+| 2 | 2026-10-15 | Início / Exercícios › passos | Diz "Sem sensor de passos", mas contou passos (309, depois 401) | Contar passos e não mostrar o aviso. Causa provável: `hasSensor` pergunta ao serviço antes de ele terminar de ligar (`MainActivity.kt:67` devolve `false` com `stepService` nulo; `step_tracking_controller.dart:94-97`) | aberto |
+| 3 | 2026-10-15 | Cérebro › foto | Mandou uma imagem qualquer (print) e a resposta foi só "não reconheci alimentos" | Entender o que é a imagem (não só prato) e responder de acordo | aberto |
 
 ## Prints recebidos (explicação do usuário pendente)
 
@@ -38,7 +40,10 @@ com os prints, num ciclo de correções. Prints em `docs/teste-aparelho/`.
 | 27 (fora do repositório) | Cérebro › exame | Cartão do exame passou a "Salvo em Saúde › Exames" depois de revisar |
 | 28, 30 (fora do repositório) | Saúde › Novo exame | Fim da lista (urina, campo Anotações) e bioquímica; unidade "mL/mim/1,73m²" copiada do laudo como está |
 | 29 (fora do repositório) | Saúde › Exames e documentos | Marcadores acompanhados, 1 medição cada |
+| 31 (fora do repositório) | Saúde › Seções | Remédios "1 ativo", mas o cartão do topo diz "Nada pendente hoje" com 2 doses atrasadas |
+| 32–33 (fora do repositório) | Saúde › Novo remédio | Horários personalizados 07:00 e 18:00; lista de frequência abre por cima do formulário |
+| 34 (fora do repositório) | Saúde › Remédios | Remédio criado às 18:31 já mostra a dose das 07:00 de hoje como ATRASADO; aviso "Salvo" cobre o cartão; botão "Novo remédio" cobre o aviso de rodapé; notificações desligadas |
 
-Prints 21 e 23 a 30 mostram exame de sangue real do usuário. O
+Prints 21, 23 a 34 mostram exame de sangue real do usuário. O
 repositório é público; por isso ficaram **fora** dele, só na sessão de
 trabalho, até o usuário decidir (ver regra de dado de saúde / LGPD).
