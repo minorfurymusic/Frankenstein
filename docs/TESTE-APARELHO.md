@@ -26,3 +26,8 @@ com os prints, num ciclo de correções. Prints em `docs/teste-aparelho/`.
 | `2026-10-15_13_conta-cerebro-ia.jpg` | Conta › Cérebro (IA) | Chave digitada; ainda mostra "Modo básico ativo"; modelo "gemini-flash-latest" |
 | `2026-10-15_14_cerebro-digitando.jpg` | Cérebro › digitando | Mensagem "bebi 2 litros e meio de água e 1 litros de energético sem açúcar" (origem do print 11) |
 | `2026-10-15_15_cerebro-inicio.jpg` | Cérebro › tela inicial com IA ativa | — |
+| `2026-10-15_16_cerebro-passos.jpg` | Cérebro › passos | Pedido "registre os 6000" deu erro do provedor e depois "não é possível registrar manualmente"; usuário pergunta como o app contou 309 passos (Início dizia "Sem sensor de passos") |
+| `2026-10-15_17_cerebro-foto-print.jpg` | Cérebro › foto do prato | Enviado um print da tela como foto do prato: 1ª vez erro do provedor, 2ª "Não reconheci alimentos" |
+| `2026-10-15_18_novo-exame-lido.jpg` | Saúde › Novo exame (lido pela IA) | Leitura de exame de sangue com valores e referências — parece ter funcionado |
+| `2026-10-15_19_cerebro-agua-energetico.jpg` | Cérebro › água e energético | Salvo direto ("Salvo em Nutrição") — confirmar se passou pela confirmação; energético em g em vez de ml |
+| `2026-10-15_20_cerebro-consentimento.jpg` | Cérebro › Antes do primeiro envio | — |
