@@ -31,3 +31,10 @@ com os prints, num ciclo de correções. Prints em `docs/teste-aparelho/`.
 | `2026-10-15_18_novo-exame-lido.jpg` | Saúde › Novo exame (lido pela IA) | Leitura de exame de sangue com valores e referências — parece ter funcionado |
 | `2026-10-15_19_cerebro-agua-energetico.jpg` | Cérebro › água e energético | Salvo direto ("Salvo em Nutrição") — confirmar se passou pela confirmação; energético em g em vez de ml |
 | `2026-10-15_20_cerebro-consentimento.jpg` | Cérebro › Antes do primeiro envio | — |
+| 21 (fora do repositório) | Cérebro › exame em PDF | Laudo lido: "34 valores lidos", cartão com "Revisar e salvar" — parece ter funcionado |
+| `2026-10-15_22_cerebro-passos-km.jpg` | Cérebro › passos | "4,8 km dão 179 passos?": erro do provedor, depois "Hoje: 309 passos"; a IA explica que o valor vem do sensor |
+| 23–25 (fora do repositório) | Saúde › Novo exame (lista de valores) | Hemograma, leucograma, bioquímica, urina com referências do laboratório — parece ter funcionado |
+
+Prints 21, 23, 24 e 25 mostram exame de sangue real do usuário. O
+repositório é público; por isso ficaram **fora** dele, só na sessão de
+trabalho, até o usuário decidir (ver regra de dado de saúde / LGPD).
