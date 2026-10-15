@@ -21,3 +21,8 @@ com os prints, num ciclo de correções. Prints em `docs/teste-aparelho/`.
 | `2026-10-15_08_onb-metas-sugeridas.jpg` | Primeiro uso › Suas metas sugeridas | Valores estranhos: 747 kcal e Carboidrato 0 g |
 | `2026-10-15_09_perfil-objetivo-imc.jpg` | Perfil › Objetivo | "IMC no peso desejado: 253.814,7" — valor impossível (provável erro de unidade da altura) |
 | `2026-10-15_10_perfil-data-digitada.jpg` | Perfil › data de nascimento digitada | "28061990" recusado ("Invalid format"): campo espera mm/dd/yyyy, em inglês |
+| `2026-10-15_11_cerebro-erro-provedor.jpg` | Cérebro › conversa | "1 litro de energético" virou "Energético sem açúcar 1.000 g" (gramas em vez de ml); "2 cachorros-quentes…" deu "O provedor de IA deu erro"; cabeçalho da IA cobre o topo da conversa |
+| `2026-10-15_12_inicio-metas.jpg` | Início › Metas do dia | Mesmas metas estranhas (747 kcal, Carboidrato 0 g); cartão "Sem sensor de passos" — confirmar se o celular tem sensor |
+| `2026-10-15_13_conta-cerebro-ia.jpg` | Conta › Cérebro (IA) | Chave digitada; ainda mostra "Modo básico ativo"; modelo "gemini-flash-latest" |
+| `2026-10-15_14_cerebro-digitando.jpg` | Cérebro › digitando | Mensagem "bebi 2 litros e meio de água e 1 litros de energético sem açúcar" (origem do print 11) |
+| `2026-10-15_15_cerebro-inicio.jpg` | Cérebro › tela inicial com IA ativa | — |
