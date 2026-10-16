@@ -20,6 +20,10 @@ com os prints, num ciclo de correções. Prints em `docs/teste-aparelho/`.
 | 12 | 2026-10-15 | Remédios › aviso "Salvo" | Cobre o cartão | Não cobrir | aviso dura 2,5 s (antes 4 s) |
 | 13 | 2026-10-16 | Cérebro › várias fotos | Pedido novo: mandar 2–3 fotos (receita, nutricionista, academia, histórico) e cada coisa ir para o lugar certo | — | decidido (ADR-19) e feito no código: Anexar › Vários documentos; cada arquivo vira cartão; peso/altura/% gordura e histórico em cartões separados — conferir no aparelho |
 
+| 14 | 2026-10-16 | Passos | ~400 passos num dia com 1,2 km a pé; RLT não lia passos do Conexão Saúde (só sono e FC) | Passos do Android no RLT | feito no código (ADR-20): lê passos do Health Connect, uma fonte por dia, atualiza a cada 5 min com o app aberto — conferir no aparelho (tocar em "Permitir o que falta" em Conta › Dispositivos) |
+| 15 | 2026-10-16 | Data digitada | Só números não aceita | Barras automáticas | feito no código: campo "Digite a data" com dd/mm/aaaa automático em todas as datas |
+| 16 | 2026-10-16 | Primeiro uso › IA | Depois de colocar a chave, voltava com "Depois/Saber mais" | Seguir sozinho | feito no código: botão "Colocar minha chave"; com a chave salva, conclui o primeiro uso |
+
 ## Prints recebidos (explicação do usuário pendente)
 
 | Arquivo | Tela | Observação minha (a confirmar com o usuário) |

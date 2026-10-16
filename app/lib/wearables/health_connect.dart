@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart';
+import 'package:flutter/widgets.dart';
 import 'package:flutter/services.dart';
 import 'package:frankstein_health_core/health_core.dart';
 import 'package:frankstein_profile/profile.dart';
@@ -11,7 +12,7 @@ import 'package:frankstein_wearable/wearable.dart';
 enum HealthConnectStatus { available, notInstalled, updateRequired, unsupported }
 
 /// O que o RLT lê do Health Connect.
-enum HealthConnectData { sleep, heartRate }
+enum HealthConnectData { sleep, heartRate, steps }
 
 /// Conversa com o Health Connect do Android (`HealthConnectBridge.kt`).
 /// Só leitura; local, sem internet.
@@ -21,6 +22,9 @@ abstract class HealthConnectBridge {
   Future<Set<HealthConnectData>> requestPermissions();
   Future<List<Map<String, dynamic>>> readSleep(DateTime fromUtc, DateTime toUtc);
   Future<List<Map<String, dynamic>>> readHeartRate(DateTime fromUtc, DateTime toUtc);
+
+  /// Passos por dia local: `[{'day': 'AAAA-MM-DD', 'count': n}]` (ADR-20).
+  Future<List<Map<String, dynamic>>> readDailySteps(DateTime fromUtc, DateTime toUtc);
   Future<bool> openSettings();
   Future<bool> openInstall();
 
@@ -35,7 +39,12 @@ class HealthConnectPermissionException implements Exception {
 
 Set<HealthConnectData> _dataFromKeys(List<Object?>? keys) => {
       for (final k in keys ?? const [])
-        if (k == 'sleep') HealthConnectData.sleep else if (k == 'heart_rate') HealthConnectData.heartRate,
+        if (k == 'sleep')
+          HealthConnectData.sleep
+        else if (k == 'heart_rate')
+          HealthConnectData.heartRate
+        else if (k == 'steps')
+          HealthConnectData.steps,
     };
 
 class AndroidHealthConnectBridge implements HealthConnectBridge {
@@ -86,6 +95,12 @@ class AndroidHealthConnectBridge implements HealthConnectBridge {
       ];
 
   @override
+  Future<List<Map<String, dynamic>>> readDailySteps(DateTime fromUtc, DateTime toUtc) async => [
+        for (final r in await _call<List<Object?>>('readDailySteps', _range(fromUtc, toUtc)) ?? const [])
+          Map<String, dynamic>.from(r! as Map),
+      ];
+
+  @override
   Future<bool> openSettings() async => await _call<bool>('openSettings') ?? false;
 
   @override
@@ -108,6 +123,7 @@ class FakeHealthConnectBridge implements HealthConnectBridge {
   Set<HealthConnectData> grantOnRequest;
   List<Map<String, dynamic>> sleepRecords;
   List<Map<String, dynamic>> heartRateRecords;
+  List<Map<String, dynamic>> dailySteps = const [];
   bool failReads = false;
 
   /// Simula a tela de permissões que nunca devolve resposta.
@@ -118,7 +134,7 @@ class FakeHealthConnectBridge implements HealthConnectBridge {
   FakeHealthConnectBridge({
     this.currentStatus = HealthConnectStatus.unsupported,
     this.granted = const {},
-    this.grantOnRequest = const {HealthConnectData.sleep, HealthConnectData.heartRate},
+    this.grantOnRequest = const {HealthConnectData.sleep, HealthConnectData.heartRate, HealthConnectData.steps},
     this.sleepRecords = const [],
     this.heartRateRecords = const [],
   });
@@ -151,6 +167,12 @@ class FakeHealthConnectBridge implements HealthConnectBridge {
   Future<List<Map<String, dynamic>>> readHeartRate(DateTime fromUtc, DateTime toUtc) async {
     _check(HealthConnectData.heartRate, fromUtc, toUtc);
     return heartRateRecords;
+  }
+
+  @override
+  Future<List<Map<String, dynamic>>> readDailySteps(DateTime fromUtc, DateTime toUtc) async {
+    _check(HealthConnectData.steps, fromUtc, toUtc);
+    return dailySteps;
   }
 
   @override
@@ -229,7 +251,7 @@ class WearableSyncOutcome {
 /// Dispositivos, Sono, e a cada abertura do app quando ligado). O dado vira
 /// `HealthEvent` com `source: wearable`; ler a mesma janela de novo não
 /// duplica (dedup por `(source, external_id)`).
-class WearableSync {
+class WearableSync with WidgetsBindingObserver {
   final HealthConnectBridge bridge;
   final HealthDataCore core;
   final ProfileRepository settings;
@@ -253,6 +275,39 @@ class WearableSync {
 
   bool get enabled => settings.getSetting('health_connect') == '1';
 
+  Timer? _autoTimer;
+  bool _autoSyncing = false;
+
+  /// Com o app aberto: lê de novo a cada [every] e quando o app volta para
+  /// a frente — passos e sono chegam sem tocar em botão (ADR-20). Com o app
+  /// fechado não lê; ao abrir, atualiza.
+  void startAutoSync({Duration every = const Duration(minutes: 5)}) {
+    if (_autoTimer != null) return;
+    WidgetsBinding.instance.addObserver(this);
+    _autoTimer = Timer.periodic(every, (_) => _autoSync());
+  }
+
+  void stopAutoSync() {
+    _autoTimer?.cancel();
+    _autoTimer = null;
+    WidgetsBinding.instance.removeObserver(this);
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _autoSync();
+  }
+
+  Future<void> _autoSync() async {
+    if (!enabled || _autoSyncing) return;
+    _autoSyncing = true;
+    try {
+      await syncNow();
+    } finally {
+      _autoSyncing = false;
+    }
+  }
+
   DateTime? get lastSyncUtc {
     final v = settings.getSetting('health_connect_last_sync');
     return v == null ? null : DateTime.parse(v);
@@ -260,11 +315,12 @@ class WearableSync {
 
   /// "Conectar pelo Health Connect": pede a permissão de leitura e, se
   /// alguma for dada, liga e sincroniza.
-  Future<WearableSyncOutcome> connect({Duration permissionTimeout = const Duration(seconds: 60)}) async {
+  Future<WearableSyncOutcome> connect({Duration permissionTimeout = const Duration(seconds: 60), bool askMissing = true}) async {
     if (await bridge.status() != HealthConnectStatus.available) return const WearableSyncOutcome(WearableSyncState.unavailable);
     // Já permitido (ex.: pela tela do próprio Health Connect): liga direto.
+    // Faltando algo (ex.: passos, novo), pede de novo — só quando a pessoa tocou.
     var granted = await bridge.grantedPermissions();
-    if (granted.isEmpty) {
+    if (granted.isEmpty || (askMissing && granted.length < HealthConnectData.values.length)) {
       try {
         granted = await bridge.requestPermissions().timeout(permissionTimeout);
       } on TimeoutException {
@@ -286,6 +342,37 @@ class WearableSync {
     onDataChanged();
   }
 
+  /// Passos do Health Connect (ADR-20): um evento por dia, só quando o
+  /// total mudou. Fica guardado no RLT mesmo que o Health Connect apague.
+  Future<int> _syncDailySteps(DateTime fromUtc, DateTime nowUtc) async {
+    var added = 0;
+    for (final r in await bridge.readDailySteps(fromUtc, nowUtc)) {
+      final day = DateTime.tryParse('${r['day']}');
+      final count = (r['count'] as num?)?.toInt() ?? 0;
+      if (day == null || count <= 0) continue;
+      final localMidnight = DateTime(day.year, day.month, day.day);
+      final start = localMidnight.toUtc();
+      final stored = core
+          .queryByType(HealthEventType.steps, from: start, to: start.add(const Duration(hours: 23, minutes: 59)))
+          .where((e) => isDailyStepTotal(e) && e.source == HealthEventSource.wearable)
+          .fold<HealthEvent?>(null, (a, e) => a == null || e.recordedAt.isAfter(a.recordedAt) ? e : a);
+      if (stored != null && (stored.payload['count'] as num).toInt() == count) continue;
+      core.insertEvent(HealthEvent(
+        id: HealthDataCore.newId(),
+        type: HealthEventType.steps,
+        source: HealthEventSource.wearable,
+        occurredAt: start,
+        occurredAtTzOffsetMinutes: localMidnight.timeZoneOffset.inMinutes,
+        recordedAt: nowUtc,
+        payload: {'count': count, 'day': r['day'], 'daily_total': true},
+        confidence: 1.0,
+        externalId: 'hc-steps-${r['day']}-${nowUtc.microsecondsSinceEpoch}',
+      ));
+      added++;
+    }
+    return added;
+  }
+
   Future<WearableSyncOutcome> syncNow() async {
     if (!enabled) return const WearableSyncOutcome(WearableSyncState.notConnected);
     try {
@@ -297,6 +384,7 @@ class WearableSync {
       final from = last == null ? now.subtract(const Duration(days: firstSyncDays)) : last.subtract(overlap);
       final result = await WearableSyncLogger(core: core, dataSource: HealthConnectDataSource(bridge, allowed: allowed))
           .sync(from: from, to: now);
+      if (allowed.contains(HealthConnectData.steps)) await _syncDailySteps(from, now);
       settings.setSetting('health_connect_last_sync', now.toIso8601String());
       onDataChanged();
       return WearableSyncOutcome(WearableSyncState.ok, result);

@@ -73,7 +73,7 @@ class _DevicesScreenState extends State<DevicesScreen> with WidgetsBindingObserv
     if (state != AppLifecycleState.resumed) return;
     _refresh().then((_) {
       // Permitiu pela tela do próprio Health Connect: liga sem pedir de novo.
-      if (mounted && _tried && !_busy && !_sync.enabled && _granted.isNotEmpty) _run(_sync.connect);
+      if (mounted && _tried && !_busy && !_sync.enabled && _granted.isNotEmpty) _run(() => _sync.connect(askMissing: false));
     });
   }
 
@@ -156,7 +156,7 @@ class _DevicesScreenState extends State<DevicesScreen> with WidgetsBindingObserv
           key: const Key('hc_connect_card'),
           icon: Icons.watch_outlined,
           title: 'Conecte sua pulseira ou relógio',
-          message: 'O RLT lê sono e batimentos pelo Health Connect do Android. Funciona com a maioria das marcas — '
+          message: 'O RLT lê passos, sono e batimentos pelo Health Connect do Android. Funciona com a maioria das marcas — '
               'o app da pulseira (ou o Gadgetbridge) grava lá, o RLT só lê. Nada vai para a internet.',
           tone: StateTone.permission,
           actionLabel: 'Conectar pelo Health Connect',
@@ -179,6 +179,7 @@ class _DevicesScreenState extends State<DevicesScreen> with WidgetsBindingObserv
     final reads = <(String, HealthConnectData?)>[
       ('Sono', HealthConnectData.sleep),
       ('Freq. cardíaca', HealthConnectData.heartRate),
+      ('Passos', HealthConnectData.steps),
     ];
     return [
       Card(

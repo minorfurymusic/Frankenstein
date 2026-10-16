@@ -63,7 +63,7 @@ class DayReadModel {
         });
     return DayTotals(
       day: DateTime(day.year, day.month, day.day),
-      steps: eventsOnLocalDay(HealthEventType.steps, day).fold(0, (s, e) => s + (e.payload['count'] as num).toInt()),
+      steps: dailyStepCount(eventsOnLocalDay(HealthEventType.steps, day)),
       energyKcal: sum('energy_kcal'),
       proteinGrams: sum('protein_g'),
       carbsGrams: sum('carbohydrates_g'),

@@ -137,8 +137,12 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   text: 'Você usa a sua própria chave de IA. Sem ela, o Cérebro funciona no modo básico, sem internet.',
                   primary: 'Depois',
                   onPrimary: _finish,
-                  secondary: 'Saber mais',
-                  onSecondary: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => BrainSettingsScreen(deps: widget.deps))),
+                  secondary: 'Colocar minha chave',
+                  onSecondary: () async {
+                    await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => BrainSettingsScreen(deps: widget.deps)));
+                    // Chave salva lá: segue direto, sem parar de novo nesta tela.
+                    if (mounted && widget.deps.ai.hasKey.value) _finish();
+                  },
                   keyName: 'onb_ai',
                 ),
               ],

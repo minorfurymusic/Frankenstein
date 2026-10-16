@@ -39,7 +39,7 @@ ToolHandler getStepsHandler(HealthDataCore core) {
     final to = from.add(const Duration(days: 1)).subtract(const Duration(milliseconds: 1));
 
     final events = core.queryByType(HealthEventType.steps, from: from, to: to);
-    final total = events.fold<int>(0, (sum, e) => sum + (e.payload['count'] as int));
+    final total = dailyStepCount(events);
 
     return ToolResult.ok({
       'date': params['date'],

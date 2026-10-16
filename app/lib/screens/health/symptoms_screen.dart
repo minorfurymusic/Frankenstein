@@ -11,6 +11,7 @@ import '../../widgets/common.dart';
 import '../../widgets/health_area.dart';
 import '../../widgets/state_views.dart';
 import '../../widgets/timeline_item.dart';
+import '../../widgets/date_picker.dart';
 
 /// Histórico médico (prancheta Historico): diário de sintomas e o que a
 /// pessoa informa — condições, alergias, cirurgias, vacinas e consultas.
@@ -129,7 +130,7 @@ class _SymptomFormScreenState extends State<SymptomFormScreen> {
   }
 
   Future<DateTime?> _pickDateTime(DateTime initial) async {
-    final date = await showDatePicker(
+    final date = await showRltDatePicker(
       context: context,
       initialDate: initial,
       firstDate: DateTime(2000),
@@ -328,7 +329,7 @@ class _MedicalHistoryFormScreenState extends State<MedicalHistoryFormScreen> {
         const SizedBox(height: RltSpace.m),
         InkWell(
           onTap: () async {
-            final picked = await showDatePicker(
+            final picked = await showRltDatePicker(
               context: context,
               initialDate: d == null ? DateTime.now() : DateTime(d.year, d.month, d.day),
               firstDate: DateTime(1900),

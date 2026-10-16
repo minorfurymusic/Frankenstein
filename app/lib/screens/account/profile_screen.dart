@@ -5,6 +5,7 @@ import '../../app_dependencies.dart';
 import '../../format.dart';
 import '../../theme/rlt_theme.dart';
 import '../../widgets/common.dart';
+import '../../widgets/date_picker.dart';
 
 /// Conta › Perfil (prancheta ContaPerfil): os dados que entram nas fórmulas
 /// (ADR-15). Peso e % de gordura viram registros em Saúde › Corpo — a
@@ -204,7 +205,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
           InkWell(
             key: const Key('profile_birth'),
             onTap: () async {
-              final d = await showDatePicker(
+              final d = await showRltDatePicker(
                 context: context,
                 initialDate: _birth ?? DateTime(1990),
                 firstDate: DateTime(1900),

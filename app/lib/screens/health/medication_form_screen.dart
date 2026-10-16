@@ -7,6 +7,7 @@ import '../../format.dart';
 import '../../theme/rlt_theme.dart';
 import '../../widgets/badges.dart';
 import '../../widgets/common.dart';
+import '../../widgets/date_picker.dart';
 import 'medications_screen.dart';
 
 /// Frequências do layout (prancheta RemedioForm, "Frequência"). Cada uma
@@ -132,7 +133,7 @@ class _MedicationFormScreenState extends State<MedicationFormScreen> {
 
   TimeOfDay _toTod(int minutes) => TimeOfDay(hour: minutes ~/ 60, minute: minutes % 60);
 
-  Future<DateTime?> _pickDate(DateTime initial) => showDatePicker(
+  Future<DateTime?> _pickDate(DateTime initial) => showRltDatePicker(
         context: context,
         initialDate: initial,
         firstDate: DateTime(2000),

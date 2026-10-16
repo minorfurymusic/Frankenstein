@@ -11,6 +11,8 @@ import androidx.health.connect.client.PermissionController
 import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.HeartRateRecord
 import androidx.health.connect.client.records.SleepSessionRecord
+import androidx.health.connect.client.records.StepsRecord
+import androidx.health.connect.client.request.AggregateGroupByPeriodRequest
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import io.flutter.plugin.common.MethodCall
@@ -21,6 +23,8 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.time.Instant
+import java.time.LocalDateTime
+import java.time.Period
 import java.time.ZoneId
 import java.time.ZoneOffset
 
@@ -118,11 +122,13 @@ object HealthConnectBridge {
     private object Impl {
         private val sleepPermission = HealthPermission.getReadPermission(SleepSessionRecord::class)
         private val heartRatePermission = HealthPermission.getReadPermission(HeartRateRecord::class)
-        private val all = setOf(sleepPermission, heartRatePermission)
+        private val stepsPermission = HealthPermission.getReadPermission(StepsRecord::class)
+        private val all = setOf(sleepPermission, heartRatePermission, stepsPermission)
 
         private fun keys(granted: Set<String>) = buildList {
             if (sleepPermission in granted) add("sleep")
             if (heartRatePermission in granted) add("heart_rate")
+            if (stepsPermission in granted) add("steps")
         }
 
         fun handle(activity: Activity, call: MethodCall, result: MethodChannel.Result) {
@@ -142,6 +148,7 @@ object HealthConnectBridge {
                 }
                 "readSleep" -> read(result) { readSleep(client, from(call), to(call)) }
                 "readHeartRate" -> read(result) { readHeartRate(client, from(call), to(call)) }
+                "readDailySteps" -> read(result) { readDailySteps(client, from(call), to(call)) }
                 else -> result.notImplemented()
             }
         }
@@ -185,6 +192,27 @@ object HealthConnectBridge {
             5 -> "deep"
             6 -> "rem"
             else -> "unknown"
+        }
+
+        /**
+         * Passos por dia local (ADR-20). O próprio Health Connect soma as
+         * fontes (o celular, Google Fit…) sem contar duas vezes.
+         */
+        private suspend fun readDailySteps(client: HealthConnectClient, from: Instant, to: Instant): List<Map<String, Any>> {
+            val zone = ZoneId.systemDefault()
+            val start = LocalDateTime.ofInstant(from, zone).toLocalDate().atStartOfDay()
+            val end = LocalDateTime.ofInstant(to, zone)
+            val groups = client.aggregateGroupByPeriod(
+                AggregateGroupByPeriodRequest(
+                    metrics = setOf(StepsRecord.COUNT_TOTAL),
+                    timeRangeFilter = TimeRangeFilter.between(start, end),
+                    timeRangeSlicer = Period.ofDays(1),
+                ),
+            )
+            return groups.mapNotNull { g ->
+                val count = g.result[StepsRecord.COUNT_TOTAL] ?: return@mapNotNull null
+                mapOf("day" to g.startTime.toLocalDate().toString(), "count" to count)
+            }
         }
 
         private suspend fun readSleep(client: HealthConnectClient, from: Instant, to: Instant): List<Map<String, Any>> {

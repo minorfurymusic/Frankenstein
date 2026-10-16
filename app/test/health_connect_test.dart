@@ -112,9 +112,48 @@ void main() {
       expect(deps.wearables.enabled, isFalse);
       // A pessoa permitiu no próprio Health Connect e voltou.
       hc.granted = const {HealthConnectData.sleep};
-      final again = await deps.wearables.connect(permissionTimeout: const Duration(milliseconds: 10));
+      final again = await deps.wearables.connect(permissionTimeout: const Duration(milliseconds: 10), askMissing: false);
       expect(again.state, WearableSyncState.ok);
       expect(hc.requests, 1, reason: 'não pede de novo o que já foi permitido');
+    });
+
+    test('passos do Health Connect: um total por dia, só quando muda; o dia usa a maior fonte, sem somar as duas', () async {
+      final today = DateTime.now();
+      String iso(DateTime d) => '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+      hc.dailySteps = [
+        {'day': iso(today), 'count': 1580},
+      ];
+      expect((await deps.wearables.connect()).state, WearableSyncState.ok);
+      expect(deps.dayRead.totals(today).steps, 1580);
+
+      // Mesma leitura: nada novo. Total maior: vale o mais recente.
+      await deps.wearables.syncNow();
+      expect(deps.core.queryByType(HealthEventType.steps), hasLength(1));
+      hc.dailySteps = [
+        {'day': iso(today), 'count': 2100},
+      ];
+      await deps.wearables.syncNow();
+      expect(deps.dayRead.totals(today).steps, 2100);
+
+      // O contador do próprio app viu menos: não soma com o Health Connect.
+      deps.core.insertEvent(HealthEvent(
+        id: HealthDataCore.newId(),
+        type: HealthEventType.steps,
+        source: HealthEventSource.pedometer,
+        occurredAt: DateTime(today.year, today.month, today.day, 8).toUtc(),
+        occurredAtTzOffsetMinutes: today.timeZoneOffset.inMinutes,
+        recordedAt: DateTime.now().toUtc(),
+        payload: {'count': 400},
+        confidence: 1,
+      ));
+      expect(deps.dayRead.totals(today).steps, 2100);
+    });
+
+    test('quem já tinha sono e FC permitidos ganha o pedido de passos ao tocar em conectar', () async {
+      hc.granted = const {HealthConnectData.sleep, HealthConnectData.heartRate};
+      await deps.wearables.connect();
+      expect(hc.requests, 1);
+      expect(hc.granted, contains(HealthConnectData.steps));
     });
 
     test('Health Connect sem resposta vira erro, não exceção', () async {

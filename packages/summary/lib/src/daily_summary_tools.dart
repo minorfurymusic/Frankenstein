@@ -52,7 +52,7 @@ ToolHandler getDailySummaryHandler(HealthDataCore core) {
         .toList();
 
     final stepsEvents = eventsOf(HealthEventType.steps);
-    final totalSteps = stepsEvents.fold<int>(0, (sum, e) => sum + (e.payload['count'] as int));
+    final totalSteps = dailyStepCount(stepsEvents);
 
     final mealEvents = eventsOf(HealthEventType.meal);
     final totalEnergyKcal = mealEvents.fold<double>(

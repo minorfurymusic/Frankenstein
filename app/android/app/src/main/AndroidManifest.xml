@@ -41,6 +41,7 @@
          runtime, só quando a pessoa toca em "Conectar" em Conta › Dispositivos. -->
     <uses-permission android:name="android.permission.health.READ_SLEEP"/>
     <uses-permission android:name="android.permission.health.READ_HEART_RATE"/>
+    <uses-permission android:name="android.permission.health.READ_STEPS"/>
     <!-- A biblioteca do Health Connect pede API 26; o app segue instalando
          da API 24 e só usa o Health Connect da API 28 em diante (onde ele
          existe). -->

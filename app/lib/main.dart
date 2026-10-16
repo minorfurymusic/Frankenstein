@@ -42,6 +42,7 @@ Future<void> main() async {
   // Pulseira via Health Connect: se a pessoa conectou, lê o que há de novo
   // (local, sem internet).
   unawaited(dependencies.wearables.syncNow());
+  dependencies.wearables.startAutoSync();
   // Só verifica se há chave de IA guardada (local; nada vai para a rede).
   unawaited(dependencies.ai.load());
   // O Health Connect pode abrir o app só para mostrar como os dados são

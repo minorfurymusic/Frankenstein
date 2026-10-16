@@ -7,5 +7,6 @@
 /// aqui — isso é o Core que todos eles vão escrever, fase a fase.
 library;
 
+export 'src/daily_steps.dart';
 export 'src/health_data_core.dart';
 export 'src/health_event.dart';

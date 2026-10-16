@@ -183,6 +183,7 @@ class AppDependencies {
     if (_closed) return;
     _closed = true;
     reminders.dispose();
+    wearables.stopAutoSync();
     dataVersion.dispose();
     themeMode.dispose();
     profileRepository.close();

@@ -17,6 +17,7 @@ import '../../widgets/state_views.dart';
 import '../../ai/ai_consent.dart';
 import '../../ai/ai_settings.dart';
 import '../../ai/brain_ai.dart';
+import '../../widgets/date_picker.dart';
 import '../account/account_more_screens.dart';
 import '../account/brain_settings_screen.dart';
 import 'medication_form_screen.dart';
@@ -734,7 +735,7 @@ class _DocumentFormScreenState extends State<DocumentFormScreen> {
       key: key,
       onTap: () async {
         final v = value;
-        final picked = await showDatePicker(
+        final picked = await showRltDatePicker(
           context: context,
           initialDate: v == null ? DateTime.now() : DateTime(v.year, v.month, v.day),
           firstDate: DateTime(1900),
