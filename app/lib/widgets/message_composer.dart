@@ -29,11 +29,16 @@ class MessageComposer extends StatefulWidget {
 
   /// Texto de ajuda do campo.
   final String? hint;
+
+  /// Anexo esperando o envio (foto ou arquivo escolhido): aparece acima do
+  /// campo, e "Enviar" funciona mesmo sem texto — o texto vai junto.
+  final Widget? attachment;
   final Key? attachKey;
   final Key? micKey;
 
   const MessageComposer({
     this.hint,
+    this.attachment,
     this.attachKey,
     this.micKey,
     this.fieldKey,
@@ -89,7 +94,7 @@ class _MessageComposerState extends State<MessageComposer> {
 
   void _send() {
     final text = _controller.text.trim();
-    if (text.isEmpty) return;
+    if (text.isEmpty && widget.attachment == null) return;
     widget.onSend(text);
     _controller.clear();
   }
@@ -172,7 +177,7 @@ class _MessageComposerState extends State<MessageComposer> {
       );
     }
 
-    return _Bar(children: [
+    final bar = _Bar(children: [
       IconButton(
         key: widget.attachKey,
         onPressed: widget.onAttach,
@@ -181,10 +186,19 @@ class _MessageComposerState extends State<MessageComposer> {
       ),
       Expanded(child: _field(c, t, hint: widget.hint ?? 'Escreva ou fale…', withCamera: true)),
       const SizedBox(width: RltSpace.s),
-      if (_hasText)
+      if (_hasText || widget.attachment != null)
         IconButton.filled(key: widget.sendKey, onPressed: _send, tooltip: 'Enviar', icon: const Icon(Icons.send_outlined))
       else
         Tooltip(message: 'Segure para gravar voz', child: KeyedSubtree(key: widget.micKey, child: _micButton(c, recording: false))),
+    ]);
+    if (widget.attachment == null) return bar;
+    return Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
+      Container(
+        color: c.surface,
+        padding: const EdgeInsets.fromLTRB(RltSpace.s, RltSpace.s, RltSpace.s, 0),
+        child: widget.attachment,
+      ),
+      bar,
     ]);
   }
 

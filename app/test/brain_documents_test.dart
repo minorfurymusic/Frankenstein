@@ -106,6 +106,8 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('attach_many_gallery')));
     await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('chat_send')));
+    await tester.pumpAndSettle();
 
     // Uma chamada para separar (com os 3 arquivos) e uma por documento lido.
     expect(transport.bodies, hasLength(3));
@@ -153,6 +155,8 @@ void main() {
     await tester.tap(find.byKey(const Key('chat_attach')));
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(const Key('attach_plate_gallery')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('chat_send')));
     await tester.pumpAndSettle();
     expect(find.textContaining('Não vi comida nesta foto: Print da tela de metas de um app.'), findsOneWidget);
   });

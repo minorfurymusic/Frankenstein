@@ -233,8 +233,11 @@ ToolCallPlan planFromReading(ChatReading r, {required List<Medication> medicatio
       'dose_amount': m.doseAmount,
       'dose_unit': m.doseUnit,
       'times': m.times,
-      'start_date': date,
+      'start_date': m.startDate ?? date,
     }));
+  }
+  for (final h in r.history) {
+    calls.add(ToolCallDecision('add_history_item', Map.of(h)));
   }
   if (calls.isEmpty && messages.isEmpty) {
     messages.add('Não encontrei nada para registrar nessa mensagem.');

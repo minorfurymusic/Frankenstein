@@ -23,10 +23,12 @@ import '../../format.dart';
 import '../../theme/rlt_colors.dart';
 import '../../theme/rlt_theme.dart';
 import '../../widgets/badges.dart';
+import '../../widgets/date_picker.dart';
 import '../../widgets/message_composer.dart';
 import '../../widgets/proposal_card.dart';
 import '../health/documents_screens.dart';
 import '../exercise/gym_screens.dart';
+import '../nutrition/meal_labels.dart';
 import '../nutrition/meal_plan_screens.dart';
 import '../nutrition/plate_photo_screen.dart';
 import 'brain_conversations_screen.dart';
@@ -142,20 +144,38 @@ class _ProposalMsg extends _Msg {
   List<TextEditingController>? gramFields;
   TextEditingController? amountField;
 
+  /// Edição de refeição: nome de cada alimento, tipo de refeição e a
+  /// observação que a IA usa para recalcular.
+  List<TextEditingController>? nameFields;
+  TextEditingController? noteField;
+  String? mealType;
+  bool refining = false;
+
+  /// Edição de remédio novo: nome, dose, unidade, horários e início.
+  TextEditingController? nameField;
+  TextEditingController? unitField;
+  TextEditingController? timesField;
+  TextEditingController? startField;
+
   /// Edição de sintoma: intensidade e quando.
   int? intensity;
   DateTime? when;
   _ProposalMsg(this.tool, this.params);
 
-  bool get editable => const {'log_estimated_meal', 'log_water', 'log_symptom'}.contains(tool);
+  bool get editable => const {'log_estimated_meal', 'log_water', 'log_symptom', 'add_medication'}.contains(tool);
 
   void disposeFields() {
-    for (final c in gramFields ?? const <TextEditingController>[]) {
-      c.dispose();
+    for (final c in [...?gramFields, ...?nameFields, amountField, noteField, nameField, unitField, timesField, startField]) {
+      c?.dispose();
     }
     gramFields = null;
-    amountField?.dispose();
+    nameFields = null;
     amountField = null;
+    noteField = null;
+    nameField = null;
+    unitField = null;
+    timesField = null;
+    startField = null;
   }
 
   @override
@@ -281,6 +301,61 @@ class _BrainScreenState extends State<BrainScreen> {
 
   /// Segurar uma mensagem: copiar o texto; nas suas, também trazer de volta
   /// para o campo, mudar e mandar de novo.
+  Future<void> _attachMenu(AttachKind kind, PickedDocument file) async {
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          ListTile(
+            key: const Key('brain_attach_resend'),
+            leading: const Icon(Icons.replay_outlined),
+            title: const Text('Mandar de novo'),
+            subtitle: const Text('Volta para o campo; dá para escrever junto'),
+            onTap: () => Navigator.pop(ctx, 'resend'),
+          ),
+        ]),
+      ),
+    );
+    if (choice == 'resend' && mounted && !_thinking) _stage(kind, [file]);
+  }
+
+  Widget _pendingPreview((AttachKind, List<PickedDocument>) p) {
+    final c = RltColors.of(context);
+    final t = Theme.of(context).textTheme;
+    final (kind, files) = p;
+    final first = files.first;
+    final isPdf = first.mimeType == 'application/pdf';
+    return Container(
+      key: const Key('chat_pending_attachment'),
+      padding: const EdgeInsets.all(RltSpace.s),
+      decoration: BoxDecoration(color: c.surfaceContainerHigh, borderRadius: BorderRadius.circular(RltRadius.card)),
+      child: Row(children: [
+        ClipRRect(
+          borderRadius: BorderRadius.circular(6),
+          child: isPdf
+              ? Icon(Icons.picture_as_pdf_outlined, size: 40, color: c.onSurfaceVariant)
+              : Image.memory(first.bytes, width: 48, height: 48, fit: BoxFit.cover,
+                  errorBuilder: (_, _, _) => Icon(kind.icon, size: 40, color: c.onSurfaceVariant)),
+        ),
+        const SizedBox(width: RltSpace.s),
+        Expanded(
+          child: Text(
+            files.length == 1 ? '${kind.label} · ${first.name}' : '${kind.label} · ${files.length} arquivos',
+            style: t.bodyMedium,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+          ),
+        ),
+        IconButton(
+          key: const Key('chat_pending_remove'),
+          tooltip: 'Tirar o anexo',
+          onPressed: () => _changed(() => _pending = null),
+          icon: const Icon(Icons.close),
+        ),
+      ]),
+    );
+  }
+
   Future<void> _messageMenu(String text, {required bool mine}) async {
     final choice = await showModalBottomSheet<String>(
       context: context,
@@ -328,6 +403,15 @@ class _BrainScreenState extends State<BrainScreen> {
     super.dispose();
   }
 
+  /// Foto ou arquivo escolhido, esperando o "Enviar": dá para escrever
+  /// junto (ex.: "não comi a borda") antes de mandar.
+  (AttachKind, List<PickedDocument>)? _pending;
+
+  void _stage(AttachKind kind, List<PickedDocument> files) {
+    if (files.isEmpty) return;
+    _changed(() => _pending = (kind, files));
+  }
+
   Future<bool> _present(ToolSpec spec, Map<String, dynamic> params) {
     final msg = _ProposalMsg(spec.name, params);
     _changed(() => _messages.add(msg));
@@ -350,8 +434,16 @@ class _BrainScreenState extends State<BrainScreen> {
     _changed(() {
       switch (m.tool) {
         case 'log_estimated_meal':
-          final items = (m.params['items'] as List).cast<Map<String, dynamic>>();
-          m.gramFields = [for (final i in items) TextEditingController(text: formatNumber(i['grams'] as num))];
+          _mealFields(m);
+          m.noteField = TextEditingController();
+          m.mealType = m.params['meal_type'] as String?;
+        case 'add_medication':
+          m.nameField = TextEditingController(text: '${m.params['name']}');
+          m.amountField = TextEditingController(text: formatNumber(m.params['dose_amount'] as num));
+          m.unitField = TextEditingController(text: '${m.params['dose_unit']}');
+          m.timesField = TextEditingController(text: (m.params['times'] as List).join(', '));
+          final start = DateTime.tryParse('${m.params['start_date']}');
+          m.startField = TextEditingController(text: start == null ? '' : ddmmyyyy(start));
         case 'log_water':
           m.amountField = TextEditingController(text: formatNumber(m.params['amount_ml'] as num));
         case 'log_symptom':
@@ -361,6 +453,89 @@ class _BrainScreenState extends State<BrainScreen> {
       }
       m.state = ProposalState.editing;
     });
+  }
+
+  void _mealFields(_ProposalMsg m) {
+    for (final c in [...?m.gramFields, ...?m.nameFields]) {
+      c.dispose();
+    }
+    final items = (m.params['items'] as List).cast<Map<String, dynamic>>();
+    m.gramFields = [for (final i in items) TextEditingController(text: formatNumber(i['grams'] as num))];
+    m.nameFields = [for (final i in items) TextEditingController(text: '${i['name']}')];
+  }
+
+  /// Itens do cartão com os nomes e gramas digitados; `null` se faltar algo.
+  List<Map<String, dynamic>>? _editedItems(_ProposalMsg m) {
+    final items = (m.params['items'] as List).cast<Map<String, dynamic>>();
+    final grams = [for (final c in m.gramFields!) double.tryParse(c.text.trim().replaceAll(',', '.'))];
+    if (grams.any((g) => g == null || g < 0) || grams.every((g) => g == 0)) return null;
+    final next = <Map<String, dynamic>>[];
+    for (var i = 0; i < items.length; i++) {
+      final g = grams[i]!;
+      if (g == 0) continue;
+      final name = m.nameFields![i].text.trim();
+      final f = g / (items[i]['grams'] as num).toDouble();
+      next.add({
+        ...items[i],
+        if (name.isNotEmpty) 'name': name,
+        'grams': g,
+        // Novas gramas: kcal e macros acompanham na proporção.
+        for (final k in const ['kcal', 'protein_g', 'carbs_g', 'fat_g'])
+          if (items[i][k] is num) k: (items[i][k] as num) * f,
+      });
+    }
+    return next;
+  }
+
+  /// A IA refaz a estimativa com a observação da pessoa (só texto; a foto
+  /// não vai de novo). O cartão continua esperando a confirmação.
+  Future<void> _refine(_ProposalMsg m) async {
+    final note = m.noteField!.text.trim();
+    final items = _editedItems(m);
+    if (note.isEmpty || items == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text('Escreva a observação (ex.: "não comi a borda").')));
+      return;
+    }
+    _changed(() => m.refining = true);
+    try {
+      final next = await refineMealItems(await widget.deps.ai.client(), [
+        for (final i in items)
+          PlateItem(
+            name: i['name'] as String,
+            grams: (i['grams'] as num).toDouble(),
+            kcal: (i['kcal'] as num).toDouble(),
+            proteinGrams: (i['protein_g'] as num?)?.toDouble() ?? 0,
+            carbsGrams: (i['carbs_g'] as num?)?.toDouble() ?? 0,
+            fatGrams: (i['fat_g'] as num?)?.toDouble() ?? 0,
+            liquid: i['unit'] == 'ml',
+          ),
+      ], note);
+      if (!mounted || m.state != ProposalState.editing) return;
+      if (next.isEmpty) throw const AiException(AiFailure.invalidOutput);
+      _changed(() {
+        m.params['items'] = [
+          for (final i in next)
+            {
+              'name': i.name,
+              'grams': i.grams,
+              if (i.liquid) 'unit': 'ml',
+              'kcal': i.kcal,
+              'protein_g': i.proteinGrams,
+              'carbs_g': i.carbsGrams,
+              'fat_g': i.fatGrams,
+            },
+        ];
+        _mealFields(m);
+        m.noteField!.clear();
+        m.refining = false;
+      });
+      final model = _modelLabel;
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text('Recalculado${model == null ? '' : ' ($model)'}. Confira e confirme.')));
+    } catch (e) {
+      if (!mounted) return;
+      _changed(() => m.refining = false);
+      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(aiFailureMessage(e))));
+    }
   }
 
   void _cancelEdit(_ProposalMsg m) {
@@ -376,27 +551,40 @@ class _BrainScreenState extends State<BrainScreen> {
     void warn(String text) => ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(text)));
     switch (m.tool) {
       case 'log_estimated_meal':
-        // Novas gramas: kcal e macros acompanham na proporção (são
-        // estimativa para a porção). Item com 0 g sai da refeição.
-        final items = (m.params['items'] as List).cast<Map<String, dynamic>>();
-        final grams = [for (final c in m.gramFields!) double.tryParse(c.text.trim().replaceAll(',', '.'))];
-        if (grams.any((g) => g == null || g < 0) || grams.every((g) => g == 0)) {
+        // Item com 0 g sai da refeição.
+        final next = _editedItems(m);
+        if (next == null) {
           warn('Informe as gramas de cada alimento (0 tira o item).');
           return false;
         }
-        final next = <Map<String, dynamic>>[];
-        for (var i = 0; i < items.length; i++) {
-          final g = grams[i]!;
-          if (g == 0) continue;
-          final f = g / (items[i]['grams'] as num).toDouble();
-          next.add({
-            ...items[i],
-            'grams': g,
-            for (final k in const ['kcal', 'protein_g', 'carbs_g', 'fat_g'])
-              if (items[i][k] is num) k: (items[i][k] as num) * f,
-          });
-        }
         m.params['items'] = next;
+        if (m.mealType != null) m.params['meal_type'] = m.mealType;
+      case 'add_medication':
+        final name = m.nameField!.text.trim();
+        final dose = _parse(m.amountField!.text);
+        final unit = m.unitField!.text.trim();
+        final hhmm = RegExp(r'^([01]?\d|2[0-3])[:h]([0-5]\d)?$');
+        final times = <String>[];
+        for (final raw in m.timesField!.text.split(RegExp(r'[,;\s]+')).where((x) => x.isNotEmpty)) {
+          final t = hhmm.firstMatch(raw.trim().toLowerCase());
+          if (t == null) {
+            warn('Horário "$raw" não entendido. Use 07:00, 18:00.');
+            return false;
+          }
+          times.add('${t.group(1)!.padLeft(2, '0')}:${t.group(2) ?? '00'}');
+        }
+        final start = m.startField!.text.trim().isEmpty ? DateTime.now() : parseDdMmYyyy(m.startField!.text);
+        if (name.isEmpty || dose == null || dose <= 0 || unit.isEmpty || times.isEmpty || start == null) {
+          warn('Confira nome, dose, unidade, horários e a data de início (dd/mm/aaaa).');
+          return false;
+        }
+        m.params
+          ..['name'] = name
+          ..['dose_amount'] = dose
+          ..['dose_unit'] = unit
+          ..['times'] = (times.toSet().toList()..sort())
+          ..['start_date'] =
+              '${start.year}-${start.month.toString().padLeft(2, '0')}-${start.day.toString().padLeft(2, '0')}';
       case 'log_water':
         final ml = _parse(m.amountField!.text);
         if (ml == null || ml <= 0 || ml > 5000) {
@@ -452,6 +640,40 @@ class _BrainScreenState extends State<BrainScreen> {
             label: Text(w == null ? 'Agora' : '${two(w.hour)}:${two(w.minute)}'),
           ),
         ]);
+      case 'add_medication':
+        return Column(children: [
+          TextField(key: const Key('proposal_med_name'), controller: m.nameField, decoration: const InputDecoration(labelText: 'Remédio', isDense: true)),
+          const SizedBox(height: RltSpace.s),
+          Row(children: [
+            Expanded(
+              child: TextField(
+                key: const Key('proposal_med_dose'),
+                controller: m.amountField,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                decoration: const InputDecoration(labelText: 'Dose', isDense: true),
+              ),
+            ),
+            const SizedBox(width: RltSpace.s),
+            Expanded(
+              child: TextField(
+                  key: const Key('proposal_med_unit'), controller: m.unitField, decoration: const InputDecoration(labelText: 'Unidade', isDense: true)),
+            ),
+          ]),
+          const SizedBox(height: RltSpace.s),
+          TextField(
+            key: const Key('proposal_med_times'),
+            controller: m.timesField,
+            decoration: const InputDecoration(labelText: 'Horários', helperText: 'Ex.: 07:00, 18:00 — um horário por dose', isDense: true),
+          ),
+          const SizedBox(height: RltSpace.s),
+          TextField(
+            key: const Key('proposal_med_start'),
+            controller: m.startField,
+            keyboardType: TextInputType.number,
+            inputFormatters: [DateMaskFormatter()],
+            decoration: const InputDecoration(labelText: 'Toma desde', hintText: 'dd/mm/aaaa', isDense: true),
+          ),
+        ]);
       default:
         return _gramsEditor(m);
     }
@@ -465,6 +687,17 @@ class _BrainScreenState extends State<BrainScreen> {
 
   Future<void> _send(String text) async {
     if (_thinking) return;
+    final pending = _pending;
+    if (pending != null) {
+      _changed(() => _pending = null);
+      if (pending.$1 == AttachKind.document) {
+        await _readMany(pending.$2, note: text);
+      } else {
+        await _readAttachment(pending.$1, pending.$2.single, note: text);
+      }
+      return;
+    }
+    if (text.trim().isEmpty) return;
     final deps = widget.deps;
     _changed(() => _messages.add(_UserMsg(text)));
     _scrollToEnd();
@@ -571,7 +804,7 @@ class _BrainScreenState extends State<BrainScreen> {
   /// Câmera no campo: atalho para a foto do prato.
   Future<void> _plateCamera() async {
     final file = await widget.deps.documentPicker.takePhoto();
-    if (file != null && mounted) await _readAttachment(AttachKind.plate, file);
+    if (file != null && mounted) _stage(AttachKind.plate, [file]);
   }
 
   Future<void> _attach() async {
@@ -641,19 +874,18 @@ class _BrainScreenState extends State<BrainScreen> {
       },
     );
     if (picked == null || picked.$2.isEmpty || !mounted) return;
-    if (picked.$1 == AttachKind.document) {
-      await _readMany(picked.$2);
-    } else {
-      await _readAttachment(picked.$1, picked.$2.single);
-    }
+    _stage(picked.$1, picked.$2);
   }
 
   /// Lê o anexo com a IA (só depois do consentimento). Prato vira cartão de
   /// refeição estimada; receita e exame viram um resumo com "Revisar e
   /// salvar".
-  Future<void> _readAttachment(AttachKind kind, PickedDocument file) async {
+  Future<void> _readAttachment(AttachKind kind, PickedDocument file, {String note = ''}) async {
     final deps = widget.deps;
-    _changed(() => _messages.add(_AttachMsg(kind, file)));
+    _changed(() {
+      _messages.add(_AttachMsg(kind, file));
+      if (note.trim().isNotEmpty) _messages.add(_UserMsg(note.trim()));
+    });
     _scrollToEnd();
     if (!await ensureAiConsent(context, deps, sending: kind.sending)) {
       if (mounted) _changed(() => _messages.add(_BotMsg('Ok, não enviei nada.')));
@@ -662,7 +894,7 @@ class _BrainScreenState extends State<BrainScreen> {
     if (!mounted) return;
     _changed(() => _thinking = true);
     try {
-      await _readOne(await deps.ai.client(), kind, file);
+      await _readOne(await deps.ai.client(), kind, file, note: note);
       if (mounted) _changed(() => _thinking = false);
     } catch (e) {
       if (!mounted) return;
@@ -675,11 +907,11 @@ class _BrainScreenState extends State<BrainScreen> {
   }
 
   /// Lê um arquivo de tipo conhecido e põe o resultado na conversa.
-  Future<void> _readOne(GeminiClient client, AttachKind kind, PickedDocument file) async {
+  Future<void> _readOne(GeminiClient client, AttachKind kind, PickedDocument file, {String note = ''}) async {
     final part = AiPart.file(file.bytes, file.mimeType);
     switch (kind) {
       case AttachKind.plate:
-        final estimate = await estimatePlate(client, part);
+        final estimate = await estimatePlate(client, part, note: note);
         if (!mounted) return;
         // O cartão espera a decisão da pessoa: a barra de "pensando" sai antes.
         _changed(() => _thinking = false);
@@ -701,18 +933,19 @@ class _BrainScreenState extends State<BrainScreen> {
         if (!mounted) return;
         _changed(() => _messages.add(_DocMsg(kind, file, describeWorkoutPlanReading(plan), workout: plan, model: _modelLabel)));
       case AttachKind.document:
-        await _sortAndRead(client, [file]);
+        await _sortAndRead(client, [file], note: note);
     }
   }
 
   /// Vários arquivos: consentimento uma vez, a IA separa e cada um segue
   /// para o leitor do seu tipo (ADR-19).
-  Future<void> _readMany(List<PickedDocument> files) async {
+  Future<void> _readMany(List<PickedDocument> files, {String note = ''}) async {
     final deps = widget.deps;
     _changed(() {
       for (final f in files) {
         _messages.add(_AttachMsg(AttachKind.document, f));
       }
+      if (note.trim().isNotEmpty) _messages.add(_UserMsg(note.trim()));
     });
     _scrollToEnd();
     final what = files.length == 1 ? 'o arquivo' : 'os ${files.length} arquivos';
@@ -723,7 +956,7 @@ class _BrainScreenState extends State<BrainScreen> {
     if (!mounted) return;
     _changed(() => _thinking = true);
     try {
-      await _sortAndRead(await deps.ai.client(), files);
+      await _sortAndRead(await deps.ai.client(), files, note: note);
     } catch (e) {
       if (mounted) _changed(() => _messages.add(_BotMsg(aiFailureMessage(e))));
     }
@@ -734,8 +967,8 @@ class _BrainScreenState extends State<BrainScreen> {
   /// Modelo que deu a última resposta da IA.
   String? get _modelLabel => widget.deps.ai.lastModelLabel.value;
 
-  Future<void> _sortAndRead(GeminiClient client, List<PickedDocument> files) async {
-    final sorting = await sortDocuments(client, [for (final f in files) AiPart.file(f.bytes, f.mimeType)]);
+  Future<void> _sortAndRead(GeminiClient client, List<PickedDocument> files, {String note = ''}) async {
+    final sorting = await sortDocuments(client, [for (final f in files) AiPart.file(f.bytes, f.mimeType)], note: note);
     if (!mounted) return;
     final many = files.length > 1;
     final calls = <ToolCallDecision>[];
@@ -752,7 +985,7 @@ class _BrainScreenState extends State<BrainScreen> {
       };
       if (kind != null) {
         try {
-          await _readOne(client, kind, file);
+          await _readOne(client, kind, file, note: note);
         } catch (e) {
           if (mounted) _changed(() => _messages.add(_BotMsg('$label: ${aiFailureMessage(e)}')));
         }
@@ -1041,18 +1274,67 @@ class _BrainScreenState extends State<BrainScreen> {
 
   Widget _gramsEditor(_ProposalMsg m) {
     final items = (m.params['items'] as List).cast<Map<String, dynamic>>();
-    return Column(children: [
+    final aiOn = widget.deps.ai.hasKey.value;
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      DropdownButtonFormField<String>(
+        key: const Key('proposal_meal_type'),
+        initialValue: m.mealType,
+        decoration: const InputDecoration(labelText: 'Refeição', isDense: true),
+        items: [
+          for (final t in MealType.values) DropdownMenuItem(value: t.wireValue, child: Text(mealTypeLabel(t))),
+        ],
+        onChanged: (v) => _changed(() => m.mealType = v),
+      ),
+      const SizedBox(height: RltSpace.s),
       for (var i = 0; i < items.length; i++)
         Padding(
           padding: const EdgeInsets.only(bottom: RltSpace.s),
-          child: TextField(
-            key: Key('proposal_grams_$i'),
-            controller: m.gramFields![i],
-            keyboardType: const TextInputType.numberWithOptions(decimal: true),
-            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
-            decoration: InputDecoration(labelText: '${items[i]['name']}', suffixText: items[i]['unit'] == 'ml' ? 'ml' : 'g', isDense: true),
+          child: Row(children: [
+            Expanded(
+              flex: 3,
+              child: TextField(
+                key: Key('proposal_name_$i'),
+                controller: m.nameFields![i],
+                decoration: const InputDecoration(labelText: 'Alimento', isDense: true),
+              ),
+            ),
+            const SizedBox(width: RltSpace.s),
+            Expanded(
+              flex: 2,
+              child: TextField(
+                key: Key('proposal_grams_$i'),
+                controller: m.gramFields![i],
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
+                decoration: InputDecoration(labelText: 'Quanto', suffixText: items[i]['unit'] == 'ml' ? 'ml' : 'g', isDense: true),
+              ),
+            ),
+          ]),
+        ),
+      if (aiOn) ...[
+        TextField(
+          key: const Key('proposal_note'),
+          controller: m.noteField,
+          minLines: 1,
+          maxLines: 3,
+          decoration: const InputDecoration(
+            labelText: 'Observação para a IA',
+            hintText: 'Ex.: não comi a borda; tirei a gordura',
+            isDense: true,
           ),
         ),
+        Align(
+          alignment: Alignment.centerLeft,
+          child: TextButton.icon(
+            key: const Key('proposal_refine'),
+            onPressed: m.refining ? null : () => _refine(m),
+            icon: m.refining
+                ? const SizedBox(width: 16, height: 16, child: CircularProgressIndicator(strokeWidth: 2))
+                : const Icon(Icons.auto_awesome_outlined, size: 18),
+            label: const Text('Recalcular com a observação'),
+          ),
+        ),
+      ],
     ]);
   }
 
@@ -1131,7 +1413,7 @@ class _BrainScreenState extends State<BrainScreen> {
                       label: const Text('Ler uma receita médica'),
                       onPressed: () async {
                         final file = await widget.deps.documentPicker.pickImage();
-                        if (file != null && mounted) await _readAttachment(AttachKind.prescription, file);
+                        if (file != null && mounted) _stage(AttachKind.prescription, [file]);
                       },
                     ),
                   ],
@@ -1146,6 +1428,10 @@ class _BrainScreenState extends State<BrainScreen> {
                 itemCount: _messages.length,
                 itemBuilder: (context, i) => switch (_messages[i]) {
                   _UserMsg(:final text) => _Bubble(text: text, mine: true, onLongPress: () => _messageMenu(text, mine: true)),
+                  // Tocar ou segurar: no anexo, mandar de novo (volta para o
+                  // campo, para escrever junto se quiser).
+                  _AttachMsg(:final kind, :final file) when file.bytes.isNotEmpty && aiOn =>
+                    _AttachBubble(kind: kind, file: file, onMenu: () => _attachMenu(kind, file)),
                   _BotMsg(:final text, :final fromAi, :final model) => _Bubble(
                       text: text, mine: false, disclaimer: fromAi, model: model, onLongPress: () => _messageMenu(text, mine: false)),
                   _AttachMsg(:final kind, :final file) => _AttachBubble(kind: kind, file: file),
@@ -1164,7 +1450,8 @@ class _BrainScreenState extends State<BrainScreen> {
         // Com a IA: campo completo (anexos, câmera do prato e voz). Sem ela:
         // só comandos de texto, sem rede.
         mode: aiOn ? ComposerMode.ai : ComposerMode.basic,
-        hint: aiOn ? 'Escreva ou fale…' : null,
+        hint: aiOn ? (_pending == null ? 'Escreva ou fale…' : 'Escreva algo sobre o anexo (opcional)') : null,
+        attachment: _pending == null ? null : _pendingPreview(_pending!),
         attachKey: const Key('chat_attach'),
         micKey: const Key('chat_mic'),
         onCamera: aiOn && !_thinking ? _plateCamera : null,
@@ -1194,6 +1481,9 @@ class _Bubble extends StatelessWidget {
     return Align(
       alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
       child: GestureDetector(
+        // Na mensagem da pessoa, tocar também abre Copiar / Editar e mandar
+        // de novo (segurar não era fácil de descobrir).
+        onTap: mine ? onLongPress : null,
         onLongPress: onLongPress,
         child: Container(
         constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.82),
@@ -1223,7 +1513,8 @@ class _Bubble extends StatelessWidget {
 class _AttachBubble extends StatelessWidget {
   final AttachKind kind;
   final PickedDocument file;
-  const _AttachBubble({required this.kind, required this.file});
+  final VoidCallback? onMenu;
+  const _AttachBubble({required this.kind, required this.file, this.onMenu});
 
   @override
   Widget build(BuildContext context) {
@@ -1231,7 +1522,10 @@ class _AttachBubble extends StatelessWidget {
     final isPdf = file.mimeType == 'application/pdf';
     return Align(
       alignment: Alignment.centerRight,
-      child: Container(
+      child: GestureDetector(
+        onTap: onMenu,
+        onLongPress: onMenu,
+        child: Container(
         key: Key('brain_attached_${kind.name}'),
         constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.7),
         margin: const EdgeInsets.symmetric(vertical: 4),
@@ -1252,6 +1546,7 @@ class _AttachBubble extends StatelessWidget {
             ]),
           ),
         ]),
+        ),
       ),
     );
   }

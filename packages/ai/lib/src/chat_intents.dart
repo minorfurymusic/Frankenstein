@@ -47,7 +47,10 @@ class ChatNewMedication {
 
   /// "HH:MM".
   final List<String> times;
-  const ChatNewMedication({required this.name, required this.doseAmount, required this.doseUnit, required this.times});
+
+  /// Desde quando toma ("AAAA-MM-DD"), só se a pessoa disse.
+  final String? startDate;
+  const ChatNewMedication({required this.name, required this.doseAmount, required this.doseUnit, required this.times, this.startDate});
 }
 
 /// O que a IA entendeu de uma mensagem livre no Cérebro. Cada registro vira
@@ -80,6 +83,10 @@ class ChatReading {
   final List<Map<String, dynamic>> vitalSigns;
   final List<Map<String, dynamic>> bodyMeasurements;
 
+  /// Itens do histórico médico ditos pela pessoa ("tenho hipertensão"), já
+  /// no formato de `add_history_item`.
+  final List<Map<String, dynamic>> history;
+
   /// Perguntas sobre os próprios dados que o app responde **localmente**
   /// (`daily_summary`, `steps`, `medication_agenda`) — o dado não vai à IA.
   final List<String> questions;
@@ -98,6 +105,7 @@ class ChatReading {
     this.vitalSigns = const [],
     this.bodyMeasurements = const [],
     this.questions = const [],
+    this.history = const [],
   });
 
   bool get isEmpty =>
@@ -109,6 +117,7 @@ class ChatReading {
       symptoms.isEmpty &&
       vitalSigns.isEmpty &&
       bodyMeasurements.isEmpty &&
+      history.isEmpty &&
       questions.isEmpty;
 }
 
@@ -201,6 +210,7 @@ const chatReadingSchema = <String, dynamic>{
             'type': 'array',
             'items': {'type': 'string', 'description': 'HH:MM'},
           },
+          'start_date': {'type': 'string', 'description': 'AAAA-MM-DD; só se a pessoa disse desde quando toma.'},
         },
         'required': ['name', 'dose_amount', 'dose_unit', 'times'],
       },
@@ -258,6 +268,21 @@ const chatReadingSchema = <String, dynamic>{
         'required': ['kind', 'value'],
       },
     },
+    'history_items': {
+      'type': 'array',
+      'items': {
+        'type': 'object',
+        'properties': {
+          'kind': {
+            'type': 'string',
+            'enum': ['condition', 'allergy', 'surgery', 'vaccine', 'appointment'],
+          },
+          'title': {'type': 'string'},
+          'date': {'type': 'string', 'description': 'AAAA-MM-DD; só se a pessoa disse.'},
+        },
+        'required': ['kind', 'title'],
+      },
+    },
     'questions': {
       'type': 'array',
       'items': {
@@ -274,10 +299,11 @@ Você é o Cérebro do RLT, um app de saúde pessoal no Brasil. Você só ANOTA 
 Regras:
 - Separe cada coisa num item próprio: "bebi 2 L de água, comi 3 ovos e tomei dipirona às 9h" = 1 água + 1 refeição + 1 remédio.
 - Água em mililitros (1 copo = 250 ml, 1 garrafa pequena = 500 ml, 1 L = 1000 ml).
-- Refeição: um item por alimento, com gramas estimadas pela quantidade dita (1 ovo ≈ 50 g) e kcal, protein_g, carbs_g e fat_g estimados para essas gramas. Bebida (suco, refrigerante, energético, leite, café, chá, cerveja): liquid = true e grams = mililitros (1 L = 1000). Água pura vai em water, não em meals. meal_type pelo que a pessoa disse ou pela hora.
+- Refeição: um item por alimento, com gramas estimadas pela quantidade dita (1 ovo ≈ 50 g) e kcal, protein_g, carbs_g e fat_g estimados para essas gramas. Bebida (suco, refrigerante, energético, leite, café, chá, cerveja): liquid = true e grams = mililitros (1 L = 1000). kcal e macros são o TOTAL do item nas gramas/ml dele (2 copos = a soma dos dois), nunca por unidade. O que se põe na bebida ou na comida (açúcar, adoçante, leite, mel, azeite) é um item próprio, e o item da bebida conta só a bebida: "café com 15 g de açúcar" = "Café" (sem açúcar, ≈ 2 kcal por 100 ml) + "Açúcar" 15 g. Nunca conte o mesmo ingrediente duas vezes. Água pura vai em water, não em meals. meal_type pelo que a pessoa disse ou pela hora.
 - Remédio: copie o nome e, SÓ se a pessoa disse, a dose e a unidade. Nunca complete, sugira ou corrija dose. "Esqueci/pulei" = skipped.
 - Treino de academia: um item por exercício, com o nome em português (ex.: "Supino reto", "Agachamento livre", "Leg press"), séries, repetições e carga em kg (0 se for peso do corpo). Corrida e caminhada não entram aqui.
-- Remédio novo ("comecei a tomar vitamina D"): só vai em new_medications se a pessoa disse nome, dose e horários. Se faltar dose ou horário, pergunte em reply; em suggestions ofereça só horários comuns (ex.: "08:00", "12:00", "20:00") — nunca ofereça dose.
+- Remédio novo ("comecei a tomar vitamina D"): só vai em new_medications se a pessoa disse nome, dose e horários. "Desde 01/02/2026" vai em start_date. Horário dito em relação a outro remédio ("30 min antes do enalapril pela manhã") vira o horário calculado, só nas doses que a pessoa disse.
+- Histórico: doença, alergia, cirurgia, vacina ou consulta que a pessoa diz ter ou ter tido ("tenho hipertensão", "sou alérgico a dipirona") vai em history_items, com o nome como ela disse. Nunca deduza doença a partir de remédio. Se faltar dose ou horário, pergunte em reply; em suggestions ofereça só horários comuns (ex.: "08:00", "12:00", "20:00") — nunca ofereça dose.
 - Sintoma: nome curto; intensidade de 0 a 10 só se a pessoa deu. Não interprete nem dê diagnóstico.
 - Sinais vitais: pressão "12 por 8" = 120/80 mmHg; temperatura em °C; glicemia em mg/dL; saturação em %; frequência em bpm.
 - Medidas: peso em kg, gordura em %, circunferências em cm.
@@ -340,6 +366,7 @@ ChatReading parseChatReading(Map<String, dynamic> json) {
     workouts.add(ChatWorkout(exercise: name, sets: sets, reps: reps, loadKg: load.isFinite && load >= 0 ? load : 0, at: _iso(w['at'])));
   }
 
+  final ymd = RegExp(r'^\d{4}-\d{2}-\d{2}$');
   final newMeds = <ChatNewMedication>[];
   final hhmm = RegExp(r'^([01]\d|2[0-3]):[0-5]\d$');
   for (final m in list('new_medications')) {
@@ -348,7 +375,9 @@ ChatReading parseChatReading(Map<String, dynamic> json) {
     final unit = _text(m['dose_unit']);
     final times = [for (final t in (m['times'] as List? ?? const [])) if (t is String && hhmm.hasMatch(t.trim())) t.trim()];
     if (name == null || amount == null || unit == null || times.isEmpty) continue;
-    newMeds.add(ChatNewMedication(name: name, doseAmount: amount, doseUnit: unit, times: times));
+    final start = _text(m['start_date']);
+    newMeds.add(ChatNewMedication(
+        name: name, doseAmount: amount, doseUnit: unit, times: times, startDate: start != null && ymd.hasMatch(start) ? start : null));
   }
 
   final doses = <ChatDose>[];
@@ -410,6 +439,15 @@ ChatReading parseChatReading(Map<String, dynamic> json) {
     vitalSigns: vitals,
     bodyMeasurements: body,
     questions: [for (final q in (json['questions'] as List? ?? const [])) q as String],
+    history: [
+      for (final h in list('history_items'))
+        if (const ['condition', 'allergy', 'surgery', 'vaccine', 'appointment'].contains(h['kind']) && _text(h['title']) != null)
+          {
+            'kind': h['kind'],
+            'title': _text(h['title']),
+            if (_text(h['date']) != null && ymd.hasMatch(_text(h['date'])!)) 'date': _text(h['date']),
+          },
+    ],
   );
 }
 

@@ -2,6 +2,7 @@ import 'package:frankstein_ai/ai.dart';
 import 'package:frankstein_brain/brain.dart';
 import 'package:frankstein_health_records/health_records.dart';
 import 'package:frankstein_nutrition/nutrition.dart';
+import 'package:frankstein_profile/profile.dart';
 
 import '../../app_dependencies.dart';
 import '../../format.dart';
@@ -154,7 +155,6 @@ ProposalView describeProposal(AppDependencies deps, String tool, Map<String, dyn
         '${kind?.label ?? 'Histórico'} — ${p['title']}',
         extra.isEmpty ? null : extra,
         'Saúde › Histórico médico',
-        when: 'lido do documento',
       );
     case 'update_height':
       return ProposalView(HealthArea.body, 'Altura — ${n(p['height_cm'])} cm', 'atualiza o perfil e as metas', 'Conta › Perfil',
@@ -177,7 +177,10 @@ String _mealLabel(MealType t) => switch (t) {
     };
 
 /// Resposta legível de uma ferramenta de leitura (modo básico, sem IA).
-String describeReadResult(String tool, Map<String, dynamic> data) {
+///
+/// [stepMeters]: passada da pessoa, para o resumo dizer a distância
+/// estimada pelos passos (sem ela, só a de corrida/caminhada gravada).
+String describeReadResult(String tool, Map<String, dynamic> data, {double? stepMeters}) {
   String n(Object? v, {int d = 0}) => v is num ? formatNumber(v, decimals: d) : '$v';
   switch (tool) {
     case 'get_daily_summary':
@@ -186,10 +189,13 @@ String describeReadResult(String tool, Map<String, dynamic> data) {
       final water = data['water'] as Map;
       final workouts = data['workouts'] as Map;
       final runs = data['runs'] as Map;
-      return 'Resumo de hoje: ${n(steps['total'])} passos, ${n(meals['total_energy_kcal'])} kcal em '
+      final stepKm = stepMeters == null ? null : (steps['total'] as num) * stepMeters / 1000;
+      final runKm = (runs['total_distance_meters'] as num) / 1000;
+      return 'Resumo de hoje: ${n(steps['total'])} passos${stepKm == null ? '' : ' (≈ ${n(stepKm, d: 1)} km pela sua passada)'}, '
+          '${n(meals['total_energy_kcal'])} kcal em '
           '${meals['count']} ${meals['count'] == 1 ? 'refeição' : 'refeições'}, ${n(water['total_amount_ml'])} ml de água, '
-          '${workouts['count']} ${workouts['count'] == 1 ? 'treino' : 'treinos'} e '
-          '${n((runs['total_distance_meters'] as num) / 1000, d: 1)} km de corrida/caminhada.';
+          '${workouts['count']} ${workouts['count'] == 1 ? 'treino' : 'treinos'}'
+          '${runKm > 0 ? ' e ${n(runKm, d: 1)} km de corrida/caminhada gravada' : ''}.';
     case 'get_steps':
       return 'Hoje: ${n(data['total_steps'])} passos.';
     case 'search_food':
@@ -226,7 +232,9 @@ String describeOutcome(AppDependencies deps, PipelineResult r) {
       if (!t.success) return 'Não deu certo: ${t.error}';
       final spec = deps.registry.specFor(r.toolName!);
       if (spec.write) return 'Pronto, salvo.';
-      return describeReadResult(r.toolName!, t.data ?? const {});
+      final p = deps.profileRepository.load();
+      return describeReadResult(r.toolName!, t.data ?? const {},
+          stepMeters: p == null ? 0.75 : HealthFormulas.stepLengthMeters(p.sex, p.heightMeters));
   }
 }
 

@@ -88,6 +88,7 @@ Regras:
 - Estime a porção em gramas pelo tamanho no prato. Se o peso total do prato for informado, distribua as porções para que a soma bata com esse peso (sem contar o prato).
 - Para cada alimento, estime kcal, protein_g, carbs_g, fat_g e, se souber, fiber_g, para a porção estimada (use valores típicos de tabelas brasileiras, como a TACO).
 - meal_type: seu palpite (café da manhã = breakfast, almoço = lunch, jantar = dinner, lanche = snack).
+- Se vier "A pessoa disse", use: ela sabe o que comeu (ex.: "pastel de carne, não comi a borda", "tirei a gordura"). Ajuste nomes, porções e valores a isso.
 - Se a foto não for de comida, devolva items vazio e, em not_food, diga em uma frase curta o que a foto mostra (ex.: "Print da tela de metas de um app.").
 - Não dê conselho de saúde nem comente a refeição.
 ''';
@@ -120,17 +121,57 @@ PlateEstimate parsePlateEstimate(Map<String, dynamic> json) {
 }
 
 /// Estima o prato da foto. [plateGrams]: peso na balança, se a pessoa
-/// informou.
-Future<PlateEstimate> estimatePlate(GeminiClient client, AiPart photo, {double? plateGrams}) async {
+/// informou. [note]: o que a pessoa escreveu junto com a foto.
+Future<PlateEstimate> estimatePlate(GeminiClient client, AiPart photo, {double? plateGrams, String? note}) async {
+  final said = note == null || note.trim().isEmpty ? '' : ' A pessoa disse: "${note.trim()}".';
   final json = await client.generateJson(
     system: plateEstimateInstruction,
     parts: [
       photo,
       AiPart.text(plateGrams == null
-          ? 'Estime os alimentos deste prato.'
-          : 'Estime os alimentos deste prato. A comida pesou ${plateGrams.round()} g na balança.'),
+          ? 'Estime os alimentos deste prato.$said'
+          : 'Estime os alimentos deste prato. A comida pesou ${plateGrams.round()} g na balança.$said'),
     ],
     schema: plateEstimateSchema,
   );
   return parsePlateEstimate(json);
+}
+
+const mealRefineInstruction = '''
+Você corrige uma refeição já estimada num app de registro alimentar no Brasil, a partir de uma observação da pessoa.
+Regras:
+- Parta dos itens recebidos (nome, gramas ou ml, kcal e macros) e aplique só o que a observação diz (ex.: "não comi a borda do pastel" = menos massa; "tirei a gordura" = menos gordura; "era frango, não peixe" = troque o alimento).
+- kcal e macros são o total de cada item na porção dele (valores típicos de tabelas brasileiras, como a TACO).
+- Itens que a observação não muda ficam iguais. Item que a pessoa não comeu sai.
+- O que se põe na comida ou bebida (açúcar, azeite, leite) é item próprio; não conte duas vezes.
+- Não dê conselho de saúde nem comente a refeição.
+''';
+
+/// Corrige os itens com a observação da pessoa — só texto: a foto não vai
+/// de novo.
+Future<List<PlateItem>> refineMealItems(GeminiClient client, List<PlateItem> items, String note) async {
+  String n(double v) => v.toStringAsFixed(1);
+  final lines = [
+    for (final i in items)
+      '- ${i.name}: ${n(i.grams)} ${i.liquid ? 'ml' : 'g'}, ${n(i.kcal)} kcal, P ${n(i.proteinGrams)} g, C ${n(i.carbsGrams)} g, G ${n(i.fatGrams)} g',
+  ].join('\n');
+  final json = await client.generateJson(
+    system: mealRefineInstruction,
+    parts: [AiPart.text('Itens:\n$lines\n\nObservação da pessoa: "${note.trim()}"')],
+    schema: plateEstimateSchema,
+  );
+  final liquid = {for (final i in items) if (i.liquid) i.name.toLowerCase()};
+  return [
+    for (final i in parsePlateEstimate(json).items)
+      liquid.contains(i.name.toLowerCase()) ? PlateItem(
+              name: i.name,
+              grams: i.grams,
+              kcal: i.kcal,
+              proteinGrams: i.proteinGrams,
+              carbsGrams: i.carbsGrams,
+              fatGrams: i.fatGrams,
+              fiberGrams: i.fiberGrams,
+              liquid: true,
+            ) : i,
+  ];
 }

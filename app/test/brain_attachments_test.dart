@@ -96,6 +96,10 @@ void main() {
     await tester.pumpAndSettle();
     await tester.tap(find.byKey(Key('attach_${kind}_$source')));
     await tester.pumpAndSettle();
+    // O anexo espera no campo (dá para escrever junto); "Enviar" manda.
+    expect(find.byKey(const Key('chat_pending_attachment')), findsOneWidget);
+    await tester.tap(find.byKey(const Key('chat_send')));
+    await tester.pumpAndSettle();
     return doc;
   }
 

@@ -162,12 +162,14 @@ DocumentSorting parseDocumentSorting(Map<String, dynamic> json, int fileCount) {
 }
 
 /// Separa os arquivos anexados (ADR-19): uma chamada com todos eles.
-Future<DocumentSorting> sortDocuments(GeminiClient client, List<AiPart> files) async {
+///
+/// [note]: o que a pessoa escreveu junto (ajuda a entender o arquivo).
+Future<DocumentSorting> sortDocuments(GeminiClient client, List<AiPart> files, {String note = ''}) async {
   final json = await client.generateJson(
     system: documentSortingInstruction,
     parts: [
       for (var i = 0; i < files.length; i++) ...[AiPart.text('Arquivo ${i + 1}:'), files[i]],
-      const AiPart.text('Separe estes arquivos.'),
+      AiPart.text(note.trim().isEmpty ? 'Separe estes arquivos.' : 'Separe estes arquivos. A pessoa disse: "${note.trim()}".'),
     ],
     schema: documentSortingSchema,
   );
