@@ -164,7 +164,10 @@ class _HistoryTab extends StatelessWidget {
 class PlanFormScreen extends StatefulWidget {
   final AppDependencies deps;
   final WorkoutPlan? existing;
-  const PlanFormScreen({super.key, required this.deps, this.existing});
+
+  /// Plano novo já preenchido (ficha lida pela IA no Cérebro, ADR-19).
+  final WorkoutPlan? draft;
+  const PlanFormScreen({super.key, required this.deps, this.existing, this.draft});
 
   @override
   State<PlanFormScreen> createState() => _PlanFormScreenState();
@@ -180,9 +183,9 @@ class _PlanItem {
 }
 
 class _PlanFormScreenState extends State<PlanFormScreen> {
-  late final TextEditingController _name = TextEditingController(text: widget.existing?.name ?? '');
+  late final TextEditingController _name = TextEditingController(text: (widget.existing ?? widget.draft)?.name ?? '');
   late final List<_PlanItem> _items = [
-    for (final e in widget.existing?.exercises ?? const <PlannedExercise>[])
+    for (final e in (widget.existing ?? widget.draft)?.exercises ?? const <PlannedExercise>[])
       _PlanItem(e.exerciseId, e.exerciseName, e.targetSets, e.targetReps, e.targetLoadKg),
   ];
 

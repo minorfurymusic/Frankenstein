@@ -16,7 +16,8 @@ enum HealthArea {
   sleep('Sono', Icons.bedtime_outlined),
   vitalSign('Sinal vital', Icons.monitor_heart_outlined),
   body('Corpo', Icons.monitor_weight_outlined),
-  steps('Passos', Icons.directions_walk_outlined);
+  steps('Passos', Icons.directions_walk_outlined),
+  history('Histórico', Icons.history_edu_outlined);
 
   final String label;
   final IconData icon;
@@ -35,6 +36,7 @@ enum HealthArea {
         HealthArea.vitalSign => c.error,
         HealthArea.body => c.secondary,
         HealthArea.steps => c.primary,
+        HealthArea.history => c.secondary,
       };
 }
 

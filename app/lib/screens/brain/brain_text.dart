@@ -1,5 +1,6 @@
 import 'package:frankstein_ai/ai.dart';
 import 'package:frankstein_brain/brain.dart';
+import 'package:frankstein_health_records/health_records.dart';
 import 'package:frankstein_nutrition/nutrition.dart';
 
 import '../../app_dependencies.dart';
@@ -144,6 +145,20 @@ ProposalView describeProposal(AppDependencies deps, String tool, Map<String, dyn
       return ProposalView(HealthArea.body, '${_bodyLabels[kind] ?? kind} — ${n(v, d: v is num && v % 1 != 0 ? 1 : 0)} $unit', null,
           'Saúde › Corpo',
           when: when ?? 'hoje, agora');
+    case 'add_history_item':
+      final kind = MedicalHistoryKind.values.where((k) => k.wireValue == p['kind']).firstOrNull;
+      final date = p['date'] is String ? _day(DateTime.parse(p['date'] as String)) : null;
+      final extra = [?date, ?(p['professional'] as String?)].join(' · ');
+      return ProposalView(
+        HealthArea.history,
+        '${kind?.label ?? 'Histórico'} — ${p['title']}',
+        extra.isEmpty ? null : extra,
+        'Saúde › Histórico médico',
+        when: 'lido do documento',
+      );
+    case 'update_height':
+      return ProposalView(HealthArea.body, 'Altura — ${n(p['height_cm'])} cm', 'atualiza o perfil e as metas', 'Conta › Perfil',
+          when: 'lido do documento');
     default:
       return ProposalView(HealthArea.body, tool, '$p', 'RLT');
   }
@@ -237,4 +252,20 @@ String describeExamReading(ExamReading r) {
   final count = r.markers.length == 1 ? '1 valor lido' : '${r.markers.length} valores lidos';
   final sample = r.markers.take(3).map((m) => '${m.name} ${formatMarkerValue(m.value)} ${m.unit}'.trim()).join(', ');
   return '$head: $count ($sample${r.markers.length > 3 ? '…' : ''}).';
+}
+
+/// Resumo do plano alimentar lido, para o Cérebro (ADR-18/19).
+String describeMealPlanDraft(MealPlanDraft d) {
+  final items = d.meals.fold<int>(0, (s, m) => s + m.items.length);
+  if (items == 0) return 'Não achei refeições neste plano. Você pode revisar e preencher à mão.';
+  final meals = d.meals.length == 1 ? '1 refeição' : '${d.meals.length} refeições';
+  return '${d.name ?? 'Plano alimentar'}: $meals, $items ${items == 1 ? 'item' : 'itens'}.';
+}
+
+/// Resumo da ficha de treino lida (ADR-19).
+String describeWorkoutPlanReading(WorkoutPlanReading r) {
+  if (r.exercises.isEmpty) return 'Não achei exercícios nesta ficha. Você pode revisar e preencher à mão.';
+  final count = r.exercises.length == 1 ? '1 exercício' : '${r.exercises.length} exercícios';
+  final sample = r.exercises.take(3).map((e) => '${e.name} ${e.sets}×${e.reps}').join(', ');
+  return '${r.name ?? 'Ficha de treino'}: $count ($sample${r.exercises.length > 3 ? '…' : ''}).';
 }

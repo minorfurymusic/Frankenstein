@@ -120,6 +120,12 @@ abstract class DocumentPicker {
   Future<PickedDocument?> takePhoto();
   Future<PickedDocument?> pickImage();
   Future<PickedDocument?> pickPdf();
+
+  /// Várias fotos da galeria de uma vez (Cérebro, ADR-19).
+  Future<List<PickedDocument>> pickImages();
+
+  /// Vários PDFs de uma vez.
+  Future<List<PickedDocument>> pickPdfs();
 }
 
 /// Câmera/galeria pelo `image_picker` (BSD-3) e PDF pelo seletor de
@@ -149,11 +155,30 @@ class NativeDocumentPicker implements DocumentPicker {
     if (x == null) return null;
     return PickedDocument(bytes: await x.readAsBytes(), name: x.name, mimeType: 'application/pdf');
   }
+
+  @override
+  Future<List<PickedDocument>> pickImages() async {
+    final xs = await _images.pickMultiImage(maxWidth: 2400, maxHeight: 2400, imageQuality: 85);
+    return [
+      for (final x in xs) PickedDocument(bytes: await x.readAsBytes(), name: x.name, mimeType: x.mimeType ?? mimeTypeForName(x.name)),
+    ];
+  }
+
+  @override
+  Future<List<PickedDocument>> pickPdfs() async {
+    final xs = await openFiles(acceptedTypeGroups: const [
+      XTypeGroup(label: 'PDF', extensions: ['pdf'], mimeTypes: ['application/pdf']),
+    ]);
+    return [for (final x in xs) PickedDocument(bytes: await x.readAsBytes(), name: x.name, mimeType: 'application/pdf')];
+  }
 }
 
 /// Para testes: devolve o que estiver em [next] e esvazia.
 class FakeDocumentPicker implements DocumentPicker {
   PickedDocument? next;
+
+  /// Devolvido por [pickImages]/[pickPdfs] (e esvaziado).
+  List<PickedDocument> nextMany = const [];
   String? lastSource;
 
   PickedDocument? _take(String source) {
@@ -169,6 +194,18 @@ class FakeDocumentPicker implements DocumentPicker {
   Future<PickedDocument?> pickImage() async => _take('gallery');
   @override
   Future<PickedDocument?> pickPdf() async => _take('pdf');
+
+  List<PickedDocument> _takeMany(String source) {
+    lastSource = source;
+    final n = nextMany;
+    nextMany = const [];
+    return n;
+  }
+
+  @override
+  Future<List<PickedDocument>> pickImages() async => _takeMany('gallery_many');
+  @override
+  Future<List<PickedDocument>> pickPdfs() async => _takeMany('pdf_many');
 }
 
 /// Desenha páginas de PDF como imagem, pelo `PdfRenderer` do próprio

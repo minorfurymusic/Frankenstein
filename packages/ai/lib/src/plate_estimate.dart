@@ -44,7 +44,10 @@ class PlateEstimate {
   /// usa o que a pessoa escolheu, se escolheu.
   final String? mealType;
   final List<PlateItem> items;
-  const PlateEstimate({this.mealType, this.items = const []});
+
+  /// Foto sem comida: o que a IA viu, em uma frase (ADR-19).
+  final String? notFood;
+  const PlateEstimate({this.mealType, this.items = const [], this.notFood});
 
   double get grams => items.fold(0, (s, i) => s + i.grams);
   double get kcal => items.fold(0, (s, i) => s + i.kcal);
@@ -57,6 +60,7 @@ const plateEstimateSchema = <String, dynamic>{
       'type': 'string',
       'enum': ['breakfast', 'lunch', 'dinner', 'snack'],
     },
+    'not_food': {'type': 'string'},
     'items': {
       'type': 'array',
       'items': {
@@ -84,7 +88,7 @@ Regras:
 - Estime a porção em gramas pelo tamanho no prato. Se o peso total do prato for informado, distribua as porções para que a soma bata com esse peso (sem contar o prato).
 - Para cada alimento, estime kcal, protein_g, carbs_g, fat_g e, se souber, fiber_g, para a porção estimada (use valores típicos de tabelas brasileiras, como a TACO).
 - meal_type: seu palpite (café da manhã = breakfast, almoço = lunch, jantar = dinner, lanche = snack).
-- Se a foto não for de comida, devolva items vazio.
+- Se a foto não for de comida, devolva items vazio e, em not_food, diga em uma frase curta o que a foto mostra (ex.: "Print da tela de metas de um app.").
 - Não dê conselho de saúde nem comente a refeição.
 ''';
 
@@ -107,7 +111,12 @@ PlateEstimate parsePlateEstimate(Map<String, dynamic> json) {
       fiberGrams: fiber is num ? n(fiber) : null,
     ));
   }
-  return PlateEstimate(mealType: json['meal_type'] as String?, items: items);
+  final notFood = json['not_food'];
+  return PlateEstimate(
+    mealType: json['meal_type'] as String?,
+    items: items,
+    notFood: items.isEmpty && notFood is String && notFood.trim().isNotEmpty ? notFood.trim() : null,
+  );
 }
 
 /// Estima o prato da foto. [plateGrams]: peso na balança, se a pessoa

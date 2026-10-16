@@ -14,6 +14,7 @@ import 'package:frankstein_tool_registry/tool_registry.dart';
 import 'package:flutter/material.dart' show ThemeMode, ValueNotifier;
 
 import 'ai/ai_settings.dart';
+import 'ai/document_tools.dart';
 import 'ai/brain_ai.dart';
 import 'ai/voice_recorder.dart';
 import 'card_image_capturer.dart';
@@ -395,6 +396,9 @@ class AppDependencies {
         logEstimatedMealSpec(),
         logEstimatedMealHandler(nutrition, mealLogger, tzOffsetMinutesProvider: tzOffsetMinutesProvider),
       )
+      // Lido de documentos no Cérebro (ADR-19).
+      ..register(addHistoryItemSpec(), addHistoryItemHandler(medicalHistory))
+      ..register(updateHeightSpec(), updateHeightHandler(profileRepository))
       ..register(
         logWaterSpec(),
         logWaterHandler(waterLogger, tzOffsetMinutesProvider: tzOffsetMinutesProvider),

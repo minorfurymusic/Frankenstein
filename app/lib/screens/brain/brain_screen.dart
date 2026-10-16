@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:frankstein_activity/activity.dart';
 import 'package:frankstein_ai/ai.dart';
 import 'package:frankstein_brain/brain.dart';
 import 'package:frankstein_health_records/health_records.dart';
@@ -15,6 +16,7 @@ import '../../ai/voice_recorder.dart';
 import '../../app_dependencies.dart';
 import '../../confirmation_gate.dart';
 import '../../data/brain_conversations.dart';
+import '../../data/meal_plan.dart';
 import '../../data/nutrition_store.dart';
 import '../../documents/document_files.dart';
 import '../../format.dart';
@@ -24,6 +26,8 @@ import '../../widgets/badges.dart';
 import '../../widgets/message_composer.dart';
 import '../../widgets/proposal_card.dart';
 import '../health/documents_screens.dart';
+import '../exercise/gym_screens.dart';
+import '../nutrition/meal_plan_screens.dart';
 import '../nutrition/plate_photo_screen.dart';
 import 'brain_conversations_screen.dart';
 import 'brain_text.dart';
@@ -65,7 +69,12 @@ class _SuggestMsg extends _Msg {
 enum AttachKind {
   plate('Foto do prato', 'a foto do prato, para estimar alimentos e calorias', Icons.restaurant_outlined),
   prescription('Receita médica', 'a foto ou o PDF da receita, para ler médico, datas e remédios', Icons.description_outlined),
-  exam('Exame', 'a foto ou o PDF do exame, para ler os valores', Icons.science_outlined);
+  exam('Exame', 'a foto ou o PDF do exame, para ler os valores', Icons.science_outlined),
+  mealPlan('Plano alimentar', 'a foto ou o PDF do plano do nutricionista, para ler as refeições', Icons.restaurant_menu_outlined),
+  workoutPlan('Ficha de treino', 'a foto ou o PDF da ficha da academia, para ler os exercícios', Icons.fitness_center_outlined),
+
+  /// Vários arquivos de uma vez: a IA identifica cada um (ADR-19).
+  document('Documento', 'os arquivos, para a IA identificar cada um e ler o que está escrito', Icons.attach_file);
 
   final String label;
   final String sending;
@@ -99,11 +108,14 @@ class _DocMsg extends _Msg {
   final String summary;
   final ExamReading? exam;
   final PrescriptionReading? prescription;
+  final MealPlanDraft? mealPlan;
+  final WorkoutPlanReading? workout;
   bool saved;
 
   /// Reaberta de uma conversa antiga: sem o arquivo nem a leitura.
   final bool restored;
-  _DocMsg(this.kind, this.file, this.summary, {this.exam, this.prescription, this.saved = false, this.restored = false});
+  _DocMsg(this.kind, this.file, this.summary,
+      {this.exam, this.prescription, this.mealPlan, this.workout, this.saved = false, this.restored = false});
   @override
   Map<String, dynamic> toJson() => {'t': 'doc', 'kind': kind.name, 'summary': summary, 'saved': saved};
 }
@@ -557,7 +569,7 @@ class _BrainScreenState extends State<BrainScreen> {
   }
 
   Future<void> _attach() async {
-    final picked = await showModalBottomSheet<(AttachKind, PickedDocument?)>(
+    final picked = await showModalBottomSheet<(AttachKind, List<PickedDocument>)>(
       context: context,
       showDragHandle: true,
       builder: (sheet) {
@@ -567,7 +579,7 @@ class _BrainScreenState extends State<BrainScreen> {
               key: Key('attach_${kind.name}_$id'),
               onPressed: () async {
                 final file = await pick();
-                if (sheet.mounted) Navigator.of(sheet).pop((kind, file));
+                if (sheet.mounted) Navigator.of(sheet).pop(file == null ? null : (kind, [file]));
               },
               icon: Icon(icon, size: 18),
               label: Text(label),
@@ -578,7 +590,37 @@ class _BrainScreenState extends State<BrainScreen> {
             const SizedBox(height: RltSpace.xs),
             Text('O arquivo só vai à IA depois que você escolher. Nada é salvo sem você conferir.',
                 style: Theme.of(sheet).textTheme.bodySmall),
-            for (final kind in AttachKind.values) ...[
+            const SizedBox(height: RltSpace.m),
+            Row(children: [
+              const Icon(Icons.auto_awesome_outlined, size: 20),
+              const SizedBox(width: RltSpace.s),
+              Expanded(child: Text('Vários documentos — a IA identifica cada um', style: Theme.of(sheet).textTheme.titleSmall)),
+            ]),
+            const SizedBox(height: RltSpace.xs),
+            Wrap(spacing: RltSpace.s, runSpacing: RltSpace.s, children: [
+              OutlinedButton.icon(
+                key: const Key('attach_many_gallery'),
+                onPressed: () async {
+                  final files = await picker.pickImages();
+                  if (sheet.mounted) Navigator.of(sheet).pop(files.isEmpty ? null : (AttachKind.document, files));
+                },
+                icon: const Icon(Icons.photo_library_outlined, size: 18),
+                label: const Text('Fotos'),
+              ),
+              OutlinedButton.icon(
+                key: const Key('attach_many_pdf'),
+                onPressed: () async {
+                  final files = await picker.pickPdfs();
+                  if (sheet.mounted) Navigator.of(sheet).pop(files.isEmpty ? null : (AttachKind.document, files));
+                },
+                icon: const Icon(Icons.picture_as_pdf_outlined, size: 18),
+                label: const Text('PDFs'),
+              ),
+              source(AttachKind.document, 'camera', 'Câmera', Icons.photo_camera_outlined, picker.takePhoto),
+            ]),
+            const SizedBox(height: RltSpace.s),
+            const Divider(),
+            for (final kind in AttachKind.values.where((k) => k != AttachKind.document)) ...[
               const SizedBox(height: RltSpace.m),
               Row(children: [Icon(kind.icon, size: 20), const SizedBox(width: RltSpace.s), Text(kind.label)]),
               const SizedBox(height: RltSpace.xs),
@@ -592,8 +634,12 @@ class _BrainScreenState extends State<BrainScreen> {
         );
       },
     );
-    if (picked == null || picked.$2 == null || !mounted) return;
-    await _readAttachment(picked.$1, picked.$2!);
+    if (picked == null || picked.$2.isEmpty || !mounted) return;
+    if (picked.$1 == AttachKind.document) {
+      await _readMany(picked.$2);
+    } else {
+      await _readAttachment(picked.$1, picked.$2.single);
+    }
   }
 
   /// Lê o anexo com a IA (só depois do consentimento). Prato vira cartão de
@@ -610,29 +656,8 @@ class _BrainScreenState extends State<BrainScreen> {
     if (!mounted) return;
     _changed(() => _thinking = true);
     try {
-      final client = await deps.ai.client();
-      final part = AiPart.file(file.bytes, file.mimeType);
-      switch (kind) {
-        case AttachKind.plate:
-          final estimate = await estimatePlate(client, part);
-          if (!mounted) return;
-          _changed(() => _thinking = false);
-          await _proposePlate(file, estimate);
-        case AttachKind.prescription:
-          final rx = await readPrescription(client, [part]);
-          if (!mounted) return;
-          _changed(() {
-            _thinking = false;
-            _messages.add(_DocMsg(kind, file, describePrescriptionReading(rx), prescription: rx));
-          });
-        case AttachKind.exam:
-          final exam = await readExam(client, [part]);
-          if (!mounted) return;
-          _changed(() {
-            _thinking = false;
-            _messages.add(_DocMsg(kind, file, describeExamReading(exam), exam: exam));
-          });
-      }
+      await _readOne(await deps.ai.client(), kind, file);
+      if (mounted) _changed(() => _thinking = false);
     } catch (e) {
       if (!mounted) return;
       _changed(() {
@@ -643,10 +668,136 @@ class _BrainScreenState extends State<BrainScreen> {
     _scrollToEnd();
   }
 
+  /// Lê um arquivo de tipo conhecido e põe o resultado na conversa.
+  Future<void> _readOne(GeminiClient client, AttachKind kind, PickedDocument file) async {
+    final part = AiPart.file(file.bytes, file.mimeType);
+    switch (kind) {
+      case AttachKind.plate:
+        final estimate = await estimatePlate(client, part);
+        if (!mounted) return;
+        // O cartão espera a decisão da pessoa: a barra de "pensando" sai antes.
+        _changed(() => _thinking = false);
+        await _proposePlate(file, estimate);
+      case AttachKind.prescription:
+        final rx = await readPrescription(client, [part]);
+        if (!mounted) return;
+        _changed(() => _messages.add(_DocMsg(kind, file, describePrescriptionReading(rx), prescription: rx)));
+      case AttachKind.exam:
+        final exam = await readExam(client, [part]);
+        if (!mounted) return;
+        _changed(() => _messages.add(_DocMsg(kind, file, describeExamReading(exam), exam: exam)));
+      case AttachKind.mealPlan:
+        final plan = await readMealPlan(client, [part]);
+        if (!mounted) return;
+        _changed(() => _messages.add(_DocMsg(kind, file, describeMealPlanDraft(plan), mealPlan: plan)));
+      case AttachKind.workoutPlan:
+        final plan = await readWorkoutPlan(client, [part]);
+        if (!mounted) return;
+        _changed(() => _messages.add(_DocMsg(kind, file, describeWorkoutPlanReading(plan), workout: plan)));
+      case AttachKind.document:
+        await _sortAndRead(client, [file]);
+    }
+  }
+
+  /// Vários arquivos: consentimento uma vez, a IA separa e cada um segue
+  /// para o leitor do seu tipo (ADR-19).
+  Future<void> _readMany(List<PickedDocument> files) async {
+    final deps = widget.deps;
+    _changed(() {
+      for (final f in files) {
+        _messages.add(_AttachMsg(AttachKind.document, f));
+      }
+    });
+    _scrollToEnd();
+    final what = files.length == 1 ? 'o arquivo' : 'os ${files.length} arquivos';
+    if (!await ensureAiConsent(context, deps, sending: '$what, para a IA identificar cada um e ler o que está escrito')) {
+      if (mounted) _changed(() => _messages.add(_BotMsg('Ok, não enviei nada.')));
+      return;
+    }
+    if (!mounted) return;
+    _changed(() => _thinking = true);
+    try {
+      await _sortAndRead(await deps.ai.client(), files);
+    } catch (e) {
+      if (mounted) _changed(() => _messages.add(_BotMsg(aiFailureMessage(e))));
+    }
+    if (mounted) _changed(() => _thinking = false);
+    _scrollToEnd();
+  }
+
+  Future<void> _sortAndRead(GeminiClient client, List<PickedDocument> files) async {
+    final sorting = await sortDocuments(client, [for (final f in files) AiPart.file(f.bytes, f.mimeType)]);
+    if (!mounted) return;
+    final many = files.length > 1;
+    final calls = <ToolCallDecision>[];
+    for (final s in sorting.files) {
+      final file = files[s.index - 1];
+      final label = many ? 'Arquivo ${s.index} (${file.name})' : 'Este arquivo';
+      final kind = switch (s.kind) {
+        SortedKind.plate => AttachKind.plate,
+        SortedKind.prescription => AttachKind.prescription,
+        SortedKind.exam => AttachKind.exam,
+        SortedKind.mealPlan => AttachKind.mealPlan,
+        SortedKind.workoutPlan => AttachKind.workoutPlan,
+        SortedKind.medicalHistory || SortedKind.other => null,
+      };
+      if (kind != null) {
+        try {
+          await _readOne(client, kind, file);
+        } catch (e) {
+          if (mounted) _changed(() => _messages.add(_BotMsg('$label: ${aiFailureMessage(e)}')));
+        }
+      } else if (s.kind == SortedKind.medicalHistory) {
+        _changed(() => _messages.add(_BotMsg('$label é um histórico médico. O que está escrito vira cartões abaixo, para você conferir.',
+            fromAi: true)));
+      } else {
+        _changed(() => _messages.add(_BotMsg(
+            '$label: ${s.description ?? 'não parece um documento de saúde.'} Não há nada para registrar.',
+            fromAi: true)));
+      }
+      if (!mounted) return;
+    }
+    // Dados pessoais escritos nos documentos: um cartão por item.
+    final at = sorting.body.date == null ? null : DateTime(sorting.body.date!.year, sorting.body.date!.month, sorting.body.date!.day, 12);
+    final atIso = at?.toUtc().toIso8601String();
+    if (sorting.body.weightKg != null) {
+      calls.add(ToolCallDecision('log_body_measurement', {'kind': 'weight', 'value': sorting.body.weightKg, 'at': ?atIso}));
+    }
+    if (sorting.body.bodyFatPercent != null) {
+      calls.add(ToolCallDecision('log_body_measurement', {'kind': 'body_fat', 'value': sorting.body.bodyFatPercent, 'at': ?atIso}));
+    }
+    if (sorting.body.heightCm != null) {
+      calls.add(ToolCallDecision('update_height', {'height_cm': sorting.body.heightCm!.roundToDouble()}));
+    }
+    final known = {for (final i in widget.deps.medicalHistory.list()) '${i.kind.wireValue}|${_plain(i.title)}'};
+    for (final h in sorting.history) {
+      if (known.contains('${h.kind}|${_plain(h.title)}')) continue; // já está no histórico
+      calls.add(ToolCallDecision('add_history_item', {
+        'kind': h.kind,
+        'title': h.title,
+        if (h.date != null) 'date': _isoDay(h.date!),
+        'professional': ?h.professional,
+      }));
+    }
+    if (calls.isEmpty) return;
+    _changed(() => _thinking = false);
+    final results = await widget.deps.pipeline.runPlan(ToolCallPlan(calls: calls));
+    if (mounted) _showResults(results);
+  }
+
+  static String _plain(String s) => s.toLowerCase().trim();
+  static String _isoDay(DateTime d) =>
+      '${d.year}-${d.month.toString().padLeft(2, '0')}-${d.day.toString().padLeft(2, '0')}';
+
   Future<void> _proposePlate(PickedDocument photo, PlateEstimate estimate) async {
     final deps = widget.deps;
     if (estimate.items.isEmpty) {
-      _changed(() => _messages.add(_BotMsg('Não reconheci alimentos nesta foto. Tente de cima, com o prato inteiro e boa luz.', fromAi: true)));
+      final seen = estimate.notFood;
+      _changed(() => _messages.add(_BotMsg(
+          seen == null
+              ? 'Não reconheci alimentos nesta foto. Tente de cima, com o prato inteiro e boa luz.'
+              : 'Não vi comida nesta foto: $seen Para receita, exame, plano ou ficha de treino, use Anexar › Vários documentos.',
+          fromAi: true)));
       return;
     }
     final now = DateTime.now();
@@ -676,6 +827,49 @@ class _BrainScreenState extends State<BrainScreen> {
   }
 
   Future<void> _reviewDocument(_DocMsg m) async {
+    final deps = widget.deps;
+    if (m.kind == AttachKind.mealPlan) {
+      final before = deps.mealPlans.load()?.toJson().toString();
+      await Navigator.of(context).push<void>(MaterialPageRoute(
+        builder: (_) => MealPlanEditScreen(
+          deps: deps,
+          initial: MealPlan.fromDraft(m.mealPlan ?? const MealPlanDraft(), source: MealPlanSource.imported, fallbackName: 'Plano do profissional'),
+          source: MealPlanSource.imported,
+          newAttachment: m.file,
+        ),
+      ));
+      final after = deps.mealPlans.load()?.toJson().toString();
+      if (mounted && after != null && after != before) _changed(() => m.saved = true);
+      return;
+    }
+    if (m.kind == AttachKind.workoutPlan) {
+      final before = deps.workoutRepository.listPlans().length;
+      final w = m.workout ?? const WorkoutPlanReading();
+      await Navigator.of(context).push<void>(MaterialPageRoute(
+        builder: (_) => PlanFormScreen(
+          deps: deps,
+          draft: WorkoutPlan(
+            id: 'draft',
+            name: w.name ?? 'Ficha da academia',
+            exercises: [
+              for (final e in w.exercises)
+                () {
+                  final known = matchExercise(e.name);
+                  return PlannedExercise(
+                    exerciseId: known?.id ?? 'livre-${e.name.toLowerCase().replaceAll(RegExp(r'[^a-z0-9]+'), '-')}',
+                    exerciseName: known?.name ?? e.name,
+                    targetSets: e.sets,
+                    targetReps: e.reps,
+                    targetLoadKg: e.loadKg,
+                  );
+                }(),
+            ],
+          ),
+        ),
+      ));
+      if (mounted && deps.workoutRepository.listPlans().length > before) _changed(() => m.saved = true);
+      return;
+    }
     await Navigator.of(context).push<void>(MaterialPageRoute(
       builder: (_) => DocumentFormScreen(
         deps: widget.deps,
@@ -812,7 +1006,13 @@ class _BrainScreenState extends State<BrainScreen> {
             Row(children: [
               Icon(Icons.check, size: 18, color: c.success),
               const SizedBox(width: 6),
-              Text(m.kind == AttachKind.exam ? 'Salvo em Saúde › Exames' : 'Salvo em Saúde › Receitas médicas',
+              Text(
+                  switch (m.kind) {
+                    AttachKind.exam => 'Salvo em Saúde › Exames',
+                    AttachKind.mealPlan => 'Salvo em Nutrição › Plano de refeições',
+                    AttachKind.workoutPlan => 'Salvo em Exercícios › Academia',
+                    _ => 'Salvo em Saúde › Receitas médicas',
+                  },
                   style: t.labelLarge?.copyWith(fontSize: 14, color: c.success)),
             ])
           else

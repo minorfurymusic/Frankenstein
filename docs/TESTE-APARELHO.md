@@ -7,7 +7,7 @@ com os prints, num ciclo de correções. Prints em `docs/teste-aparelho/`.
 |---|---|---|---|---|---|
 | 1 | 2026-10-15 | Cérebro › mensagem enviada | Não dá para copiar o texto de uma mensagem que eu escrevi | Poder copiar (ex.: copiar, mudar algo e mandar de novo) | corrigido no código (segurar a mensagem: Copiar / Editar e mandar de novo) — conferir no aparelho |
 | 2 | 2026-10-15 | Início / Exercícios › passos | Diz "Sem sensor de passos", mas contou passos (309, depois 401) | Contar passos e não mostrar o aviso. Causa provável: `hasSensor` pergunta ao serviço antes de ele terminar de ligar (`MainActivity.kt:67` devolve `false` com `stepService` nulo; `step_tracking_controller.dart:94-97`) | corrigido no código: sensor perguntado direto ao Android; última leitura entregue ao ligar; ponto da contagem guardado para contar o que foi andado com o app fechado — conferir no aparelho |
-| 3 | 2026-10-15 | Cérebro › foto | Mandou uma imagem qualquer (print) e a resposta foi só "não reconheci alimentos" | Entender o que é a imagem (não só prato) e responder de acordo | aberto — junto do pedido de várias fotos (abaixo), depende de decisão |
+| 3 | 2026-10-15 | Cérebro › foto | Mandou uma imagem qualquer (print) e a resposta foi só "não reconheci alimentos" | Entender o que é a imagem (não só prato) e responder de acordo | corrigido no código (ADR-19): foto sem comida → a IA diz o que viu; Anexar › Vários documentos identifica o tipo — conferir no aparelho |
 
 | 4 | 2026-10-15 | Calendário / data digitada | Em inglês; "28061990" recusado | Português, dd/mm/aaaa | corrigido no código (app em pt-BR) — conferir no aparelho |
 | 5 | 2026-10-15 | Metas 747 kcal / carboidrato 0 g | — | Usuário confirmou: está certo (perder 300 g/dia, proteína alta) | não é problema |
@@ -18,7 +18,7 @@ com os prints, num ciclo de correções. Prints em `docs/teste-aparelho/`.
 | 10 | 2026-10-15 | Cérebro › faixa do topo | Alta, feia | Compacta | corrigido no código (uma linha: "IA ativa · Gemini" + ícones) |
 | 11 | 2026-10-15 | Conta › Dispositivos › Health Connect | Tocou e nada em 5 min | Abrir permissões | corrigido no código: espera no máx. 60 s, avisa, botão "Abrir o Health Connect", confere ao voltar. Causa de a tela não abrir NÃO VERIFICADA (sem aparelho) |
 | 12 | 2026-10-15 | Remédios › aviso "Salvo" | Cobre o cartão | Não cobrir | aviso dura 2,5 s (antes 4 s) |
-| 13 | 2026-10-16 | Cérebro › várias fotos | Pedido novo: mandar 2–3 fotos (receita, nutricionista, academia, histórico) e cada coisa ir para o lugar certo | — | aberto — precisa de decisão (portão: dado de saúde/arquitetura) |
+| 13 | 2026-10-16 | Cérebro › várias fotos | Pedido novo: mandar 2–3 fotos (receita, nutricionista, academia, histórico) e cada coisa ir para o lugar certo | — | decidido (ADR-19) e feito no código: Anexar › Vários documentos; cada arquivo vira cartão; peso/altura/% gordura e histórico em cartões separados — conferir no aparelho |
 
 ## Prints recebidos (explicação do usuário pendente)
 

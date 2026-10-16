@@ -5,8 +5,10 @@
 library;
 
 export 'src/chat_intents.dart';
+export 'src/document_sorting.dart';
 export 'src/exam_reading.dart';
 export 'src/gemini_client.dart';
 export 'src/meal_plan_ai.dart';
 export 'src/plate_estimate.dart';
 export 'src/prescription_reading.dart';
+export 'src/workout_plan_reading.dart';
