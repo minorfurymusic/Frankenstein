@@ -197,7 +197,7 @@ class _PlanFormScreenState extends State<PlanFormScreen> {
 
   Future<void> _add() async {
     final e = await Navigator.of(context).push<CatalogExercise>(
-      MaterialPageRoute(builder: (_) => const ExerciseLibraryScreen(pickMode: true)),
+      MaterialPageRoute(builder: (_) => ExerciseLibraryScreen(pickMode: true, deps: widget.deps)),
     );
     if (e != null) setState(() => _items.add(_PlanItem(e.id, e.name, 3, 10, null)));
   }

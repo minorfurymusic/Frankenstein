@@ -51,6 +51,23 @@ void main() {
       expect(upper, hasLength(1));
     });
 
+    test('searchByName ignora acento: "cafe" acha "Café"', () {
+      final repo = FoodRepository.openInMemory();
+      addTearDown(repo.close);
+      repo.insertCustomFood(Food(
+        id: 'custom-cafe',
+        name: 'Café coado sem açúcar',
+        source: FoodSource.custom,
+        energyKcalPer100g: 2,
+        carbohydratesPer100g: 0,
+        fatPer100g: 0,
+        proteinPer100g: 0.1,
+      ));
+      expect(repo.searchByName('cafe acucar').map((f) => f.id), isEmpty);
+      expect(repo.searchByName('cafe').map((f) => f.id), contains('custom-cafe'));
+      expect(repo.searchByName('ACUCAR').map((f) => f.id), contains('custom-cafe'));
+    });
+
     test('insertCustomFood cadastra um item personalizado (adição rápida)', () {
       final repo = FoodRepository.openInMemory();
       addTearDown(repo.close);

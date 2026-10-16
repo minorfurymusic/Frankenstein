@@ -14,6 +14,9 @@ import '../../widgets/common.dart';
 import '../../widgets/line_chart.dart';
 import 'share_helpers.dart';
 
+/// "34 kg" ou, sem carga, "peso do corpo" (flexão, barra, prancha…).
+String loadLabel(double kg) => kg <= 0 ? 'peso do corpo' : '${formatNumber(kg, decimals: kg % 1 == 0 ? 0 : 1)} kg';
+
 class _LiveSet {
   double loadKg;
   int reps;
@@ -81,7 +84,7 @@ class _LiveWorkoutScreenState extends State<LiveWorkoutScreen> {
 
   Future<void> _addExercise() async {
     final picked = await Navigator.of(context).push<CatalogExercise>(
-      MaterialPageRoute(builder: (_) => const ExerciseLibraryScreen(pickMode: true)),
+      MaterialPageRoute(builder: (_) => ExerciseLibraryScreen(pickMode: true, deps: widget.deps)),
     );
     if (picked == null) return;
     setState(() {
@@ -92,10 +95,18 @@ class _LiveWorkoutScreenState extends State<LiveWorkoutScreen> {
     });
   }
 
-  void _completeSet(_LiveSet s) {
+  void _completeSet(_LiveExercise e, _LiveSet s) {
     setState(() {
       s.done = true;
       _restLeft = widget.restDuration;
+      // As próximas séries começam com a carga e as repetições desta —
+      // quem muda de carga ajusta só o que mudou.
+      for (final next in e.sets.where((x) => !x.done)) {
+        next
+          ..loadKg = s.loadKg
+          ..reps = s.reps
+          ..rpe = s.rpe;
+      }
     });
   }
 
@@ -241,14 +252,13 @@ class _LiveWorkoutScreenState extends State<LiveWorkoutScreen> {
         const SizedBox(height: RltSpace.m),
         for (var i = 0; i < ex.sets.length; i++)
           i == activeIndex
-              ? _ActiveSetCard(key: Key('live_set_$i'), number: i + 1, set: ex.sets[i], onDone: () => _completeSet(ex.sets[i]))
+              ? _ActiveSetCard(key: Key('live_set_$i'), number: i + 1, set: ex.sets[i], onDone: () => _completeSet(ex, ex.sets[i]))
               : ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: ex.sets[i].done
                       ? CircleAvatar(radius: 14, backgroundColor: c.primary, child: Icon(Icons.check, size: 16, color: c.onPrimary))
                       : CircleAvatar(radius: 14, backgroundColor: c.surfaceContainerHigh, child: Text('${i + 1}', style: t.labelMedium)),
-                  title: Text('${formatNumber(ex.sets[i].loadKg, decimals: ex.sets[i].loadKg % 1 == 0 ? 0 : 1)} kg × ${ex.sets[i].reps}',
-                      style: RltTheme.tabular(t.bodyLarge!)),
+                  title: Text('${loadLabel(ex.sets[i].loadKg)} × ${ex.sets[i].reps}', style: RltTheme.tabular(t.bodyLarge!)),
                   trailing: Text(ex.sets[i].done ? 'RPE ${ex.sets[i].rpe.round()}' : '—', style: t.bodyMedium),
                 ),
         TextButton.icon(
@@ -309,7 +319,7 @@ class _ActiveSetCardState extends State<_ActiveSetCard> {
               key: const Key('live_load'),
               controller: _load,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(labelText: 'Carga', suffixText: 'kg'),
+              decoration: const InputDecoration(labelText: 'Carga', suffixText: 'kg', helperText: '0 = peso do corpo'),
               onChanged: (v) => widget.set.loadKg = parseNumber(v) ?? widget.set.loadKg,
             ),
           ),
@@ -386,7 +396,7 @@ class WorkoutSummaryScreen extends StatelessWidget {
           ListTile(
             contentPadding: EdgeInsets.zero,
             title: Text(s.payload['exercise_name'] as String),
-            subtitle: Text('Série ${s.payload['set_number']} · ${formatNumber((s.payload['load_kg'] as num).toDouble(), decimals: 1)} kg × ${s.payload['reps']}'
+            subtitle: Text('Série ${s.payload['set_number']} · ${loadLabel((s.payload['load_kg'] as num).toDouble())} × ${s.payload['reps']}'
                 '${s.payload['rpe'] == null ? '' : ' · RPE ${(s.payload['rpe'] as num).round()}'}'),
           ),
         const SizedBox(height: RltSpace.l),
@@ -421,10 +431,32 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
   @override
   Widget build(BuildContext context) {
     final t = Theme.of(context).textTheme;
+    // Mais usados primeiro: quantas vezes cada exercício já entrou num
+    // treino (a partir de 1). Sem busca nem filtro, aparecem no topo.
+    final uses = <String, int>{};
+    for (final s in widget.deps?.core.queryByType(HealthEventType.setLog) ?? const <HealthEvent>[]) {
+      if (s.payload['set_number'] == 1) uses.update('${s.payload['exercise_id']}', (n) => n + 1, ifAbsent: () => 1);
+    }
     final list = exerciseCatalog
         .where((e) => _group == null || e.group == _group)
         .where((e) => _q.isEmpty || e.name.toLowerCase().contains(_q.toLowerCase()))
         .toList();
+    final favorites = [for (final e in exerciseCatalog) if ((uses[e.id] ?? 0) > 0) e]
+      ..sort((a, b) => uses[b.id]!.compareTo(uses[a.id]!));
+    Widget tile(CatalogExercise e, {String? subtitle}) => ListTile(
+          key: Key('library_${subtitle == null ? '' : 'fav_'}${e.id}'),
+          contentPadding: EdgeInsets.zero,
+          title: Text(e.name, style: t.bodyLarge),
+          subtitle: Text(subtitle ?? e.group.label),
+          trailing: widget.pickMode ? const Icon(Icons.add) : const Icon(Icons.chevron_right),
+          onTap: widget.pickMode
+              ? () => Navigator.of(context).pop(e)
+              : (widget.deps == null
+                  ? null
+                  : () => Navigator.of(context).push(MaterialPageRoute<void>(
+                        builder: (_) => ExerciseProgressScreen(deps: widget.deps!, exerciseId: e.id, name: e.name),
+                      ))),
+        );
     return Scaffold(
       appBar: AppBar(title: Text(widget.pickMode ? 'Escolher exercício' : 'Biblioteca de exercícios')),
       body: ListView(padding: const EdgeInsets.all(RltSpace.l), children: [
@@ -439,21 +471,13 @@ class _ExerciseLibraryScreenState extends State<ExerciseLibraryScreen> {
             FilterChip(label: Text(g.label), selected: _group == g, onSelected: (v) => setState(() => _group = v ? g : null)),
         ]),
         const SizedBox(height: RltSpace.s),
-        for (final e in list)
-          ListTile(
-            key: Key('library_${e.id}'),
-            contentPadding: EdgeInsets.zero,
-            title: Text(e.name, style: t.bodyLarge),
-            subtitle: Text(e.group.label),
-            trailing: widget.pickMode ? const Icon(Icons.add) : const Icon(Icons.chevron_right),
-            onTap: widget.pickMode
-                ? () => Navigator.of(context).pop(e)
-                : (widget.deps == null
-                    ? null
-                    : () => Navigator.of(context).push(MaterialPageRoute<void>(
-                          builder: (_) => ExerciseProgressScreen(deps: widget.deps!, exerciseId: e.id, name: e.name),
-                        ))),
-          ),
+        if (favorites.isNotEmpty && _q.isEmpty && _group == null) ...[
+          const RltSectionHeader('Mais usados'),
+          for (final e in favorites.take(8))
+            tile(e, subtitle: '${e.group.label} · ${uses[e.id]} ${uses[e.id] == 1 ? 'treino' : 'treinos'}'),
+          const RltSectionHeader('Todos'),
+        ],
+        for (final e in list) tile(e),
       ]),
     );
   }

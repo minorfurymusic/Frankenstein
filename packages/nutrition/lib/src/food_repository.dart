@@ -190,15 +190,20 @@ class FoodRepository {
     return _rowToFood(rows.first);
   }
 
-  /// Busca por nome (substring, sem diferenciar maiúsculas/minúsculas),
-  /// ordenada por nome. `docs/specs/nutricao.md`, fluxo "Registrar
-  /// refeição por busca".
+  /// Busca por nome (substring, sem diferenciar maiúsculas/minúsculas nem
+  /// acentos: "cafe" acha "Café"), ordenada por nome — começo do nome
+  /// primeiro. `docs/specs/nutricao.md`, fluxo "Registrar refeição por
+  /// busca". O `LIKE` do SQLite não ignora acento; a lista cabe na memória
+  /// (catálogo TACO + itens próprios).
   List<Food> searchByName(String query, {int limit = 20}) {
-    final rows = _db.select(
-      'SELECT * FROM foods WHERE name LIKE ? ORDER BY name ASC LIMIT ?',
-      ['%$query%', limit],
-    );
-    return rows.map(_rowToFood).toList();
+    final q = foldForSearch(query);
+    final hits = <(bool, String, Row)>[];
+    for (final r in _db.select('SELECT * FROM foods')) {
+      final name = foldForSearch(r['name'] as String);
+      if (name.contains(q)) hits.add((name.startsWith(q), name, r));
+    }
+    hits.sort((a, b) => a.$1 != b.$1 ? (a.$1 ? -1 : 1) : a.$2.compareTo(b.$2));
+    return [for (final h in hits.take(limit)) _rowToFood(h.$3)];
   }
 
   Food _rowToFood(Row r) {
@@ -218,4 +223,16 @@ class FoodRepository {
       sodiumPer100g: (r['sodium_100g'] as num?)?.toDouble(),
     );
   }
+}
+
+/// Minúsculas e sem acento, para comparar nomes de alimentos.
+String foldForSearch(String s) {
+  const from = 'áàâãäéèêëíìîïóòôõöúùûüç';
+  const to = 'aaaaaeeeeiiiiooooouuuuc';
+  final b = StringBuffer();
+  for (final ch in s.toLowerCase().trim().split('')) {
+    final i = from.indexOf(ch);
+    b.write(i < 0 ? ch : to[i]);
+  }
+  return b.toString();
 }

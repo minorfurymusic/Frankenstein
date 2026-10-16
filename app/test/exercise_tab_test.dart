@@ -76,6 +76,8 @@ void main() {
     await tester.tap(find.byKey(const Key('live_set_done')));
     await tester.pump();
     expect(find.byKey(const Key('live_rest')), findsOneWidget);
+    // A próxima série já vem com a carga que acabou de ser usada.
+    expect(tester.widget<TextField>(find.byKey(const Key('live_load'))).controller!.text, '40');
     await tester.pump(const Duration(seconds: 2)); // cronômetro anda
     await tester.tap(find.byKey(const Key('live_finish')));
     await tester.pumpAndSettle();
@@ -87,6 +89,17 @@ void main() {
     final set = deps.core.queryByType(HealthEventType.setLog).single;
     expect(set.payload['load_kg'], 40);
     expect(find.text('Treino salvo'), findsOneWidget);
+
+    // Já usado uma vez: aparece em "Mais usados" ao escolher exercício.
+    await tester.tap(find.text('Concluir'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('plan_new')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('plan_add_exercise')));
+    await tester.pumpAndSettle();
+    expect(find.text('Mais usados'), findsOneWidget);
+    expect(find.byKey(const Key('library_fav_supino-reto')), findsOneWidget);
+    expect(find.text('Peito · 1 treino'), findsOneWidget);
   });
 
   testWidgets('outra atividade grava e soma na meta de calorias do dia', (tester) async {

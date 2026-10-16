@@ -24,6 +24,10 @@ com os prints, num ciclo de correções. Prints em `docs/teste-aparelho/`.
 | 15 | 2026-10-16 | Data digitada | Só números não aceita | Barras automáticas | feito no código: campo "Digite a data" com dd/mm/aaaa automático em todas as datas |
 | 16 | 2026-10-16 | Primeiro uso › IA | Depois de colocar a chave, voltava com "Depois/Saber mais" | Seguir sozinho | feito no código: botão "Colocar minha chave"; com a chave salva, conclui o primeiro uso |
 
+| 17 | 2026-10-16 | Academia › escolher exercício | Sem favoritos | Mais usados primeiro (a partir de 1 treino) | feito no código: seção "Mais usados" |
+| 18 | 2026-10-16 | Treino ao vivo | Séries 2 e 3 vinham com 0 kg depois da 1ª com 34 kg; "0 kg" para peso do corpo | Herdar carga; mostrar "peso do corpo" | feito no código |
+| 19 | 2026-10-16 | Adição rápida | Usuário espera buscar alimento com cálculo automático | — | a busca existe (Adicionar alimento › buscar, TACO, sem IA); "cafe" não achava "Café" — busca passou a ignorar acento |
+
 ## Prints recebidos (explicação do usuário pendente)
 
 | Arquivo | Tela | Observação minha (a confirmar com o usuário) |
