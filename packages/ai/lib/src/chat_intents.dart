@@ -83,6 +83,10 @@ class ChatReading {
   final List<Map<String, dynamic>> vitalSigns;
   final List<Map<String, dynamic>> bodyMeasurements;
 
+  /// Avisos do app sobre o que a IA entendeu mas faltou dado para virar
+  /// cartão (ex.: remédio sem horário).
+  final List<String> incomplete;
+
   /// Itens do histórico médico ditos pela pessoa ("tenho hipertensão"), já
   /// no formato de `add_history_item`.
   final List<Map<String, dynamic>> history;
@@ -106,6 +110,7 @@ class ChatReading {
     this.bodyMeasurements = const [],
     this.questions = const [],
     this.history = const [],
+    this.incomplete = const [],
   });
 
   bool get isEmpty =>
@@ -212,7 +217,7 @@ const chatReadingSchema = <String, dynamic>{
           },
           'start_date': {'type': 'string', 'description': 'AAAA-MM-DD; só se a pessoa disse desde quando toma.'},
         },
-        'required': ['name', 'dose_amount', 'dose_unit', 'times'],
+        'required': ['name'],
       },
     },
     'suggestions': {
@@ -302,8 +307,8 @@ Regras:
 - Refeição: um item por alimento, com gramas estimadas pela quantidade dita (1 ovo ≈ 50 g) e kcal, protein_g, carbs_g e fat_g estimados para essas gramas. Bebida (suco, refrigerante, energético, leite, café, chá, cerveja): liquid = true e grams = mililitros (1 L = 1000). kcal e macros são o TOTAL do item nas gramas/ml dele (2 copos = a soma dos dois), nunca por unidade. O que se põe na bebida ou na comida (açúcar, adoçante, leite, mel, azeite) é um item próprio, e o item da bebida conta só a bebida: "café com 15 g de açúcar" = "Café" (sem açúcar, ≈ 2 kcal por 100 ml) + "Açúcar" 15 g. Nunca conte o mesmo ingrediente duas vezes. Água pura vai em water, não em meals. meal_type pelo que a pessoa disse ou pela hora.
 - Remédio: copie o nome e, SÓ se a pessoa disse, a dose e a unidade. Nunca complete, sugira ou corrija dose. "Esqueci/pulei" = skipped.
 - Treino de academia: um item por exercício, com o nome em português (ex.: "Supino reto", "Agachamento livre", "Leg press"), séries, repetições e carga em kg (0 se for peso do corpo). Corrida e caminhada não entram aqui.
-- Remédio novo ("comecei a tomar vitamina D"): só vai em new_medications se a pessoa disse nome, dose e horários. "Desde 01/02/2026" vai em start_date. Horário dito em relação a outro remédio ("30 min antes do enalapril pela manhã") vira o horário calculado, só nas doses que a pessoa disse.
-- Histórico: doença, alergia, cirurgia, vacina ou consulta que a pessoa diz ter ou ter tido ("tenho hipertensão", "sou alérgico a dipirona") vai em history_items, com o nome como ela disse. Nunca deduza doença a partir de remédio. Se faltar dose ou horário, pergunte em reply; em suggestions ofereça só horários comuns (ex.: "08:00", "12:00", "20:00") — nunca ofereça dose.
+- Remédio de uso (novo ou que a pessoa já toma: "comecei a tomar", "tomo", "faço uso", "uso todo dia") vai em new_medications, um item por remédio, com nome, dose e horários ditos. medication_doses é só para uma dose tomada ou pulada agora ("tomei a dipirona"). "Desde 01/02/2026" vai em start_date. Horário dito em relação a outro remédio ("30 min antes do enalapril pela manhã", com o enalapril às 07:00) vira o horário calculado ("06:30"), só nas doses que a pessoa disse. Se faltar dose ou horário, ponha o remédio mesmo assim com o que foi dito e pergunte o que falta em reply; em suggestions ofereça só horários comuns (ex.: "08:00", "12:00", "20:00") — nunca ofereça dose.
+- Histórico: doença, alergia, cirurgia, vacina ou consulta que a pessoa diz ter ou ter tido ("tenho hipertensão", "sou alérgico a dipirona") vai em history_items, com o nome como ela disse. Remédio citado junto continua indo em new_medications. Nunca deduza doença a partir de remédio (enalapril sozinho não vira hipertensão).
 - Sintoma: nome curto; intensidade de 0 a 10 só se a pessoa deu. Não interprete nem dê diagnóstico.
 - Sinais vitais: pressão "12 por 8" = 120/80 mmHg; temperatura em °C; glicemia em mg/dL; saturação em %; frequência em bpm.
 - Medidas: peso em kg, gordura em %, circunferências em cm.
@@ -313,6 +318,7 @@ Regras:
 - seek_care = true se a pessoa descreve algo que pede atenção profissional rápida (dor no peito, falta de ar, desmaio, sangramento forte, pensamentos de se machucar, febre muito alta, pressão ou glicemia muito altas ou baixas).
 - Mensagem de voz (áudio anexo): escreva em transcript o que a pessoa falou e entenda o áudio como a mensagem.
 - "Conversa até agora" (quando houver) é o que já foi dito e o que a pessoa confirmou ou descartou nesta conversa. Use para entender a mensagem nova (ex.: "pode salvar a dipirona" = registrar de novo o remédio descartado). Não repita registros já confirmados.
+- Mensagem longa com várias coisas (doença, remédios, refeição, água): registre TODAS, nenhuma fica de fora.
 - reply: uma frase curta em português. Se faltar algo essencial para registrar, pergunte. Não repita os valores dos itens.
 ''';
 
@@ -368,13 +374,20 @@ ChatReading parseChatReading(Map<String, dynamic> json) {
 
   final ymd = RegExp(r'^\d{4}-\d{2}-\d{2}$');
   final newMeds = <ChatNewMedication>[];
+  final incomplete = <String>[];
   final hhmm = RegExp(r'^([01]\d|2[0-3]):[0-5]\d$');
   for (final m in list('new_medications')) {
     final name = _text(m['name']);
     final amount = _pos(m['dose_amount']);
     final unit = _text(m['dose_unit']);
     final times = [for (final t in (m['times'] as List? ?? const [])) if (t is String && hhmm.hasMatch(t.trim())) t.trim()];
-    if (name == null || amount == null || unit == null || times.isEmpty) continue;
+    if (name == null) continue;
+    if (amount == null || unit == null || times.isEmpty) {
+      // Sem dose ou horário não vira cartão, mas não some calado.
+      final missing = [if (amount == null || unit == null) 'a dose', if (times.isEmpty) 'os horários'].join(' e ');
+      incomplete.add('Para cadastrar $name, me diga $missing (ex.: "$name 20 mg às 07:00").');
+      continue;
+    }
     final start = _text(m['start_date']);
     newMeds.add(ChatNewMedication(
         name: name, doseAmount: amount, doseUnit: unit, times: times, startDate: start != null && ymd.hasMatch(start) ? start : null));
@@ -431,6 +444,7 @@ ChatReading parseChatReading(Map<String, dynamic> json) {
     doses: doses,
     workouts: workouts,
     newMedications: newMeds,
+    incomplete: incomplete,
     suggestions: [
       for (final x in (json['suggestions'] as List? ?? const []))
         if (_text(x) != null && _text(x)!.length <= 30) _text(x)!,

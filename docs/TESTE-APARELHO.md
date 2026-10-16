@@ -42,6 +42,7 @@ com os prints, num ciclo de correções. Prints em `docs/teste-aparelho/`.
 | 30 | 2026-10-16 | Cérebro › anexo enviado | Não dava para reenviar | Reenviar | feito no código: tocar no anexo › "Mandar de novo" |
 | 31 | 2026-10-16 | Cérebro › remédio novo | Botão de editar apagado; pantoprazol com 2 horários; "desde 01/02" ignorado; "tenho hipertensão" sem cartão | Editar; data de início; histórico | feito no código: cartão do remédio editável (nome, dose, unidade, horários, desde); a IA lê "desde" e condição/alergia/cirurgia viram cartão do histórico |
 | 32 | 2026-10-16 | Cérebro › copiar a minha mensagem | Não conseguia | Copiar e mandar de novo | o menu já existia ao segurar; agora abre também com um toque na mensagem — conferir no aparelho |
+| 33 | 2026-10-16 | Cérebro › mensagem longa | Condição + 2 remédios + refeição: condição e refeição vieram, remédios não; "e os remédios?" funcionou | Tudo de uma vez | causa provável (a resposta da IA não foi vista): na correção anterior, a regra do histórico foi colada no meio da regra dos remédios, e a regra só falava em remédio "novo". Corrigido: remédio que a pessoa já toma também vai como cadastro; "registre TODAS"; remédio sem dose/horário não some — o app pede o que falta |
 
 ## Prints recebidos (explicação do usuário pendente)
 

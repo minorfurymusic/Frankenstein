@@ -147,6 +147,7 @@ ToolCallPlan planFromReading(ChatReading r, {required List<Medication> medicatio
   if (r.transcript != null) messages.add('Transcrição: “${r.transcript}”');
   if (r.seekCare) messages.add(seekCareMessage);
   if (r.reply != null) messages.add(r.reply!);
+  messages.addAll(r.incomplete);
 
   for (final w in r.water) {
     calls.add(ToolCallDecision('log_water', Map.of(w)));

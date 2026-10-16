@@ -190,6 +190,40 @@ void main() {
     expect(deps.medicalHistory.list().single.title, 'Hipertensão');
   });
 
+  testWidgets('mensagem longa: condição, 2 remédios e refeição viram cartões; remédio sem horário avisa em vez de sumir', (tester) async {
+    transport.replies.add({
+      'reply': 'Anotei.',
+      'history_items': [
+        {'kind': 'condition', 'title': 'Hipertensão', 'date': '2026-02-01'},
+      ],
+      'new_medications': [
+        {'name': 'Enalapril', 'dose_amount': 20, 'dose_unit': 'mg', 'times': ['07:00', '18:00'], 'start_date': '2026-02-01'},
+        {'name': 'Pantoprazol', 'dose_amount': 20, 'dose_unit': 'mg', 'times': ['06:30']},
+        {'name': 'Losartana'},
+      ],
+      'meals': [
+        {
+          'meal_type': 'lunch',
+          'items': [
+            {'name': 'Frango grelhado', 'grams': 400, 'kcal': 660, 'protein_g': 100, 'carbs_g': 0, 'fat_g': 28},
+          ],
+        },
+      ],
+    });
+    await pump(tester);
+    await send(tester, 'sou hipertenso desde 01/02/2026, tomo enalapril 20 mg às 7 e 18h e pantoprazol 20 mg meia hora antes pela manhã; almocei 400 g de frango');
+    expect(find.textContaining('Para cadastrar Losartana, me diga a dose e os horários'), findsOneWidget);
+    // Os cartões vêm um de cada vez; confirmar todos grava tudo.
+    for (var i = 0; i < 4; i++) {
+      await tester.tap(find.byKey(const Key('confirmation_confirm')).first);
+      await tester.pumpAndSettle();
+    }
+    expect([for (final m in deps.medicationRepository.listAll()) m.name]..sort(), ['Enalapril', 'Pantoprazol']);
+    expect(deps.medicalHistory.list().single.title, 'Hipertensão');
+    expect(deps.core.queryByType(HealthEventType.meal), hasLength(1));
+    expect(transport.bodies.single, contains('registre TODAS'));
+  });
+
   testWidgets('tocar na própria mensagem abre Copiar e Editar e mandar de novo', (tester) async {
     transport.replies.add({'reply': 'Ok.'});
     await pump(tester);
