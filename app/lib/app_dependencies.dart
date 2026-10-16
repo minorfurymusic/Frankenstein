@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:frankstein_activity/activity.dart';
@@ -355,7 +356,20 @@ class AppDependencies {
     // `StepsRepository.recordSample` rejeitar leitura de "outro
     // aparelho" (packages/activity/lib/src/steps_repository.dart:50-53),
     // não é usado pra nada além disso ainda.
-    final stepsRepository = StepsRepository(core: core, deviceId: 'android-device');
+    final stepsRepository = StepsRepository(
+      core: core,
+      deviceId: 'android-device',
+      loadCheckpoint: () {
+        final raw = profileRepository.getSetting('steps_checkpoint');
+        if (raw == null) return null;
+        try {
+          return StepsCheckpoint.fromJson(jsonDecode(raw) as Map<String, dynamic>);
+        } catch (_) {
+          return null;
+        }
+      },
+      saveCheckpoint: (c) => profileRepository.setSetting('steps_checkpoint', jsonEncode(c.toJson())),
+    );
     final stepTracking = StepTrackingController(
       repository: stepsRepository,
       tzOffsetMinutesProvider: tzOffsetMinutesProvider,

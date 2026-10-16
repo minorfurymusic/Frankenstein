@@ -194,5 +194,6 @@ void showRltError(BuildContext context, Object error) {
 }
 
 void showRltSaved(BuildContext context, String message) {
-  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+  // Curto: o aviso flutua por cima da lista; não deve cobrir o cartão salvo.
+  ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message), duration: const Duration(milliseconds: 2500)));
 }

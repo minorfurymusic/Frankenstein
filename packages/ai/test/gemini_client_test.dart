@@ -107,7 +107,7 @@ void main() {
       AiFailure.badKey,
     );
     expect(await failureFor(const AiHttpResponse(429, '{"error":{"status":"RESOURCE_EXHAUSTED"}}')), AiFailure.quota);
-    expect(await failureFor(const AiHttpResponse(500, 'oops')), AiFailure.provider);
+    expect(await failureFor(const AiHttpResponse(400, '{"error":{"code":400,"message":"Invalid JSON payload","status":"INVALID_ARGUMENT"}}')), AiFailure.provider);
     expect(await failureFor(const AiHttpResponse(200, '{"promptFeedback":{"blockReason":"SAFETY"}}')), AiFailure.blocked);
 
     final t = FakeTransport([])..throwOnCall = const SocketException('sem rede');
@@ -115,6 +115,22 @@ void main() {
       GeminiClient(apiKey: 'k', transport: t).ping(),
       throwsA(isA<AiException>().having((e) => e.failure, 'failure', AiFailure.network)),
     );
+  });
+
+  test('servidor ocupado (503): repete sozinho e, se continuar, avisa com o código', () async {
+    final busy = const AiHttpResponse(503, '{"error":{"code":503,"message":"The model is overloaded.","status":"UNAVAILABLE"}}');
+    final t = FakeTransport([busy, busy, ok({'markers': []})]);
+    final c = GeminiClient(apiKey: 'k', transport: t, busyRetryDelays: const [Duration.zero, Duration.zero]);
+    final r = await readExam(c, const [AiPart.text('x')]);
+    expect(t.calls, hasLength(3));
+    expect(r.markers, isEmpty);
+
+    final t2 = FakeTransport([busy, busy, busy]);
+    await expectLater(
+      GeminiClient(apiKey: 'k', transport: t2, busyRetryDelays: const [Duration.zero, Duration.zero]).ping(),
+      throwsA(isA<AiException>().having((e) => e.failure, 'failure', AiFailure.busy).having((e) => e.httpStatus, 'http', 503)),
+    );
+    expect(t2.calls, hasLength(3));
   });
 
   test('arquivo grande demais não sai do aparelho', () async {

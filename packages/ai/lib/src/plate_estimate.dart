@@ -9,6 +9,9 @@ class PlateItem {
   final double carbsGrams;
   final double fatGrams;
   final double? fiberGrams;
+
+  /// Bebida: a quantidade em [grams] é em ml (1 ml ≈ 1 g para as contas).
+  final bool liquid;
   const PlateItem({
     required this.name,
     required this.grams,
@@ -17,6 +20,7 @@ class PlateItem {
     this.carbsGrams = 0,
     this.fatGrams = 0,
     this.fiberGrams,
+    this.liquid = false,
   });
 
   /// Mesma comida, outra porção: valores proporcionais.
@@ -30,6 +34,7 @@ class PlateItem {
       carbsGrams: carbsGrams * f,
       fatGrams: fatGrams * f,
       fiberGrams: fiberGrams == null ? null : fiberGrams! * f,
+      liquid: liquid,
     );
   }
 }

@@ -119,6 +119,16 @@ String aiFailureMessage(Object error) {
     AiFailure.blocked => 'A IA não quis ler este conteúdo. Tente outra foto ou preencha à mão.',
     AiFailure.tooLarge => 'Arquivo grande demais para a IA (máx. 15 MB). Tente uma foto ou um PDF menor.',
     AiFailure.invalidOutput => 'A IA respondeu fora do formato. Tente de novo ou preencha à mão.',
-    AiFailure.provider => 'O provedor de IA deu erro. Tente de novo em instantes.',
+    AiFailure.busy => 'O servidor da IA está ocupado agora (erro ${error.httpStatus} do provedor). '
+        'Já tentei de novo sozinho; espere um pouco e mande outra vez.',
+    AiFailure.provider => 'O provedor de IA recusou o pedido (erro ${error.httpStatus ?? '?'}'
+        '${error.detail == null ? '' : ': ${_short(error.detail!)}'}).',
   };
+}
+
+/// Mensagem do provedor (em inglês) cortada para caber no balão — ajuda a
+/// descobrir a causa num print, sem dado da pessoa (só o texto do erro).
+String _short(String s) {
+  final one = s.replaceAll(RegExp(r'\s+'), ' ').trim();
+  return one.length <= 140 ? one : '${one.substring(0, 140)}…';
 }

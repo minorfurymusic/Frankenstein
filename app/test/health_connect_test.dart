@@ -105,6 +105,18 @@ void main() {
       expect(o.result!.sleepSynced, 0);
     });
 
+    test('tela de permissões que não abre: avisa em vez de ficar esperando; permitido por fora liga direto', () async {
+      hc.hangOnRequest = true;
+      final o = await deps.wearables.connect(permissionTimeout: const Duration(milliseconds: 10));
+      expect(o.state, WearableSyncState.noResponse);
+      expect(deps.wearables.enabled, isFalse);
+      // A pessoa permitiu no próprio Health Connect e voltou.
+      hc.granted = const {HealthConnectData.sleep};
+      final again = await deps.wearables.connect(permissionTimeout: const Duration(milliseconds: 10));
+      expect(again.state, WearableSyncState.ok);
+      expect(hc.requests, 1, reason: 'não pede de novo o que já foi permitido');
+    });
+
     test('Health Connect sem resposta vira erro, não exceção', () async {
       await deps.wearables.connect();
       hc.failReads = true;

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:flutter/services.dart';
 import 'package:path_provider/path_provider.dart';
 
@@ -95,6 +96,11 @@ class _FrankstitAppState extends State<FrankstitApp> {
       builder: (context, mode, _) => MaterialApp(
         navigatorKey: widget.navigatorKey,
         title: 'RLT',
+        // Componentes do sistema (calendário, "Cancelar", formato da data
+        // digitada dd/mm/aaaa) em português do Brasil.
+        locale: const Locale('pt', 'BR'),
+        supportedLocales: const [Locale('pt', 'BR')],
+        localizationsDelegates: GlobalMaterialLocalizations.delegates,
         theme: RltTheme.light(),
         darkTheme: RltTheme.dark(),
         themeMode: mode,

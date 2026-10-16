@@ -202,4 +202,51 @@ void main() {
       expect(spec.module, 'activity');
     });
   });
+
+  group('StepsRepository — passos com o app fechado (checkpoint)', () {
+    late HealthDataCore core;
+    setUp(() => core = HealthDataCore.openInMemory());
+    tearDown(() => core.close());
+
+    test('reabrir o app conta o que foi andado enquanto ele estava fechado', () {
+      StepsCheckpoint? saved;
+      StepsRepository open() => StepsRepository(
+            core: core,
+            deviceId: 'device-1',
+            loadCheckpoint: () => saved,
+            saveCheckpoint: (c) => saved = c,
+          );
+      final first = open();
+      first.recordSample(_sample(1000, DateTime.utc(2026, 10, 16, 12, 0)));
+      first.recordSample(_sample(1100, DateTime.utc(2026, 10, 16, 12, 5)));
+      first.flush(at: DateTime.utc(2026, 10, 16, 12, 5), tzOffsetMinutes: -180);
+      // App fechado; a pessoa anda 2.000 passos; abre de novo.
+      final again = open();
+      again.recordSample(_sample(3100, DateTime.utc(2026, 10, 16, 14, 0)));
+      again.flush(at: DateTime.utc(2026, 10, 16, 14, 0), tzOffsetMinutes: -180);
+      final counts = core.queryByType(HealthEventType.steps).map((e) => e.payload['count']).toList();
+      expect(counts, unorderedEquals([100, 2000]));
+    });
+
+    test('aparelho reiniciado (contador menor que o guardado) recomeça do zero', () {
+      StepsCheckpoint? saved = StepsCheckpoint(5000, DateTime.utc(2026, 10, 16, 8, 0));
+      final repo = StepsRepository(core: core, deviceId: 'device-1', loadCheckpoint: () => saved, saveCheckpoint: (c) => saved = c);
+      repo.recordSample(_sample(40, DateTime.utc(2026, 10, 16, 9, 0)));
+      expect(repo.pendingDelta, 0);
+      expect(saved!.cumulative, 40);
+    });
+
+    test('janela que passou da meia-noite local vai para o dia em que o app foi aberto', () {
+      final repo = StepsRepository(
+        core: core,
+        deviceId: 'device-1',
+        loadCheckpoint: () => StepsCheckpoint(1000, DateTime.utc(2026, 10, 16, 1, 0)), // 22:00 do dia 15 em -03:00
+      );
+      repo.recordSample(_sample(1800, DateTime.utc(2026, 10, 16, 12, 0)));
+      repo.flush(at: DateTime.utc(2026, 10, 16, 12, 0), tzOffsetMinutes: -180);
+      final e = core.queryByType(HealthEventType.steps).single;
+      expect(e.payload['count'], 800);
+      expect(e.occurredAt, DateTime.utc(2026, 10, 16, 3, 0)); // 00:00 do dia 16 em -03:00
+    });
+  });
 }

@@ -76,8 +76,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
 
   double? _num(TextEditingController c) => parseNumber(c.text);
 
+  /// Altura em cm. Quem digita em metros ("1,83") também é entendido —
+  /// ninguém mede menos de 3 cm.
+  double? get _heightCm {
+    final h = _num(_height);
+    if (h == null) return null;
+    return h > 0 && h < 3 ? h * 100 : h;
+  }
+
   void _save() {
-    final height = _num(_height);
+    final height = _heightCm;
     final weight = _num(_weight);
     final fat = _fat.text.trim().isEmpty ? null : _num(_fat);
     final target = _targetKg;
@@ -134,7 +142,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
     final t = Theme.of(context).textTheme;
     final target = _targetKg!;
     final weight = _num(_weight);
-    final height = _num(_height);
+    final height = _heightCm;
     final auto = _autoObjective;
     final label = switch (auto) {
       Objective.lose => 'Perder — você está ${formatNumber(weight! - target, decimals: 1)} kg acima do peso desejado.',
@@ -143,7 +151,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
       null => 'Preencha o peso atual para o app saber o objetivo.',
     };
     final rate = _num(_rate) ?? 0;
-    final bmi = height == null || height <= 0 ? null : target / ((height / 100) * (height / 100));
+    final bmi = height == null || height < 50 || height > 250 ? null : target / ((height / 100) * (height / 100));
     String? forecast;
     if (weight != null && auto != Objective.maintain && auto != null) {
       if (rate > 0) {

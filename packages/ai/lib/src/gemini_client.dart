@@ -78,6 +78,10 @@ enum AiFailure {
   /// A resposta não bateu no formato esperado, mesmo depois de repetir.
   invalidOutput,
 
+  /// Servidor do provedor ocupado ou com falha passageira (HTTP 500/502/
+  /// 503/504), mesmo depois de repetir sozinho.
+  busy,
+
   /// Outro erro do provedor.
   provider,
 }
@@ -85,10 +89,13 @@ enum AiFailure {
 class AiException implements Exception {
   final AiFailure failure;
   final String? detail;
-  const AiException(this.failure, [this.detail]);
+
+  /// Código HTTP devolvido pelo provedor, quando houve resposta.
+  final int? httpStatus;
+  const AiException(this.failure, [this.detail, this.httpStatus]);
 
   @override
-  String toString() => 'AiException($failure${detail == null ? '' : ': $detail'})';
+  String toString() => 'AiException($failure${httpStatus == null ? '' : ' HTTP $httpStatus'}${detail == null ? '' : ': $detail'})';
 }
 
 /// Cliente REST do Gemini (Gemini Developer API), sem SDK do provedor
@@ -110,8 +117,18 @@ class GeminiClient {
   final String model;
   final AiTransport transport;
 
-  GeminiClient({required this.apiKey, this.model = defaultModel, AiTransport? transport})
-      : transport = transport ?? HttpAiTransport();
+  /// Espera antes de repetir quando o servidor está ocupado (500/502/503/
+  /// 504): uma entrada por nova tentativa.
+  final List<Duration> busyRetryDelays;
+
+  GeminiClient({
+    required this.apiKey,
+    this.model = defaultModel,
+    AiTransport? transport,
+    this.busyRetryDelays = const [Duration(seconds: 2), Duration(seconds: 5)],
+  }) : transport = transport ?? HttpAiTransport();
+
+  static bool _isBusy(int status) => status == 500 || status == 502 || status == 503 || status == 504;
 
   Uri get _url => Uri.parse('$baseUrl/$model:generateContent');
 
@@ -176,15 +193,21 @@ class GeminiClient {
   }
 
   Future<String> _call(String body) async {
-    final AiHttpResponse res;
-    try {
-      res = await transport.post(_url, {'content-type': 'application/json', 'x-goog-api-key': apiKey}, body);
-    } on SocketException catch (e) {
-      throw AiException(AiFailure.network, e.message);
-    } on TimeoutException {
-      throw const AiException(AiFailure.network, 'tempo esgotado');
-    } on HttpException catch (e) {
-      throw AiException(AiFailure.network, e.message);
+    AiHttpResponse res;
+    var retry = 0;
+    while (true) {
+      try {
+        res = await transport.post(_url, {'content-type': 'application/json', 'x-goog-api-key': apiKey}, body);
+      } on SocketException catch (e) {
+        throw AiException(AiFailure.network, e.message);
+      } on TimeoutException {
+        throw const AiException(AiFailure.network, 'tempo esgotado');
+      } on HttpException catch (e) {
+        throw AiException(AiFailure.network, e.message);
+      }
+      // Servidor ocupado é passageiro: repete sozinho antes de avisar.
+      if (!_isBusy(res.status) || retry >= busyRetryDelays.length) break;
+      await Future<void>.delayed(busyRetryDelays[retry++]);
     }
     if (res.status != 200) throw _errorFor(res);
     final Map<String, dynamic> json;
@@ -216,11 +239,13 @@ class GeminiClient {
       status = e['status'] as String?;
     } catch (_) {}
     final m = (message ?? '').toLowerCase();
-    if (res.status == 429 || status == 'RESOURCE_EXHAUSTED') return AiException(AiFailure.quota, message);
-    if (res.status == 401 || res.status == 403 || m.contains('api key') || status == 'PERMISSION_DENIED' || status == 'UNAUTHENTICATED') {
-      return AiException(AiFailure.badKey, message);
+    final code = res.status;
+    if (code == 429 || status == 'RESOURCE_EXHAUSTED') return AiException(AiFailure.quota, message, code);
+    if (code == 401 || code == 403 || m.contains('api key') || status == 'PERMISSION_DENIED' || status == 'UNAUTHENTICATED') {
+      return AiException(AiFailure.badKey, message, code);
     }
-    if (res.status == 413) return AiException(AiFailure.tooLarge, message);
-    return AiException(AiFailure.provider, message ?? 'HTTP ${res.status}');
+    if (code == 413) return AiException(AiFailure.tooLarge, message, code);
+    if (_isBusy(code)) return AiException(AiFailure.busy, message, code);
+    return AiException(AiFailure.provider, message ?? 'HTTP $code', code);
   }
 }

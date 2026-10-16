@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:frankstein/app_dependencies.dart';
 import 'package:frankstein/card_image_capturer.dart';
@@ -64,6 +65,32 @@ void main() {
     await tester.tap(find.byKey(const Key('confirmation_confirm')));
     await tester.pumpAndSettle();
     expect(deps.core.queryByType(HealthEventType.meal).single.payload['meal_type'], 'lunch');
+  });
+
+  testWidgets('segurar a mensagem: copiar o texto ou trazer de volta ao campo para mudar e mandar', (tester) async {
+    String? copied;
+    tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, (call) async {
+      if (call.method == 'Clipboard.setData') copied = (call.arguments as Map)['text'] as String;
+      return null;
+    });
+    addTearDown(() => tester.binding.defaultBinaryMessenger.setMockMethodCallHandler(SystemChannels.platform, null));
+    await openBrain(tester);
+    await tester.enterText(find.byKey(const Key('chat_input')), 'resumo de hoje');
+    await tester.tap(find.byKey(const Key('chat_send')));
+    await tester.pumpAndSettle();
+
+    await tester.longPress(find.text('resumo de hoje'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('brain_msg_copy')));
+    await tester.pumpAndSettle();
+    expect(copied, 'resumo de hoje');
+    expect(find.text('Mensagem copiada.'), findsOneWidget);
+
+    await tester.longPress(find.text('resumo de hoje'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('brain_msg_edit')));
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(find.byKey(const Key('chat_input'))).controller!.text, 'resumo de hoje');
   });
 
   testWidgets('nova conversa limpa as mensagens e descarta cartão pendente sem gravar', (tester) async {

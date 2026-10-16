@@ -164,7 +164,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(deps.core.queryByType(HealthEventType.weight).single.payload['kg'], 68.4);
 
-    await tester.pageBack();
+    await tester.tap(find.byTooltip('Voltar')); // app em pt-BR: pageBack() procura "Back"
     await tester.pumpAndSettle();
     expect(find.textContaining('68,4', findRichText: true), findsOneWidget);
   });

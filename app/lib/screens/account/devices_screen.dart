@@ -30,6 +30,8 @@ String syncOutcomeMessage(WearableSyncOutcome o) => switch (o.state) {
       WearableSyncState.unavailable => 'Health Connect não encontrado neste celular.',
       WearableSyncState.noPermission => 'O RLT não tem permissão para ler no Health Connect.',
       WearableSyncState.error => 'O Health Connect não respondeu. Tente de novo em instantes.',
+      WearableSyncState.noResponse => 'A tela do Health Connect não abriu. Toque em “Abrir o Health Connect”, '
+          'permita Sono e Batimentos para o RLT e volte aqui.',
     };
 
 /// Conta › Dispositivos (prancheta ContaDispositivos): conectar a pulseira
@@ -43,7 +45,10 @@ class DevicesScreen extends StatefulWidget {
   State<DevicesScreen> createState() => _DevicesScreenState();
 }
 
-class _DevicesScreenState extends State<DevicesScreen> {
+class _DevicesScreenState extends State<DevicesScreen> with WidgetsBindingObserver {
+  /// A pessoa tentou conectar; ao voltar do Health Connect, confere de novo.
+  bool _tried = false;
+
   HealthConnectStatus? _status;
   Set<HealthConnectData> _granted = const {};
   bool _busy = false;
@@ -53,7 +58,23 @@ class _DevicesScreenState extends State<DevicesScreen> {
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _refresh();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state != AppLifecycleState.resumed) return;
+    _refresh().then((_) {
+      // Permitiu pela tela do próprio Health Connect: liga sem pedir de novo.
+      if (mounted && _tried && !_busy && !_sync.enabled && _granted.isNotEmpty) _run(_sync.connect);
+    });
   }
 
   Future<void> _refresh() async {
@@ -140,7 +161,18 @@ class _DevicesScreenState extends State<DevicesScreen> {
           tone: StateTone.permission,
           actionLabel: 'Conectar pelo Health Connect',
           actionIcon: Icons.link,
-          onAction: _busy ? null : () => _run(_sync.connect),
+          onAction: _busy
+              ? null
+              : () {
+                  _tried = true;
+                  _run(_sync.connect);
+                },
+          secondaryLabel: 'Abrir o Health Connect',
+          secondaryIcon: Icons.open_in_new,
+          onSecondary: () {
+            _tried = true;
+            _sync.bridge.openSettings();
+          },
         ),
       ];
     }

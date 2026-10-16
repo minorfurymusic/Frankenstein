@@ -6,6 +6,8 @@ import android.content.Context
 import android.content.Intent
 import android.content.ServiceConnection
 import android.content.pm.PackageManager
+import android.hardware.Sensor
+import android.hardware.SensorManager
 import android.os.Build
 import android.os.IBinder
 import androidx.core.app.ActivityCompat
@@ -64,7 +66,12 @@ class MainActivity : FlutterActivity() {
         MethodChannel(flutterEngine.dartExecutor.binaryMessenger, methodChannelName)
             .setMethodCallHandler { call, result ->
                 when (call.method) {
-                    "hasSensor" -> result.success(stepService?.hasSensor() ?: false)
+                    // Pergunta direto ao Android: o service pode ainda não ter ligado
+                    // (bind assíncrono) e responderia "sem sensor" por engano.
+                    "hasSensor" -> result.success(
+                        (getSystemService(Context.SENSOR_SERVICE) as SensorManager)
+                            .getDefaultSensor(Sensor.TYPE_STEP_COUNTER) != null,
+                    )
                     "hasActivityRecognitionPermission" -> result.success(hasActivityRecognitionPermission())
                     "requestActivityRecognitionPermission" -> requestActivityRecognitionPermission(result)
                     "startService" -> {
@@ -156,7 +163,8 @@ class MainActivity : FlutterActivity() {
 
     private fun attachListenerIfNeeded() {
         val sink = eventSink ?: return
-        stepService?.setListener(StepCounterService.StepUpdateListener { reading ->
+        val service = stepService ?: return
+        val send = StepCounterService.StepUpdateListener { reading ->
             runOnUiThread {
                 sink.success(
                     mapOf(
@@ -165,7 +173,11 @@ class MainActivity : FlutterActivity() {
                     ),
                 )
             }
-        })
+        }
+        service.setListener(send)
+        // O bind chega depois do Dart começar a ouvir: entrega já a última
+        // leitura, sem esperar o próximo passo.
+        service.getCurrentReading()?.let { send.onStepUpdate(it) }
     }
 
     private fun hasActivityRecognitionPermission(): Boolean {

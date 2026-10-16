@@ -105,4 +105,19 @@ void main() {
     expect(r.workouts.map((w) => (w.exercise, w.sets, w.reps, w.loadKg)), [('Supino reto', 3, 10, 30.0), ('Flexão', 3, 15, 0.0)]);
     expect(r.isEmpty, isFalse);
   });
+
+  test('bebida vem marcada como líquida (ml), não gramas', () {
+    final r = parseChatReading({
+      'meals': [
+        {
+          'meal_type': 'snack',
+          'items': [
+            {'name': 'Energético sem açúcar', 'grams': 1000, 'liquid': true, 'kcal': 15},
+            {'name': 'Pão', 'grams': 50, 'kcal': 130},
+          ],
+        },
+      ],
+    });
+    expect(r.meals.single.items.map((i) => (i.name, i.liquid)), [('Energético sem açúcar', true), ('Pão', false)]);
+  });
 }

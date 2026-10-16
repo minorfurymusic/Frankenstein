@@ -77,7 +77,7 @@ ProposalView describeProposal(AppDependencies deps, String tool, Map<String, dyn
       final label = _mealLabelOf(p['meal_type']);
       return ProposalView(
         HealthArea.meal,
-        '$label — ${items.map((i) => '${i['name']} ${n(i['grams'])} g').join(', ')}',
+        '$label — ${items.map((i) => '${i['name']} ${n(i['grams'])} ${i['unit'] == 'ml' ? 'ml' : 'g'}').join(', ')}',
         '≈ ${n(kcal)} kcal (estimativa)',
         'Nutrição › $label',
         when: when,

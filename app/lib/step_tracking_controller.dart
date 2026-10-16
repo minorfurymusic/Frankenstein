@@ -99,6 +99,13 @@ class StepTrackingController with WidgetsBindingObserver {
     }
 
     _subscription ??= repository.attachSensor(sensor);
+    // O sensor só manda evento quando o contador muda; a leitura atual
+    // fecha já a conta do que foi andado com o app fechado.
+    final current = await sensor.getCurrentReading();
+    if (current != null) {
+      repository.recordSample(current);
+      _flush();
+    }
     _flushTimer ??= Timer.periodic(flushInterval, (_) => _flush());
     WidgetsBinding.instance.addObserver(this);
     status.value = StepTrackingStatus.active;

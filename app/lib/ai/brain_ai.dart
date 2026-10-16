@@ -30,6 +30,11 @@ final Map<String, dynamic> logEstimatedMealSchema = {
         'properties': {
           'name': {'type': 'string', 'minLength': 1},
           'grams': {'type': 'number', 'exclusiveMinimum': 0},
+          // Bebida: a quantidade em `grams` é em ml.
+          'unit': {
+            'type': 'string',
+            'enum': ['g', 'ml'],
+          },
           'kcal': {'type': 'number', 'minimum': 0},
           'protein_g': {'type': 'number', 'minimum': 0},
           'carbs_g': {'type': 'number', 'minimum': 0},
@@ -71,7 +76,7 @@ ToolHandler logEstimatedMealHandler(
           fat: n('fat_g'),
           idPrefix: 'chat',
         );
-        items.add(MealItemInput(foodId: food.id, grams: grams));
+        items.add(MealItemInput(foodId: food.id, grams: grams, unit: raw['unit'] == 'ml' ? 'ml' : 'g'));
       }
       final at = params['at'] as String?;
       final event = logger.logMeal(
@@ -155,6 +160,7 @@ ToolCallPlan planFromReading(ChatReading r, {required List<Medication> medicatio
           {
             'name': i.name,
             'grams': i.grams,
+            if (i.liquid) 'unit': 'ml',
             'kcal': i.kcal,
             'protein_g': i.proteinGrams,
             'carbs_g': i.carbsGrams,

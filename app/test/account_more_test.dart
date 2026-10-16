@@ -131,7 +131,7 @@ void main() {
       await tester.tap(find.byKey(Key('account_$section')));
       await tester.pumpAndSettle();
       expect(find.textContaining(expectText), findsWidgets, reason: section);
-      await tester.pageBack();
+      await tester.tap(find.byTooltip('Voltar')); // app em pt-BR: pageBack() procura "Back"
       await tester.pumpAndSettle();
     }
 

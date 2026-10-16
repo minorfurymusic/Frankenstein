@@ -198,6 +198,7 @@ class _BrainScreenState extends State<BrainScreen> {
   /// A conversa atual, guardada no celular a cada mudança.
   BrainConversation _conv = BrainConversation.start();
   final _scroll = ScrollController();
+  final _composer = TextEditingController();
   /// Esperando a IA responder. Cartões pendentes não travam o campo: a
   /// pessoa pode mandar outra mensagem e decidir os cartões depois.
   bool _thinking = false;
@@ -260,8 +261,44 @@ class _BrainScreenState extends State<BrainScreen> {
     _gate?.presenter = _present;
   }
 
+  /// Segurar uma mensagem: copiar o texto; nas suas, também trazer de volta
+  /// para o campo, mudar e mandar de novo.
+  Future<void> _messageMenu(String text, {required bool mine}) async {
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      builder: (ctx) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          ListTile(
+            key: const Key('brain_msg_copy'),
+            leading: const Icon(Icons.copy_outlined),
+            title: const Text('Copiar'),
+            onTap: () => Navigator.pop(ctx, 'copy'),
+          ),
+          if (mine)
+            ListTile(
+              key: const Key('brain_msg_edit'),
+              leading: const Icon(Icons.edit_outlined),
+              title: const Text('Editar e mandar de novo'),
+              onTap: () => Navigator.pop(ctx, 'edit'),
+            ),
+        ]),
+      ),
+    );
+    if (!mounted || choice == null) return;
+    if (choice == 'copy') {
+      await Clipboard.setData(ClipboardData(text: text));
+      if (!mounted) return;
+      ScaffoldMessenger.of(context)
+        ..hideCurrentSnackBar()
+        ..showSnackBar(const SnackBar(content: Text('Mensagem copiada.')));
+    } else {
+      _composer.value = TextEditingValue(text: text, selection: TextSelection.collapsed(offset: text.length));
+    }
+  }
+
   @override
   void dispose() {
+    _composer.dispose();
     if (_gate?.presenter == _present) _gate?.presenter = null;
     for (final m in _messages) {
       if (m is _ProposalMsg) {
@@ -804,7 +841,7 @@ class _BrainScreenState extends State<BrainScreen> {
             controller: m.gramFields![i],
             keyboardType: const TextInputType.numberWithOptions(decimal: true),
             inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
-            decoration: InputDecoration(labelText: '${items[i]['name']}', suffixText: 'g', isDense: true),
+            decoration: InputDecoration(labelText: '${items[i]['name']}', suffixText: items[i]['unit'] == 'ml' ? 'ml' : 'g', isDense: true),
           ),
         ),
     ]);
@@ -822,7 +859,7 @@ class _BrainScreenState extends State<BrainScreen> {
     return Column(children: [
       Container(
         width: double.infinity,
-        padding: const EdgeInsets.symmetric(horizontal: RltSpace.l, vertical: RltSpace.s),
+        padding: const EdgeInsets.only(left: RltSpace.l, right: RltSpace.xs),
         color: c.surfaceContainer,
         child: Row(children: [
           Icon(aiOn ? Icons.auto_awesome_outlined : Icons.offline_bolt_outlined, size: 18, color: c.onSurfaceVariant),
@@ -830,9 +867,11 @@ class _BrainScreenState extends State<BrainScreen> {
           Expanded(
             child: aiOn
                 ? Text(
-                    'IA ativa (Gemini, com a sua chave). Comandos simples continuam sem internet.',
+                    'IA ativa · Gemini',
                     key: const Key('brain_ai_notice'),
-                    style: t.bodySmall,
+                    style: t.labelLarge,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   )
                 : Text(
                     'Modo básico, sem internet. Ative a IA em Conta › Cérebro para entender fotos e texto livre.',
@@ -847,7 +886,12 @@ class _BrainScreenState extends State<BrainScreen> {
             icon: const Icon(Icons.forum_outlined),
           ),
           if (_messages.isNotEmpty)
-            TextButton(key: const Key('brain_new'), onPressed: _newConversation, child: const Text('Nova conversa')),
+            IconButton(
+              key: const Key('brain_new'),
+              tooltip: 'Nova conversa',
+              onPressed: _newConversation,
+              icon: const Icon(Icons.add_comment_outlined),
+            ),
         ]),
       ),
       Expanded(
@@ -857,7 +901,8 @@ class _BrainScreenState extends State<BrainScreen> {
                 const SizedBox(height: RltSpace.s),
                 Text(
                     aiOn
-                        ? 'Escreva, fale ou mande foto ou PDF. Eu mostro o que entendi e você confirma antes de salvar.'
+                        ? 'Escreva, fale ou mande foto ou PDF. Eu mostro o que entendi e você confirma antes de salvar. '
+                          'A IA usa a sua chave; comandos simples funcionam sem internet.'
                         : 'Toque num exemplo ou escreva um comando.',
                     style: t.bodyMedium),
                 const SizedBox(height: RltSpace.m),
@@ -891,8 +936,9 @@ class _BrainScreenState extends State<BrainScreen> {
                 padding: const EdgeInsets.all(RltSpace.l),
                 itemCount: _messages.length,
                 itemBuilder: (context, i) => switch (_messages[i]) {
-                  _UserMsg(:final text) => _Bubble(text: text, mine: true),
-                  _BotMsg(:final text, :final fromAi) => _Bubble(text: text, mine: false, disclaimer: fromAi),
+                  _UserMsg(:final text) => _Bubble(text: text, mine: true, onLongPress: () => _messageMenu(text, mine: true)),
+                  _BotMsg(:final text, :final fromAi) =>
+                    _Bubble(text: text, mine: false, disclaimer: fromAi, onLongPress: () => _messageMenu(text, mine: false)),
                   _AttachMsg(:final kind, :final file) => _AttachBubble(kind: kind, file: file),
                   _VoiceMsg(:final duration) => _VoiceBubble(duration: duration),
                   final _SuggestMsg m => _suggestions(m),
@@ -905,6 +951,7 @@ class _BrainScreenState extends State<BrainScreen> {
       // decidir um cartão.
       if (_thinking) const LinearProgressIndicator(key: Key('brain_thinking'), minHeight: 2),
       MessageComposer(
+        controller: _composer,
         // Com a IA: campo completo (anexos, câmera do prato e voz). Sem ela:
         // só comandos de texto, sem rede.
         mode: aiOn ? ComposerMode.ai : ComposerMode.basic,
@@ -928,14 +975,17 @@ class _Bubble extends StatelessWidget {
   final String text;
   final bool mine;
   final bool disclaimer;
-  const _Bubble({required this.text, required this.mine, this.disclaimer = false});
+  final VoidCallback? onLongPress;
+  const _Bubble({required this.text, required this.mine, this.disclaimer = false, this.onLongPress});
 
   @override
   Widget build(BuildContext context) {
     final c = RltColors.of(context);
     return Align(
       alignment: mine ? Alignment.centerRight : Alignment.centerLeft,
-      child: Container(
+      child: GestureDetector(
+        onLongPress: onLongPress,
+        child: Container(
         constraints: BoxConstraints(maxWidth: MediaQuery.sizeOf(context).width * 0.82),
         margin: const EdgeInsets.symmetric(vertical: 4),
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
@@ -954,6 +1004,7 @@ class _Bubble extends StatelessWidget {
             ),
           ],
         ]),
+        ),
       ),
     );
   }

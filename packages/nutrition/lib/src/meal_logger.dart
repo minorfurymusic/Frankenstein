@@ -83,7 +83,7 @@ class MealLogger {
         'source': food.source.wireValue,
         'input_method': item.inputMethod.wireValue,
         'grams': item.grams,
-        'unit': 'g',
+        'unit': item.unit,
         ...itemMacros.toPayload(),
       });
     }

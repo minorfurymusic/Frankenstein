@@ -55,13 +55,18 @@ class MealItemInput {
   final double grams;
   final MealItemInputMethod inputMethod;
 
+  /// Unidade mostrada: 'g' ou 'ml' (bebida; contas com 1 ml ≈ 1 g).
+  final String unit;
+
   MealItemInput({
     required this.foodId,
     required this.grams,
     this.inputMethod = MealItemInputMethod.unspecified,
+    this.unit = 'g',
   }) {
     if (grams <= 0) {
       throw ArgumentError('grams precisa ser positivo (item $foodId)');
     }
+    if (unit != 'g' && unit != 'ml') throw ArgumentError('unidade desconhecida: $unit');
   }
 }

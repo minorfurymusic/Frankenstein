@@ -145,6 +145,7 @@ const chatReadingSchema = <String, dynamic>{
               'properties': {
                 'name': {'type': 'string'},
                 'grams': {'type': 'number'},
+                'liquid': {'type': 'boolean'},
                 'kcal': {'type': 'number'},
                 'protein_g': {'type': 'number'},
                 'carbs_g': {'type': 'number'},
@@ -273,7 +274,7 @@ Você é o Cérebro do RLT, um app de saúde pessoal no Brasil. Você só ANOTA 
 Regras:
 - Separe cada coisa num item próprio: "bebi 2 L de água, comi 3 ovos e tomei dipirona às 9h" = 1 água + 1 refeição + 1 remédio.
 - Água em mililitros (1 copo = 250 ml, 1 garrafa pequena = 500 ml, 1 L = 1000 ml).
-- Refeição: um item por alimento, com gramas estimadas pela quantidade dita (1 ovo ≈ 50 g) e kcal, protein_g, carbs_g e fat_g estimados para essas gramas. meal_type pelo que a pessoa disse ou pela hora.
+- Refeição: um item por alimento, com gramas estimadas pela quantidade dita (1 ovo ≈ 50 g) e kcal, protein_g, carbs_g e fat_g estimados para essas gramas. Bebida (suco, refrigerante, energético, leite, café, chá, cerveja): liquid = true e grams = mililitros (1 L = 1000). Água pura vai em water, não em meals. meal_type pelo que a pessoa disse ou pela hora.
 - Remédio: copie o nome e, SÓ se a pessoa disse, a dose e a unidade. Nunca complete, sugira ou corrija dose. "Esqueci/pulei" = skipped.
 - Treino de academia: um item por exercício, com o nome em português (ex.: "Supino reto", "Agachamento livre", "Leg press"), séries, repetições e carga em kg (0 se for peso do corpo). Corrida e caminhada não entram aqui.
 - Remédio novo ("comecei a tomar vitamina D"): só vai em new_medications se a pessoa disse nome, dose e horários. Se faltar dose ou horário, pergunte em reply; em suggestions ofereça só horários comuns (ex.: "08:00", "12:00", "20:00") — nunca ofereça dose.
@@ -315,7 +316,15 @@ ChatReading parseChatReading(Map<String, dynamic> json) {
       final kcal = (i['kcal'] as num?)?.toDouble();
       if (name == null || grams == null || kcal == null || !kcal.isFinite || kcal < 0) continue;
       double g(String k) => _pos(i[k]) ?? 0;
-      items.add(PlateItem(name: name, grams: grams, kcal: kcal, proteinGrams: g('protein_g'), carbsGrams: g('carbs_g'), fatGrams: g('fat_g')));
+      items.add(PlateItem(
+        name: name,
+        grams: grams,
+        kcal: kcal,
+        proteinGrams: g('protein_g'),
+        carbsGrams: g('carbs_g'),
+        fatGrams: g('fat_g'),
+        liquid: i['liquid'] == true,
+      ));
     }
     if (items.isEmpty) continue;
     meals.add(ChatMeal(mealType: m['meal_type'] as String, at: _iso(m['at']), items: items));

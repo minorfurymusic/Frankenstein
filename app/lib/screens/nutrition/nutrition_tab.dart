@@ -349,7 +349,7 @@ class _MealSection extends StatelessWidget {
                 Expanded(
                   child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
                     Text(i['name'] as String, style: t.bodyLarge),
-                    Text('${formatNumber((i['grams'] as num).toDouble())} g', style: t.bodySmall),
+                    Text('${formatNumber((i['grams'] as num).toDouble())} ${i['unit'] == 'ml' ? 'ml' : 'g'}', style: t.bodySmall),
                   ]),
                 ),
                 Text('${formatNumber((i['energy_kcal'] as num).toDouble())} kcal', style: RltTheme.tabular(t.bodyMedium!)),

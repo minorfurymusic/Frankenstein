@@ -309,12 +309,16 @@ class _OtherActivityScreenState extends State<OtherActivityScreen> {
 
   void _save() {
     final now = DateTime.now();
+    // Registrada agora: conta no dia de hoje, mesmo logo depois da meia-noite.
+    final midnight = DateTime(now.year, now.month, now.day);
+    var start = now.subtract(Duration(minutes: _min));
+    if (start.isBefore(midnight)) start = midnight;
     try {
       widget.deps.activityLogger.log(
         activity: _activity,
         intensity: _intensity,
         duration: Duration(minutes: _min),
-        occurredAt: now.subtract(Duration(minutes: _min)).toUtc(),
+        occurredAt: start.toUtc(),
         occurredAtTzOffsetMinutes: now.timeZoneOffset.inMinutes,
       );
       widget.deps.notifyDataChanged();

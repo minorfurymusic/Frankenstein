@@ -133,6 +133,10 @@ void main() {
     expect(find.textContaining('Perder — você está 6'), findsOneWidget);
     expect(find.textContaining('~18 semanas'), findsOneWidget);
     expect(find.textContaining('IMC no peso desejado: 22'), findsOneWidget);
+    // Altura digitada em metros ("1,65") também vale — antes virava 1,65 cm.
+    await tester.enterText(find.byKey(const Key('profile_height')), '1,65');
+    await tester.pump();
+    expect(find.textContaining('IMC no peso desejado: 22'), findsOneWidget);
     await tester.tap(find.byKey(const Key('profile_save')));
     await tester.pumpAndSettle();
     expect(deps.profileRepository.load()!.targetWeightKg, 60);

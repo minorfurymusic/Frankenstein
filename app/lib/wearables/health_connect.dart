@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart';
@@ -108,6 +109,9 @@ class FakeHealthConnectBridge implements HealthConnectBridge {
   List<Map<String, dynamic>> sleepRecords;
   List<Map<String, dynamic>> heartRateRecords;
   bool failReads = false;
+
+  /// Simula a tela de permissões que nunca devolve resposta.
+  bool hangOnRequest = false;
   int requests = 0;
   (DateTime, DateTime)? lastRange;
 
@@ -126,6 +130,7 @@ class FakeHealthConnectBridge implements HealthConnectBridge {
   @override
   Future<Set<HealthConnectData>> requestPermissions() async {
     requests++;
+    if (hangOnRequest) return Completer<Set<HealthConnectData>>().future;
     granted = {...granted, ...grantOnRequest};
     return granted;
   }
@@ -212,7 +217,7 @@ class HealthConnectDataSource implements WearableDataSource {
 }
 
 /// Resultado de uma sincronização, para a tela dizer o que aconteceu.
-enum WearableSyncState { ok, notConnected, unavailable, noPermission, error }
+enum WearableSyncState { ok, notConnected, unavailable, noPermission, error, noResponse }
 
 class WearableSyncOutcome {
   final WearableSyncState state;
@@ -255,9 +260,20 @@ class WearableSync {
 
   /// "Conectar pelo Health Connect": pede a permissão de leitura e, se
   /// alguma for dada, liga e sincroniza.
-  Future<WearableSyncOutcome> connect() async {
+  Future<WearableSyncOutcome> connect({Duration permissionTimeout = const Duration(seconds: 60)}) async {
     if (await bridge.status() != HealthConnectStatus.available) return const WearableSyncOutcome(WearableSyncState.unavailable);
-    final granted = await bridge.requestPermissions();
+    // Já permitido (ex.: pela tela do próprio Health Connect): liga direto.
+    var granted = await bridge.grantedPermissions();
+    if (granted.isEmpty) {
+      try {
+        granted = await bridge.requestPermissions().timeout(permissionTimeout);
+      } on TimeoutException {
+        // A tela de permissões não abriu ou não devolveu resposta.
+        return const WearableSyncOutcome(WearableSyncState.noResponse);
+      } on PlatformException {
+        return const WearableSyncOutcome(WearableSyncState.noResponse);
+      }
+    }
     if (granted.isEmpty) return const WearableSyncOutcome(WearableSyncState.noPermission);
     settings.setSetting('health_connect', '1');
     return syncNow();
