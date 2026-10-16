@@ -125,12 +125,46 @@ void main() {
     expect(transport.bodies, isEmpty);
   });
 
-  testWidgets('toque curto não envia: pede para segurar enquanto fala', (tester) async {
+  testWidgets('gravação curta demais não envia: explica como gravar', (tester) async {
     recorder.next = RecordedAudio(_aac, const Duration(milliseconds: 300));
     await pump(tester);
     await holdMic(tester);
-    expect(find.text('Segure o botão do microfone enquanto fala.'), findsOneWidget);
+    expect(find.textContaining('Não ouvi nada'), findsOneWidget);
     expect(transport.bodies, isEmpty);
+  });
+
+  testWidgets('tocar no microfone: começa a gravar; tocar de novo envia (sem precisar segurar)', (tester) async {
+    transport.reply = {'reply': 'Anotei.', 'transcript': 'bebi um copo de água'};
+    await pump(tester);
+    await tester.tap(find.byKey(const Key('chat_mic')));
+    await tester.pump();
+    expect(recorder.recording, isTrue);
+    expect(find.text('Gravando — toque no microfone para enviar'), findsOneWidget);
+    await tester.tap(find.bySemanticsLabel('Gravando — toque para enviar'));
+    await tester.pumpAndSettle();
+    expect(transport.bodies, hasLength(1));
+    expect(find.text('Transcrição: “bebi um copo de água”'), findsOneWidget);
+  });
+
+  testWidgets('tocar no microfone e no X cancela: nada é enviado', (tester) async {
+    await pump(tester);
+    await tester.tap(find.byKey(const Key('chat_mic')));
+    await tester.pump();
+    await tester.tap(find.byKey(const Key('composer_record_cancel')));
+    await tester.pumpAndSettle();
+    expect(recorder.cancelled, isTrue);
+    expect(transport.bodies, isEmpty);
+  });
+
+  testWidgets('microfone que não abre: avisa em vez de ficar calado', (tester) async {
+    recorder.failStart = true;
+    await pump(tester);
+    await tester.tap(find.byKey(const Key('chat_mic')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Não consegui abrir o microfone'), findsOneWidget);
+    // A barra sai do "Gravando" e volta ao campo normal.
+    expect(find.text('Gravando — toque no microfone para enviar'), findsNothing);
+    expect(find.byKey(const Key('chat_mic')), findsOneWidget);
   });
 
   test('exercício casado com a biblioteca; o que não existe vira exercício livre', () {

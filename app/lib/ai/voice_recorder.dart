@@ -48,7 +48,12 @@ class AndroidVoiceRecorder implements VoiceRecorder {
 
   @override
   Future<RecordedAudio?> stop() async {
-    final raw = await _channel.invokeMapMethod<String, Object?>('stop');
+    final Map<String, Object?>? raw;
+    try {
+      raw = await _channel.invokeMapMethod<String, Object?>('stop');
+    } on PlatformException {
+      return null;
+    }
     if (raw == null) return null;
     return RecordedAudio(raw['bytes'] as Uint8List, Duration(milliseconds: (raw['duration_ms'] as num).toInt()));
   }
@@ -62,6 +67,9 @@ class FakeVoiceRecorder implements VoiceRecorder {
   bool granted;
   bool recording = false;
   bool cancelled = false;
+
+  /// Simula microfone ocupado ou com defeito.
+  bool failStart = false;
   int permissionRequests = 0;
   RecordedAudio? next;
   FakeVoiceRecorder({this.granted = true, this.next});
@@ -76,7 +84,7 @@ class FakeVoiceRecorder implements VoiceRecorder {
   }
 
   @override
-  Future<bool> start() async => recording = granted;
+  Future<bool> start() async => recording = granted && !failStart;
 
   @override
   Future<RecordedAudio?> stop() async {

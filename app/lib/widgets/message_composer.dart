@@ -21,7 +21,8 @@ class MessageComposer extends StatefulWidget {
   final ValueChanged<String> onSend;
   final VoidCallback? onAttach;
   final VoidCallback? onCamera;
-  final VoidCallback? onRecordStart;
+  /// Devolve `false` quando o microfone não abriu: a barra volta ao normal.
+  final Future<bool> Function()? onRecordStart;
   final ValueChanged<Duration>? onRecordEnd;
   final VoidCallback? onRecordCancel;
   final Key? fieldKey;
@@ -63,6 +64,10 @@ class _MessageComposerState extends State<MessageComposer> {
   bool _hasText = false;
   bool _recording = false;
   bool _cancelHint = false;
+
+  /// Gravação começada com um toque (não segurando): outro toque no
+  /// microfone envia; o X cancela.
+  bool _tapMode = false;
   DateTime? _recordStartedAt;
   Duration _elapsed = Duration.zero;
   Timer? _ticker;
@@ -99,8 +104,14 @@ class _MessageComposerState extends State<MessageComposer> {
     _controller.clear();
   }
 
-  void _startRecording() {
-    widget.onRecordStart?.call();
+  void _startRecording({bool tap = false}) {
+    if (widget.onRecordStart == null) return;
+    _tapMode = tap;
+    widget.onRecordStart!.call().then((ok) {
+      if (ok || !mounted || !_recording) return;
+      _ticker?.cancel();
+      setState(() => _recording = false);
+    });
     _recordStartedAt = DateTime.now();
     _ticker = Timer.periodic(const Duration(seconds: 1), (_) {
       setState(() => _elapsed = DateTime.now().difference(_recordStartedAt!));
@@ -152,6 +163,24 @@ class _MessageComposerState extends State<MessageComposer> {
       ]);
     }
 
+    if (_recording && _tapMode) {
+      final secs = _elapsed.inSeconds;
+      return _Bar(children: [
+        IconButton(
+          key: const Key('composer_record_cancel'),
+          tooltip: 'Cancelar gravação',
+          onPressed: () => _stopRecording(cancel: true),
+          icon: const Icon(Icons.close),
+        ),
+        Container(width: 10, height: 10, decoration: BoxDecoration(color: c.error, shape: BoxShape.circle)),
+        const SizedBox(width: 10),
+        Text('${secs ~/ 60}:${(secs % 60).toString().padLeft(2, '0')}', style: RltTheme.tabular(t.titleSmall!)),
+        const SizedBox(width: RltSpace.s),
+        Expanded(child: Text('Gravando — toque no microfone para enviar', style: t.bodyMedium)),
+        Semantics(label: 'Gravando — toque para enviar', child: _micButton(c, recording: true)),
+      ]);
+    }
+
     if (_recording) {
       final secs = _elapsed.inSeconds;
       return _Bar(
@@ -189,7 +218,11 @@ class _MessageComposerState extends State<MessageComposer> {
       if (_hasText || widget.attachment != null)
         IconButton.filled(key: widget.sendKey, onPressed: _send, tooltip: 'Enviar', icon: const Icon(Icons.send_outlined))
       else
-        Tooltip(message: 'Segure para gravar voz', child: KeyedSubtree(key: widget.micKey, child: _micButton(c, recording: false))),
+        // Sem Tooltip: no Android ele também disputa o toque longo.
+        Semantics(
+          label: 'Gravar voz: toque para começar ou segure enquanto fala',
+          child: KeyedSubtree(key: widget.micKey, child: _micButton(c, recording: false)),
+        ),
     ]);
     if (widget.attachment == null) return bar;
     return Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.stretch, children: [
@@ -206,7 +239,18 @@ class _MessageComposerState extends State<MessageComposer> {
     final size = recording ? 64.0 : 48.0;
     return GestureDetector(
       key: _micKey,
-      onLongPressStart: (_) => _startRecording(),
+      // Toque: começa (e o próximo toque envia). Segurar: grava enquanto
+      // segura, como antes.
+      onTap: () {
+        if (!_recording) {
+          _startRecording(tap: true);
+        } else if (_tapMode) {
+          _stopRecording(cancel: false);
+        }
+      },
+      onLongPressStart: (_) {
+        if (!_recording) _startRecording();
+      },
       onLongPressMoveUpdate: (d) {
         final cancel = d.offsetFromOrigin.dx < -80;
         if (cancel != _cancelHint) setState(() => _cancelHint = cancel);

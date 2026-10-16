@@ -237,13 +237,13 @@ void main() {
     testWidgets('com IA: microfone sem texto, enviar com texto', (tester) async {
       final sent = <String>[];
       await _pump(tester, MessageComposer(mode: ComposerMode.ai, onSend: sent.add));
-      expect(find.byTooltip('Segure para gravar voz'), findsOneWidget);
+      expect(find.bySemanticsLabel('Gravar voz: toque para começar ou segure enquanto fala'), findsOneWidget);
       expect(find.byTooltip('Tirar foto'), findsOneWidget);
       expect(find.byTooltip('Anexar foto, arquivo, áudio ou vídeo'), findsOneWidget);
 
       await tester.enterText(find.byType(TextField), '  almocei arroz e feijão  ');
       await tester.pump();
-      expect(find.byTooltip('Segure para gravar voz'), findsNothing);
+      expect(find.bySemanticsLabel('Gravar voz: toque para começar ou segure enquanto fala'), findsNothing);
       await tester.tap(find.byTooltip('Enviar'));
       await tester.pump();
       expect(sent, ['almocei arroz e feijão']);
@@ -254,7 +254,7 @@ void main() {
       final sent = <String>[];
       await _pump(tester, MessageComposer(mode: ComposerMode.basic, onSend: sent.add));
       expect(find.text('Comando, ex.: registrar água 500ml'), findsOneWidget);
-      expect(find.byTooltip('Segure para gravar voz'), findsNothing);
+      expect(find.bySemanticsLabel('Gravar voz: toque para começar ou segure enquanto fala'), findsNothing);
       expect(find.byTooltip('Tirar foto'), findsNothing);
       await tester.enterText(find.byType(TextField), 'registrar água 500ml');
       await tester.pump();
@@ -270,18 +270,21 @@ void main() {
         MessageComposer(
           mode: ComposerMode.ai,
           onSend: (_) {},
-          onRecordStart: () => started++,
+          onRecordStart: () async {
+            started++;
+            return true;
+          },
           onRecordEnd: (d) => ended = d,
         ),
       );
-      final gesture = await tester.startGesture(tester.getCenter(find.byTooltip('Segure para gravar voz')));
+      final gesture = await tester.startGesture(tester.getCenter(find.bySemanticsLabel('Gravar voz: toque para começar ou segure enquanto fala')));
       await tester.pump(kLongPressTimeout + const Duration(milliseconds: 50));
       expect(started, 1);
       expect(find.text('Arraste para a esquerda para cancelar'), findsOneWidget);
       await gesture.up();
       await tester.pump();
       expect(ended, isNotNull);
-      expect(find.byTooltip('Segure para gravar voz'), findsOneWidget);
+      expect(find.bySemanticsLabel('Gravar voz: toque para começar ou segure enquanto fala'), findsOneWidget);
     });
   });
 

@@ -763,19 +763,27 @@ class _BrainScreenState extends State<BrainScreen> {
 
   Future<bool>? _voiceStarting;
 
-  void _voiceStart() {
-    _voiceStarting = () async {
+  Future<bool> _voiceStart() {
+    return _voiceStarting = () async {
       final rec = widget.deps.voiceRecorder;
-      var ok = await rec.hasPermission();
-      if (!ok) ok = await rec.requestPermission();
-      if (!ok) {
+      if (!await rec.hasPermission()) {
+        // A janela de permissão interrompe o gesto: não grava agora, e a
+        // próxima vez já funciona.
+        final granted = await rec.requestPermission();
         if (mounted) {
-          _changed(() => _messages.add(_BotMsg('Para falar com o Cérebro, permita o microfone. '
-              'Você pode mudar isso em Conta › Permissões.')));
+          _changed(() => _messages.add(_BotMsg(granted
+              ? 'Microfone liberado. Toque no microfone de novo para falar.'
+              : 'Para falar com o Cérebro, permita o microfone. '
+                  'Você pode mudar isso em Configurações do Android › Apps › RLT › Permissões.')));
         }
         return false;
       }
-      return rec.start();
+      final started = await rec.start();
+      if (!started && mounted) {
+        _changed(() => _messages.add(_BotMsg('Não consegui abrir o microfone. Feche outro app que esteja usando o '
+            'microfone (ligação, gravador) e tente de novo.')));
+      }
+      return started;
     }();
   }
 
@@ -786,7 +794,8 @@ class _BrainScreenState extends State<BrainScreen> {
     final audio = await widget.deps.voiceRecorder.stop();
     if (!mounted) return;
     if (audio == null || audio.duration < const Duration(milliseconds: 800)) {
-      _changed(() => _messages.add(_BotMsg('Segure o botão do microfone enquanto fala.')));
+      _changed(() => _messages.add(_BotMsg('Não ouvi nada. Toque no microfone, fale e toque de novo para enviar '
+          '(ou segure enquanto fala).')));
       return;
     }
     _changed(() => _messages.add(_VoiceMsg(audio.duration)));
