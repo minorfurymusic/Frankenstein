@@ -50,9 +50,12 @@ class _BotMsg extends _Msg {
 
   /// Resposta da IA: leva o aviso de que o app não diagnostica nem prescreve.
   final bool fromAi;
-  _BotMsg(this.text, {this.fromAi = false});
+
+  /// Nome do modelo que respondeu (ex.: "Gemini 2.5 Flash").
+  final String? model;
+  _BotMsg(this.text, {this.fromAi = false, this.model});
   @override
-  Map<String, dynamic> toJson() => {'t': 'bot', 'text': text, 'ai': fromAi};
+  Map<String, dynamic> toJson() => {'t': 'bot', 'text': text, 'ai': fromAi, 'model': ?model};
 }
 
 /// Respostas rápidas da IA (prancheta CerebroCartoesEstados: "08:00 |
@@ -114,10 +117,13 @@ class _DocMsg extends _Msg {
 
   /// Reaberta de uma conversa antiga: sem o arquivo nem a leitura.
   final bool restored;
+
+  /// Nome do modelo que leu.
+  final String? model;
   _DocMsg(this.kind, this.file, this.summary,
-      {this.exam, this.prescription, this.mealPlan, this.workout, this.saved = false, this.restored = false});
+      {this.exam, this.prescription, this.mealPlan, this.workout, this.saved = false, this.restored = false, this.model});
   @override
-  Map<String, dynamic> toJson() => {'t': 'doc', 'kind': kind.name, 'summary': summary, 'saved': saved};
+  Map<String, dynamic> toJson() => {'t': 'doc', 'kind': kind.name, 'summary': summary, 'saved': saved, 'model': ?model};
 }
 
 class _ProposalMsg extends _Msg {
@@ -170,7 +176,7 @@ _Msg? _msgFromJson(Map<String, dynamic> m) {
     case 'user':
       return _UserMsg(m['text'] as String);
     case 'bot':
-      return _BotMsg(m['text'] as String, fromAi: m['ai'] == true);
+      return _BotMsg(m['text'] as String, fromAi: m['ai'] == true, model: m['model'] as String?);
     case 'suggest':
       return _SuggestMsg([for (final x in m['items'] as List) x as String], used: true);
     case 'voice':
@@ -179,7 +185,7 @@ _Msg? _msgFromJson(Map<String, dynamic> m) {
       return _AttachMsg(kind(), PickedDocument(bytes: Uint8List(0), name: m['name'] as String, mimeType: m['mime'] as String));
     case 'doc':
       return _DocMsg(kind(), PickedDocument(bytes: Uint8List(0), name: '', mimeType: ''), m['summary'] as String,
-          saved: m['saved'] == true, restored: true);
+          saved: m['saved'] == true, restored: true, model: m['model'] as String?);
     case 'card':
       final c = _ProposalMsg(m['tool'] as String, Map<String, dynamic>.from(m['params'] as Map))
         ..state = m['state'] == 'confirmed' ? ProposalState.confirmed : ProposalState.discarded
@@ -505,7 +511,7 @@ class _BrainScreenState extends State<BrainScreen> {
     _changed(() {
       _thinking = false;
       for (final m in plan.messages) {
-        _messages.add(_BotMsg(m, fromAi: true));
+        _messages.add(_BotMsg(m, fromAi: true, model: _modelLabel));
       }
       if (plan.suggestions.isNotEmpty) _messages.add(_SuggestMsg(plan.suggestions));
     });
@@ -681,19 +687,19 @@ class _BrainScreenState extends State<BrainScreen> {
       case AttachKind.prescription:
         final rx = await readPrescription(client, [part]);
         if (!mounted) return;
-        _changed(() => _messages.add(_DocMsg(kind, file, describePrescriptionReading(rx), prescription: rx)));
+        _changed(() => _messages.add(_DocMsg(kind, file, describePrescriptionReading(rx), prescription: rx, model: _modelLabel)));
       case AttachKind.exam:
         final exam = await readExam(client, [part]);
         if (!mounted) return;
-        _changed(() => _messages.add(_DocMsg(kind, file, describeExamReading(exam), exam: exam)));
+        _changed(() => _messages.add(_DocMsg(kind, file, describeExamReading(exam), exam: exam, model: _modelLabel)));
       case AttachKind.mealPlan:
         final plan = await readMealPlan(client, [part]);
         if (!mounted) return;
-        _changed(() => _messages.add(_DocMsg(kind, file, describeMealPlanDraft(plan), mealPlan: plan)));
+        _changed(() => _messages.add(_DocMsg(kind, file, describeMealPlanDraft(plan), mealPlan: plan, model: _modelLabel)));
       case AttachKind.workoutPlan:
         final plan = await readWorkoutPlan(client, [part]);
         if (!mounted) return;
-        _changed(() => _messages.add(_DocMsg(kind, file, describeWorkoutPlanReading(plan), workout: plan)));
+        _changed(() => _messages.add(_DocMsg(kind, file, describeWorkoutPlanReading(plan), workout: plan, model: _modelLabel)));
       case AttachKind.document:
         await _sortAndRead(client, [file]);
     }
@@ -725,6 +731,9 @@ class _BrainScreenState extends State<BrainScreen> {
     _scrollToEnd();
   }
 
+  /// Modelo que deu a última resposta da IA.
+  String? get _modelLabel => widget.deps.ai.lastModelLabel.value;
+
   Future<void> _sortAndRead(GeminiClient client, List<PickedDocument> files) async {
     final sorting = await sortDocuments(client, [for (final f in files) AiPart.file(f.bytes, f.mimeType)]);
     if (!mounted) return;
@@ -749,11 +758,11 @@ class _BrainScreenState extends State<BrainScreen> {
         }
       } else if (s.kind == SortedKind.medicalHistory) {
         _changed(() => _messages.add(_BotMsg('$label é um histórico médico. O que está escrito vira cartões abaixo, para você conferir.',
-            fromAi: true)));
+            fromAi: true, model: _modelLabel)));
       } else {
         _changed(() => _messages.add(_BotMsg(
             '$label: ${s.description ?? 'não parece um documento de saúde.'} Não há nada para registrar.',
-            fromAi: true)));
+            fromAi: true, model: _modelLabel)));
       }
       if (!mounted) return;
     }
@@ -797,7 +806,7 @@ class _BrainScreenState extends State<BrainScreen> {
           seen == null
               ? 'Não reconheci alimentos nesta foto. Tente de cima, com o prato inteiro e boa luz.'
               : 'Não vi comida nesta foto: $seen Para receita, exame, plano ou ficha de treino, use Anexar › Vários documentos.',
-          fromAi: true)));
+          fromAi: true, model: _modelLabel)));
       return;
     }
     final now = DateTime.now();
@@ -997,7 +1006,7 @@ class _BrainScreenState extends State<BrainScreen> {
           const SizedBox(height: RltSpace.s),
           Text(m.summary, key: Key('brain_doc_summary_${m.kind.name}'), style: t.bodyMedium),
           const SizedBox(height: RltSpace.s),
-          Text('Confira com o papel antes de salvar. O RLT registra; não diagnostica nem prescreve.',
+          Text('${m.model == null ? '' : '${m.model} · '}Confira com o papel antes de salvar. O RLT registra; não diagnostica nem prescreve.',
               style: t.bodySmall?.copyWith(color: c.onSurfaceVariant)),
           const SizedBox(height: RltSpace.s),
           if (m.restored && !m.saved)
@@ -1137,8 +1146,8 @@ class _BrainScreenState extends State<BrainScreen> {
                 itemCount: _messages.length,
                 itemBuilder: (context, i) => switch (_messages[i]) {
                   _UserMsg(:final text) => _Bubble(text: text, mine: true, onLongPress: () => _messageMenu(text, mine: true)),
-                  _BotMsg(:final text, :final fromAi) =>
-                    _Bubble(text: text, mine: false, disclaimer: fromAi, onLongPress: () => _messageMenu(text, mine: false)),
+                  _BotMsg(:final text, :final fromAi, :final model) => _Bubble(
+                      text: text, mine: false, disclaimer: fromAi, model: model, onLongPress: () => _messageMenu(text, mine: false)),
                   _AttachMsg(:final kind, :final file) => _AttachBubble(kind: kind, file: file),
                   _VoiceMsg(:final duration) => _VoiceBubble(duration: duration),
                   final _SuggestMsg m => _suggestions(m),
@@ -1175,8 +1184,9 @@ class _Bubble extends StatelessWidget {
   final String text;
   final bool mine;
   final bool disclaimer;
+  final String? model;
   final VoidCallback? onLongPress;
-  const _Bubble({required this.text, required this.mine, this.disclaimer = false, this.onLongPress});
+  const _Bubble({required this.text, required this.mine, this.disclaimer = false, this.model, this.onLongPress});
 
   @override
   Widget build(BuildContext context) {
@@ -1198,7 +1208,7 @@ class _Bubble extends StatelessWidget {
           if (disclaimer) ...[
             const SizedBox(height: 6),
             Text(
-              'O RLT registra; não diagnostica nem prescreve.',
+              '${model == null ? '' : '$model · '}O RLT registra; não diagnostica nem prescreve.',
               key: const Key('brain_ai_disclaimer'),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(color: c.onSurfaceVariant),
             ),

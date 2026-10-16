@@ -186,14 +186,18 @@ void main() {
   testWidgets('erro da IA aparece em português e dá para tentar de novo', (tester) async {
     await activateKey();
     deps.ai.giveConsent();
-    transport.replies.add(const AiHttpResponse(429, '{"error":{"status":"RESOURCE_EXHAUSTED"}}'));
+    // Escada automática: 3 modelos sem cota e o pedido para.
+    for (var i = 0; i < 3; i++) {
+      transport.replies.add(const AiHttpResponse(429, '{"error":{"status":"RESOURCE_EXHAUSTED"}}'));
+    }
     await pump(tester, ExamsScreen(deps: deps));
     await tester.tap(find.byKey(const Key('document_add')));
     await tester.pumpAndSettle();
     picker.next = PickedDocument(bytes: Uint8List(4), name: 'foto.jpg', mimeType: 'image/jpeg');
     await tester.tap(find.byKey(const Key('document_gallery')));
     await tester.pumpAndSettle();
-    expect(find.textContaining('limite de uso'), findsOneWidget);
+    expect(find.textContaining('limite gratuito do Google'), findsOneWidget);
+    expect(transport.replies, isEmpty);
     expect(find.text('Ler de novo com a IA'), findsOneWidget);
   });
 

@@ -34,6 +34,7 @@ com os prints, num ciclo de correções. Prints em `docs/teste-aparelho/`.
 | 22 | 2026-10-16 | Passos | Sem registro à mão | Registrar por passos ou km | feito no código: "Registrar passos" (passos ou distância → passos pela passada), editar e excluir; somam por cima do celular |
 | 23 | 2026-10-16 | Editar/excluir | Séries, exercícios e registros sem editar/excluir | Poder corrigir | feito no código: correção append-only (versão nova / excluído) — treino salvo (séries e treino), treino ao vivo, itens de refeição, linha do tempo do Início (água, peso, remédio, sintoma, pressão, atividades), registros do Corpo, sinais vitais, receitas, cadastro de remédio |
 | 24 | 2026-10-16 | Preferências › Tema | 3 opções | Só Claro e Escuro | feito no código; sem escolha guardada, começa como o celular |
+| 25 | 2026-10-16 | Cérebro › limite / ocupado | Erro 429 (limite) e depois 503 travaram a leitura de fotos; campo Modelo só salvava com Enter | Trocar de modelo sozinho e mostrar qual respondeu | feito no código (ADR-22): escada de modelos da chave, até 3 por pedido, começa onde parou e volta ao topo no dia seguinte; nome do modelo em cada resposta; Modelo vira lista "Automático" que salva na hora — conferir no aparelho |
 
 ## Prints recebidos (explicação do usuário pendente)
 

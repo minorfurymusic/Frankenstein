@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io' show Platform;
 
 import 'package:flutter/foundation.dart';
@@ -63,8 +64,83 @@ class AiSettings {
     }
   }
 
-  String get model => settings.getSetting('ai_model') ?? GeminiClient.defaultModel;
-  void setModel(String m) => settings.setSetting('ai_model', m.trim().isEmpty ? GeminiClient.defaultModel : m.trim());
+  /// Nome do modelo que deu a última resposta, para mostrar embaixo dela.
+  final ValueNotifier<String?> lastModelLabel = ValueNotifier(null);
+
+  /// Escolha em Conta › Cérebro: [auto] (escada de modelos) ou um nome.
+  /// Chave nova de ajuste: a antiga (`ai_model`) prendia todo mundo num
+  /// modelo só.
+  static const auto = 'auto';
+  String get modelChoice {
+    final v = settings.getSetting('ai_model_choice');
+    return v == null || v.isEmpty ? auto : v;
+  }
+
+  void setModelChoice(String m) => settings.setSetting('ai_model_choice', m.trim().isEmpty ? auto : m.trim());
+
+  /// Modelos que a chave pode usar, lidos em "Testar e salvar" ou
+  /// "Atualizar lista", já na ordem da escada. Vazio: escada padrão.
+  List<AiModel> get availableModels {
+    final v = settings.getSetting('ai_models');
+    if (v == null || v.isEmpty) return const [];
+    try {
+      return [for (final m in jsonDecode(v) as List) AiModel.fromJson((m as Map).cast<String, dynamic>())];
+    } on Object {
+      return const [];
+    }
+  }
+
+  /// Nome para a tela: o do Google quando conhecido.
+  String displayName(String model) {
+    for (final m in availableModels) {
+      if (m.name == model) return m.displayName;
+    }
+    return model;
+  }
+
+  List<String> get ladder {
+    if (modelChoice != auto) return [modelChoice];
+    final known = availableModels;
+    return known.isEmpty ? GeminiClient.defaultLadder : [for (final m in known) m.name];
+  }
+
+  /// Dia da cota do Google: vira à meia-noite do Pacífico (UTC−8; no
+  /// horário de verão de lá vira 1 h depois — só atrasa a volta ao topo).
+  static String quotaDay(DateTime now) {
+    final p = now.toUtc().subtract(const Duration(hours: 8));
+    return '${p.year}-${p.month}-${p.day}';
+  }
+
+  /// Onde a escada parou hoje; num dia novo, volta ao melhor modelo.
+  int ladderStart([DateTime? now]) {
+    final v = settings.getSetting('ai_ladder');
+    if (v == null || v.isEmpty) return 0;
+    try {
+      final m = jsonDecode(v) as Map<String, dynamic>;
+      if (m['day'] != quotaDay(now ?? DateTime.now())) return 0;
+      final name = m['model'] as String?;
+      final i = ladder.indexOf(name ?? '');
+      return i < 0 ? 0 : i;
+    } on Object {
+      return 0;
+    }
+  }
+
+  void _saveLadder(String model) =>
+      settings.setSetting('ai_ladder', jsonEncode({'day': quotaDay(DateTime.now()), 'model': model}));
+
+  /// Lê de novo a lista de modelos da chave (só nomes; nenhum dado vai).
+  Future<List<AiModel>> refreshModels() async {
+    final k = await secrets.read(_keyName);
+    if (k == null || k.isEmpty) throw const AiException(AiFailure.noKey);
+    return _fetchModels(k);
+  }
+
+  Future<List<AiModel>> _fetchModels(String key) async {
+    final list = await GeminiClient(apiKey: key, transport: transport).listModels();
+    if (list.isNotEmpty) settings.setSetting('ai_models', jsonEncode([for (final m in list) m.toJson()]));
+    return list;
+  }
 
   /// Consentimento (prancheta CerebroConsentimento), por provedor.
   DateTime? get consentedAt {
@@ -84,7 +160,15 @@ class AiSettings {
   Future<void> testAndSaveKey(String key) async {
     final k = key.trim();
     if (k.isEmpty) throw const AiException(AiFailure.noKey);
-    await GeminiClient(apiKey: k, model: model, transport: transport).ping();
+    // Primeiro a lista de modelos da chave (só nomes), para o teste já
+    // usar a escada certa.
+    try {
+      await _fetchModels(k);
+    } on AiException catch (e) {
+      if (e.failure == AiFailure.badKey) rethrow;
+      // Sem a lista, vale a escada padrão.
+    }
+    await _client(k).ping();
     await secrets.write(_keyName, k);
     settings.setSetting('ai_key_tested', DateTime.now().toIso8601String());
     hasKey.value = true;
@@ -102,10 +186,24 @@ class AiSettings {
   Future<GeminiClient> client() async {
     final k = await secrets.read(_keyName);
     if (k == null || k.isEmpty) throw const AiException(AiFailure.noKey);
-    return GeminiClient(apiKey: k, model: model, transport: transport);
+    return _client(k);
   }
 
-  void dispose() => hasKey.dispose();
+  GeminiClient _client(String key) => GeminiClient(
+        apiKey: key,
+        models: ladder,
+        startIndex: ladderStart(),
+        transport: transport,
+        onModel: (i, m, {required ok}) {
+          _saveLadder(m);
+          if (ok) lastModelLabel.value = displayName(m);
+        },
+      );
+
+  void dispose() {
+    hasKey.dispose();
+    lastModelLabel.dispose();
+  }
 }
 
 /// Texto para cada falha da IA, em português simples.
@@ -119,6 +217,11 @@ String aiFailureMessage(Object error) {
     AiFailure.blocked => 'A IA não quis ler este conteúdo. Tente outra foto ou preencha à mão.',
     AiFailure.tooLarge => 'Arquivo grande demais para a IA (máx. 15 MB). Tente uma foto ou um PDF menor.',
     AiFailure.invalidOutput => 'A IA respondeu fora do formato. Tente de novo ou preencha à mão.',
+    AiFailure.exhausted => error.httpStatus == 429
+        ? 'O limite gratuito do Google acabou nos modelos que tentei (3). Tente mais tarde — a cota volta todo dia. '
+            'Para não depender disso, ative o faturamento no Google AI Studio.'
+        : 'Os servidores do Google estão ocupados nos modelos que tentei (3, erro ${error.httpStatus}). '
+            'Espere um pouco e mande outra vez.',
     AiFailure.busy => 'O servidor da IA está ocupado agora (erro ${error.httpStatus} do provedor). '
         'Já tentei de novo sozinho; espere um pouco e mande outra vez.',
     AiFailure.provider => 'O provedor de IA recusou o pedido (erro ${error.httpStatus ?? '?'}'

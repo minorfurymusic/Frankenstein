@@ -23,8 +23,8 @@ class BrainSettingsScreen extends StatefulWidget {
 
 class _BrainSettingsScreenState extends State<BrainSettingsScreen> {
   final _key = TextEditingController();
-  late final _model = TextEditingController(text: widget.deps.ai.model);
   bool _busy = false;
+  bool _refreshing = false;
   String? _error;
   bool _obscure = true;
 
@@ -33,7 +33,6 @@ class _BrainSettingsScreenState extends State<BrainSettingsScreen> {
   @override
   void dispose() {
     _key.dispose();
-    _model.dispose();
     super.dispose();
   }
 
@@ -42,7 +41,6 @@ class _BrainSettingsScreenState extends State<BrainSettingsScreen> {
       _busy = true;
       _error = null;
     });
-    _ai.setModel(_model.text);
     try {
       await _ai.testAndSaveKey(_key.text);
       _key.clear();
@@ -53,6 +51,57 @@ class _BrainSettingsScreenState extends State<BrainSettingsScreen> {
           : aiFailureMessage(e);
     }
     if (mounted) setState(() => _busy = false);
+  }
+
+  Future<void> _refreshModels() async {
+    setState(() => _refreshing = true);
+    try {
+      final list = await _ai.refreshModels();
+      if (mounted) showRltSaved(context, '${list.length} modelos disponíveis para esta chave.');
+    } on AiException catch (e) {
+      if (mounted) showRltSaved(context, aiFailureMessage(e));
+    }
+    if (mounted) setState(() => _refreshing = false);
+  }
+
+  Widget _modelPicker(TextTheme t) {
+    final choice = _ai.modelChoice;
+    final known = _ai.availableModels;
+    final names = known.isEmpty ? GeminiClient.defaultLadder : [for (final m in known) m.name];
+    return ExpansionTile(
+      tilePadding: EdgeInsets.zero,
+      title: Text('Modelo', style: t.titleSmall),
+      subtitle: Text(choice == AiSettings.auto ? 'Automático (recomendado)' : _ai.displayName(choice), style: t.bodySmall),
+      children: [
+        DropdownButtonFormField<String>(
+          key: const Key('ai_model'),
+          initialValue: choice == AiSettings.auto || names.contains(choice) ? choice : AiSettings.auto,
+          isExpanded: true,
+          decoration: const InputDecoration(labelText: 'Modelo da IA'),
+          items: [
+            const DropdownMenuItem(value: AiSettings.auto, child: Text('Automático (recomendado)')),
+            for (final n in names) DropdownMenuItem(value: n, child: Text(_ai.displayName(n), overflow: TextOverflow.ellipsis)),
+          ],
+          onChanged: (v) => setState(() => _ai.setModelChoice(v ?? AiSettings.auto)),
+        ),
+        const SizedBox(height: RltSpace.s),
+        Text(
+          'Automático: começa no melhor modelo e, se o limite gratuito acabar ou o Google estiver ocupado, '
+          'passa sozinho para o próximo (até 3 por pedido). No dia seguinte volta ao melhor.',
+          style: t.bodySmall,
+        ),
+        if (_ai.hasKey.value)
+          Align(
+            alignment: Alignment.centerLeft,
+            child: TextButton.icon(
+              key: const Key('ai_refresh_models'),
+              onPressed: _refreshing ? null : _refreshModels,
+              icon: const Icon(Icons.refresh),
+              label: const Text('Atualizar lista de modelos'),
+            ),
+          ),
+      ],
+    );
   }
 
   Future<void> _remove() async {
@@ -151,19 +200,7 @@ class _BrainSettingsScreenState extends State<BrainSettingsScreen> {
               ),
             ],
             const SizedBox(height: RltSpace.m),
-            ExpansionTile(
-              tilePadding: EdgeInsets.zero,
-              title: Text('Modelo', style: t.titleSmall),
-              subtitle: Text(_ai.model, style: t.bodySmall),
-              children: [
-                TextField(
-                  key: const Key('ai_model'),
-                  controller: _model,
-                  decoration: const InputDecoration(labelText: 'Nome do modelo', helperText: 'Padrão: ${GeminiClient.defaultModel}'),
-                  onSubmitted: (v) => setState(() => _ai.setModel(v)),
-                ),
-              ],
-            ),
+            _modelPicker(t),
             const RltSectionHeader('O que é enviado'),
             bullet('Só o que você mandar, quando você mandar: a foto ou o PDF do exame que você anexou, a foto do prato, '
                 'o plano de refeições que você importou, ou o pedido de sugestão com suas metas e preferências.',
