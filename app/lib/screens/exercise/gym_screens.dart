@@ -145,9 +145,11 @@ class _HistoryTab extends StatelessWidget {
       const RltSectionHeader('Treinos'),
       for (final s in sessions)
         ListTile(
+          key: Key('history_${s.rootId}'),
           contentPadding: EdgeInsets.zero,
+          onTap: () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => WorkoutSummaryScreen(deps: deps, session: s))),
           title: Text(relativeDayTime(localOf(s.occurredAt, s.occurredAtTzOffsetMinutes))),
-          subtitle: Text('${s.payload['sets_count']} séries'
+          subtitle: Text('${deps.core.queryByType(HealthEventType.setLog, from: s.occurredAt, to: s.occurredAt).where((x) => x.payload['session_event_id'] == s.rootId).length} séries'
               '${s.payload['duration_seconds'] == null ? '' : ' · ${durationLabel(Duration(seconds: (s.payload['duration_seconds'] as num).toInt()))}'}'),
           trailing: IconButton(
             tooltip: 'Compartilhar',

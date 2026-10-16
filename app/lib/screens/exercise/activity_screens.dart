@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:frankstein_activity/activity.dart';
 import 'package:frankstein_health_core/health_core.dart';
+import 'package:frankstein_profile/profile.dart';
 
 import '../../app_dependencies.dart';
 import '../../data/activity_read_model.dart';
@@ -12,6 +13,7 @@ import '../../step_tracking_controller.dart';
 import '../../theme/rlt_colors.dart';
 import '../../theme/rlt_theme.dart';
 import '../../widgets/common.dart';
+import '../../widgets/record_actions.dart';
 import '../../widgets/state_views.dart';
 import 'run_screens.dart';
 import 'share_helpers.dart';
@@ -30,8 +32,50 @@ class StepsScreen extends StatefulWidget {
 class _StepsScreenState extends State<StepsScreen> {
   int _days = 7;
 
+  /// Passada da pessoa (ACSM pela altura, ADR-15); sem perfil, 0,75 m.
+  double get _stepMeters {
+    final p = widget.deps.profileRepository.load();
+    return p == null ? 0.75 : HealthFormulas.stepLengthMeters(p.sex, p.heightMeters);
+  }
+
+  /// Passos registrados à mão (ex.: caminhada sem o celular). Por passos ou
+  /// por distância — o app converte pela passada.
+  Future<void> _manual({HealthEvent? existing}) async {
+    final deps = widget.deps;
+    final r = await showDialog<(int, double?)>(
+      context: context,
+      builder: (_) => _ManualStepsDialog(
+        stepMeters: _stepMeters,
+        initialSteps: (existing?.payload['count'] as num?)?.toInt(),
+        initialKm: (existing?.payload['distance_m'] as num?) == null ? null : (existing!.payload['distance_m'] as num) / 1000,
+      ),
+    );
+    if (r == null) return;
+    final (count, km) = r;
+    final payload = {'count': count, if (km != null) 'distance_m': km * 1000, 'manual': true};
+    if (existing != null) {
+      deps.core.editEvent(existing.id, payload: payload);
+    } else {
+      final now = DateTime.now();
+      deps.core.insertEvent(HealthEvent(
+        id: HealthDataCore.newId(),
+        type: HealthEventType.steps,
+        source: HealthEventSource.manual,
+        occurredAt: now.toUtc(),
+        occurredAtTzOffsetMinutes: now.timeZoneOffset.inMinutes,
+        recordedAt: now.toUtc(),
+        payload: payload,
+        confidence: 1,
+      ));
+    }
+    deps.notifyDataChanged();
+  }
+
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      ValueListenableBuilder<int>(valueListenable: widget.deps.dataVersion, builder: (context, _, _) => _build(context));
+
+  Widget _build(BuildContext context) {
     final deps = widget.deps;
     final c = RltColors.of(context);
     final t = Theme.of(context).textTheme;
@@ -44,9 +88,20 @@ class _StepsScreenState extends State<StepsScreen> {
     final counts = [for (final d in days) deps.dayRead.totals(d).steps];
     final maxCount = counts.fold<int>(goal, (m, v) => v > m ? v : m);
     final avg = counts.isEmpty ? 0 : counts.reduce((a, b) => a + b) / counts.length;
+    final manual = deps.core
+        .queryByType(HealthEventType.steps, from: DateTime(today.year, today.month, today.day).subtract(Duration(days: _days - 1)).toUtc())
+        .where((e) => e.source == HealthEventSource.manual)
+        .toList()
+        .reversed;
     return Scaffold(
       appBar: AppBar(title: const Text('Passos')),
-      body: ListView(padding: const EdgeInsets.all(RltSpace.l), children: [
+      floatingActionButton: FloatingActionButton.extended(
+        key: const Key('steps_manual_add'),
+        onPressed: () => _manual(),
+        icon: const Icon(Icons.add),
+        label: const Text('Registrar passos'),
+      ),
+      body: ListView(padding: const EdgeInsets.fromLTRB(RltSpace.l, RltSpace.l, RltSpace.l, 96), children: [
         ValueListenableBuilder<StepTrackingStatus>(
           valueListenable: deps.stepTracking.status,
           builder: (context, status, _) => switch (status) {
@@ -104,6 +159,28 @@ class _StepsScreenState extends State<StepsScreen> {
               ),
           ]),
         ),
+        if (manual.isNotEmpty) ...[
+          const RltSectionHeader('Registrados à mão'),
+          for (final e in manual)
+            ListTile(
+              key: Key('steps_manual_${e.rootId}'),
+              contentPadding: EdgeInsets.zero,
+              title: Text('${formatNumber((e.payload['count'] as num).toInt())} passos'),
+              subtitle: Text([
+                relativeDayTime(localOf(e.occurredAt, e.occurredAtTzOffsetMinutes)),
+                if (e.payload['distance_m'] != null) '${formatNumber((e.payload['distance_m'] as num) / 1000, decimals: 2)} km',
+              ].join(' · ')),
+              trailing: RecordMenu(
+                keyPrefix: 'steps_manual',
+                what: 'estes passos',
+                onEdit: () => _manual(existing: e),
+                onDelete: () {
+                  deps.core.deleteEvent(e.id);
+                  deps.notifyDataChanged();
+                },
+              ),
+            ),
+        ],
         const RltSectionHeader('Dias'),
         for (var i = days.length - 1; i >= 0; i--)
           ListTile(
@@ -214,7 +291,7 @@ class RunSummaryScreen extends StatelessWidget {
     final points = _points();
     final summary = points.length < 2 ? null : RunCalculator.summarize(points);
     final day = localOf(run.occurredAt, run.occurredAtTzOffsetMinutes);
-    final entry = deps.activityRead.forDay(day).where((a) => a.event.id == run.id).firstOrNull;
+    final entry = deps.activityRead.forDay(day).where((a) => a.event.rootId == run.rootId).firstOrNull;
     return Scaffold(
       appBar: AppBar(title: Text(entry?.title ?? runTitle(run))),
       body: ListView(padding: const EdgeInsets.all(RltSpace.l), children: [
@@ -372,6 +449,79 @@ class _OtherActivityScreenState extends State<OtherActivityScreen> {
           ),
         ),
       ]),
+    );
+  }
+}
+
+class _ManualStepsDialog extends StatefulWidget {
+  final double stepMeters;
+  final int? initialSteps;
+  final double? initialKm;
+  const _ManualStepsDialog({required this.stepMeters, this.initialSteps, this.initialKm});
+
+  @override
+  State<_ManualStepsDialog> createState() => _ManualStepsDialogState();
+}
+
+class _ManualStepsDialogState extends State<_ManualStepsDialog> {
+  late bool _byKm = widget.initialKm != null;
+  late final _value = TextEditingController(
+    text: widget.initialKm != null
+        ? formatNumber(widget.initialKm!, decimals: 2)
+        : (widget.initialSteps == null ? '' : '${widget.initialSteps}'),
+  );
+
+  double? get _number => parseNumber(_value.text);
+  int get _steps => _number == null ? 0 : (_byKm ? (_number! * 1000 / widget.stepMeters).round() : _number!.round());
+
+  @override
+  void dispose() {
+    _value.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Theme.of(context).textTheme;
+    return AlertDialog(
+      title: const Text('Registrar passos'),
+      content: Column(mainAxisSize: MainAxisSize.min, crossAxisAlignment: CrossAxisAlignment.start, children: [
+        SegmentedButton<bool>(
+          segments: const [
+            ButtonSegment(value: false, label: Text('Passos')),
+            ButtonSegment(value: true, label: Text('Distância')),
+          ],
+          selected: {_byKm},
+          onSelectionChanged: (v) => setState(() {
+            _byKm = v.first;
+            _value.clear();
+          }),
+        ),
+        const SizedBox(height: RltSpace.m),
+        TextField(
+          key: const Key('steps_manual_value'),
+          controller: _value,
+          autofocus: true,
+          keyboardType: const TextInputType.numberWithOptions(decimal: true),
+          decoration: InputDecoration(labelText: _byKm ? 'Distância' : 'Passos', suffixText: _byKm ? 'km' : null),
+          onChanged: (_) => setState(() {}),
+        ),
+        const SizedBox(height: RltSpace.s),
+        Text(
+          _byKm
+              ? '≈ ${formatNumber(_steps)} passos (passada de ${formatNumber(widget.stepMeters * 100)} cm, pela sua altura)'
+              : 'Para passos que o celular não contou (ex.: caminhada sem ele).',
+          style: t.bodySmall,
+        ),
+      ]),
+      actions: [
+        TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
+        FilledButton(
+          key: const Key('steps_manual_save'),
+          onPressed: _steps <= 0 ? null : () => Navigator.pop(context, (_steps, _byKm ? _number : null)),
+          child: const Text('Salvar'),
+        ),
+      ],
     );
   }
 }

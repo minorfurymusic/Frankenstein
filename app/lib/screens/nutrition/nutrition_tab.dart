@@ -13,6 +13,7 @@ import '../../theme/rlt_colors.dart';
 import '../../theme/rlt_theme.dart';
 import '../../widgets/state_views.dart';
 import '../../widgets/common.dart';
+import '../../widgets/record_actions.dart';
 import '../../widgets/goal_calendar.dart';
 import '../../widgets/weight_target.dart';
 import '../../widgets/line_chart.dart';
@@ -317,14 +318,15 @@ class _MealSection extends StatelessWidget {
   Widget build(BuildContext context) {
     final c = RltColors.of(context);
     final t = Theme.of(context).textTheme;
-    final items = <Map<String, dynamic>>[];
+    final items = <(HealthEvent, int, Map<String, dynamic>)>[];
     DateTime? firstLocal;
     double kcal = 0;
     for (final e in events) {
       firstLocal ??= localOf(e.occurredAt, e.occurredAtTzOffsetMinutes);
       kcal += ((e.payload['totals'] as Map<String, dynamic>)['energy_kcal'] as num).toDouble();
-      for (final i in (e.payload['items'] as List)) {
-        items.add(i as Map<String, dynamic>);
+      final list = e.payload['items'] as List;
+      for (var n = 0; n < list.length; n++) {
+        items.add((e, n, list[n] as Map<String, dynamic>));
       }
     }
     return Padding(
@@ -342,7 +344,7 @@ class _MealSection extends StatelessWidget {
             ),
             if (items.isNotEmpty) Text('${formatNumber(kcal)} kcal', style: RltTheme.tabular(t.titleSmall!)),
           ]),
-          for (final i in items)
+          for (final (meal, n, i) in items)
             Padding(
               padding: const EdgeInsets.only(top: RltSpace.s),
               child: Row(children: [
@@ -353,6 +355,26 @@ class _MealSection extends StatelessWidget {
                   ]),
                 ),
                 Text('${formatNumber((i['energy_kcal'] as num).toDouble())} kcal', style: RltTheme.tabular(t.bodyMedium!)),
+                RecordMenu(
+                  keyPrefix: 'meal_item_${type.name}_$n',
+                  what: i['name'] as String,
+                  onEdit: () async {
+                    final unit = i['unit'] == 'ml' ? 'ml' : 'g';
+                    final v = await askNumbers(context, i['name'] as String, [('Quantidade', (i['grams'] as num).toDouble(), unit)]);
+                    if (v == null || v.first <= 0) return;
+                    deps.core.editEvent(meal.id, payload: mealPayloadWithItem(meal.payload, n, grams: v.first));
+                    deps.notifyDataChanged();
+                  },
+                  onDelete: () {
+                    final left = (meal.payload['items'] as List).length - 1;
+                    if (left <= 0) {
+                      deps.core.deleteEvent(meal.id);
+                    } else {
+                      deps.core.editEvent(meal.id, payload: mealPayloadWithItem(meal.payload, n));
+                    }
+                    deps.notifyDataChanged();
+                  },
+                ),
               ]),
             ),
           const SizedBox(height: RltSpace.s),
@@ -514,4 +536,28 @@ class _TrendsViewState extends State<TrendsView> {
       ),
     ]);
   }
+}
+
+/// Refeição com um item alterado ([grams]) ou retirado (sem [grams]); os
+/// valores do item mudam na proporção e o total da refeição é refeito.
+Map<String, dynamic> mealPayloadWithItem(Map<String, dynamic> payload, int index, {double? grams}) {
+  const macroKeys = ['energy_kcal', 'carbohydrates_g', 'fat_g', 'protein_g', 'saturated_fat_g', 'sugar_g', 'fiber_g', 'sodium_g'];
+  final items = [for (final i in payload['items'] as List) Map<String, dynamic>.from(i as Map)];
+  if (grams == null) {
+    items.removeAt(index);
+  } else {
+    final old = (items[index]['grams'] as num).toDouble();
+    final f = old <= 0 ? 0.0 : grams / old;
+    items[index] = {
+      ...items[index],
+      'grams': grams,
+      for (final k in macroKeys)
+        if (items[index][k] is num) k: (items[index][k] as num) * f,
+    };
+  }
+  final totals = <String, dynamic>{
+    for (final k in macroKeys)
+      if (items.any((i) => i[k] is num)) k: items.fold<double>(0, (s, i) => s + ((i[k] as num?)?.toDouble() ?? 0)),
+  };
+  return {...payload, 'items': items, 'totals': totals};
 }

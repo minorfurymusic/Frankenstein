@@ -17,6 +17,7 @@ import '../../widgets/progress.dart';
 import '../../widgets/rlt_navigation_bar.dart';
 import '../../widgets/state_views.dart';
 import '../../widgets/steps_status_card.dart';
+import '../../widgets/record_actions.dart';
 import '../../widgets/timeline_item.dart';
 import '../account/goals_screen.dart';
 import '../exercise/activity_screens.dart';
@@ -36,7 +37,13 @@ class _Entry {
   final HealthArea area;
   final String title;
   final String? detail;
-  const _Entry(this.local, this.area, this.title, this.detail);
+
+  /// Registro por trás da linha (editar/excluir ao tocar).
+  final HealthEvent? event;
+
+  /// Número editável: (rótulo, chave no payload, unidade).
+  final (String, String, String?)? editable;
+  const _Entry(this.local, this.area, this.title, this.detail, {this.event, this.editable});
 }
 
 /// Início (prancheta Inicio): painel do dia num olhar — metas, remédios de
@@ -122,20 +129,24 @@ class _HomeScreenState extends State<HomeScreen> {
       final items = (e.payload['items'] as List).map((i) => (i as Map)['name'] as String).join(', ');
       final kcal = ((e.payload['totals'] as Map)['energy_kcal'] as num).toDouble();
       out.add(_Entry(loc(e), HealthArea.meal, mealTypeLabel(MealType.fromWireValue(e.payload['meal_type'] as String)),
-          '$items · ${formatNumber(kcal)} kcal'));
+          '$items · ${formatNumber(kcal)} kcal',
+          event: e));
     }
     for (final e in deps.dayRead.eventsOnLocalDay(HealthEventType.water, d)) {
-      out.add(_Entry(loc(e), HealthArea.water, 'Água', '${formatNumber((e.payload['amount_ml'] as num).toDouble())} ml'));
+      out.add(_Entry(loc(e), HealthArea.water, 'Água', '${formatNumber((e.payload['amount_ml'] as num).toDouble())} ml',
+          event: e, editable: ('Água', 'amount_ml', 'ml')));
     }
     for (final e in deps.dayRead.eventsOnLocalDay(HealthEventType.medicationDose, d)) {
       final taken = e.payload['status'] == 'taken';
       out.add(_Entry(loc(e), HealthArea.medication,
           '${e.payload['name']} ${formatNumber((e.payload['dose_amount'] as num).toDouble())} ${e.payload['dose_unit']}',
-          taken ? 'Tomado' : 'Pulado'));
+          taken ? 'Tomado' : 'Pulado',
+          event: e));
     }
     for (final e in deps.dayRead.eventsOnLocalDay(HealthEventType.symptom, d)) {
       final i = e.payload['intensity'];
-      out.add(_Entry(loc(e), HealthArea.symptom, e.payload['name'] as String, i == null ? null : 'Intensidade $i de 10'));
+      out.add(_Entry(loc(e), HealthArea.symptom, e.payload['name'] as String, i == null ? null : 'Intensidade $i de 10',
+          event: e));
     }
     for (final a in deps.activityRead.forDay(d)) {
       out.add(_Entry(
@@ -147,19 +158,71 @@ class _HomeScreenState extends State<HomeScreen> {
           if (a.duration != null) durationLabel(a.duration!),
           if (a.kcal > 0) '${formatNumber(a.kcal)} kcal',
         ].join(' · '),
+        event: a.event,
       ));
     }
     for (final e in deps.dayRead.eventsOnLocalDay(HealthEventType.weight, d)) {
-      out.add(_Entry(loc(e), HealthArea.body, 'Peso', '${formatNumber((e.payload['kg'] as num).toDouble(), decimals: 1)} kg'));
+      out.add(_Entry(loc(e), HealthArea.body, 'Peso', '${formatNumber((e.payload['kg'] as num).toDouble(), decimals: 1)} kg',
+          event: e, editable: ('Peso', 'kg', 'kg')));
     }
     for (final e in deps.dayRead.eventsOnLocalDay(HealthEventType.vitalSign, d)) {
       if (e.payload['kind'] != 'blood_pressure') continue;
       final s = kpaToMmHg((e.payload['systolic_kpa'] as num).toDouble()).round();
       final di = kpaToMmHg((e.payload['diastolic_kpa'] as num).toDouble()).round();
-      out.add(_Entry(loc(e), HealthArea.vitalSign, 'Pressão', '$s/$di mmHg'));
+      out.add(_Entry(loc(e), HealthArea.vitalSign, 'Pressão', '$s/$di mmHg', event: e));
     }
     out.sort((a, b) => a.local.compareTo(b.local));
     return out;
+  }
+
+  /// Tocar numa linha do tempo: editar o número (água, peso) ou excluir.
+  /// Treino de academia abre o resumo (lá se editam as séries).
+  Future<void> _entryActions(_Entry entry) async {
+    final deps = widget.deps;
+    final e = entry.event;
+    if (e == null) return;
+    if (e.type == HealthEventType.workoutSession && e.payload['kind'] != 'other_activity') {
+      _open(WorkoutSummaryScreen(deps: deps, session: e));
+      return;
+    }
+    final choice = await showModalBottomSheet<String>(
+      context: context,
+      showDragHandle: true,
+      builder: (sheet) => SafeArea(
+        child: Column(mainAxisSize: MainAxisSize.min, children: [
+          ListTile(title: Text(entry.title), subtitle: entry.detail == null ? null : Text(entry.detail!)),
+          if (entry.editable != null)
+            ListTile(
+              key: const Key('timeline_edit'),
+              leading: const Icon(Icons.edit_outlined),
+              title: const Text('Editar'),
+              onTap: () => Navigator.pop(sheet, 'edit'),
+            ),
+          ListTile(
+            key: const Key('timeline_delete'),
+            leading: const Icon(Icons.delete_outline),
+            title: const Text('Excluir'),
+            onTap: () => Navigator.pop(sheet, 'delete'),
+          ),
+        ]),
+      ),
+    );
+    if (!mounted || choice == null) return;
+    if (choice == 'edit') {
+      final (label, key, unit) = entry.editable!;
+      final v = await askNumbers(context, label, [(label, (e.payload[key] as num).toDouble(), unit)]);
+      if (v == null || v.first <= 0) return;
+      try {
+        deps.core.editEvent(e.id, payload: {...e.payload, key: v.first});
+      } catch (err) {
+        if (mounted) showRltError(context, err);
+        return;
+      }
+    } else {
+      if (!mounted || !await confirmDelete(context, entry.title.toLowerCase())) return;
+      deps.core.deleteEvent(e.id);
+    }
+    deps.notifyDataChanged();
   }
 
   Future<void> _quickWater() async {
@@ -442,6 +505,7 @@ class _HomeScreenState extends State<HomeScreen> {
               title: timeline[i].title,
               detail: timeline[i].detail,
               isLast: i == timeline.length - 1,
+              onTap: timeline[i].event == null ? null : () => _entryActions(timeline[i]),
             ),
         if (_isToday) ...[
           const RltSectionHeader('Atalhos rápidos'),

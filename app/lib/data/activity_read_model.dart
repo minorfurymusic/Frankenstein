@@ -50,7 +50,7 @@ class ActivityReadModel {
   double sessionKcal(HealthEvent session, double bodyWeightKg) => strengthSessionKcal(
         days.core
             .queryByType(HealthEventType.setLog, from: session.occurredAt, to: session.occurredAt)
-            .where((s) => s.payload['session_event_id'] == session.id)
+            .where((s) => s.payload['session_event_id'] == session.rootId)
             .map((s) => (
                   exerciseId: '${s.payload['exercise_id']}',
                   loadKg: (s.payload['load_kg'] as num).toDouble(),

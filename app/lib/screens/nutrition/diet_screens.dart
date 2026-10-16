@@ -14,6 +14,7 @@ import '../../theme/rlt_colors.dart';
 import '../../theme/rlt_theme.dart';
 import '../../widgets/amount_picker.dart';
 import '../../widgets/common.dart';
+import '../../widgets/record_actions.dart';
 import '../../widgets/state_views.dart';
 import '../account/goals_screen.dart';
 import 'food_detail_screen.dart';
@@ -152,7 +153,14 @@ class RecipesScreen extends StatelessWidget {
                   subtitle: Text('${r.ingredients.length} ingredientes · ${r.servings} '
                       '${r.servings == 1 ? 'porção' : 'porções'} de ${formatNumber(r.servingGrams)} g · '
                       '${formatNumber(perServing)} kcal por porção'),
-                  trailing: const Icon(Icons.chevron_right),
+                  trailing: RecordMenu(
+                    keyPrefix: 'recipe_${r.foodId}',
+                    what: 'a receita ${r.name}',
+                    onDelete: () {
+                      deps.nutrition.deleteRecipe(r.foodId);
+                      deps.notifyDataChanged();
+                    },
+                  ),
                   onTap: food == null
                       ? null
                       : () => Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => FoodDetailScreen(deps: deps, food: food))),

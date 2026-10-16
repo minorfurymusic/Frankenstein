@@ -27,7 +27,6 @@ class PreferencesScreen extends StatelessWidget {
               segments: const [
                 ButtonSegment(value: ThemeMode.light, label: Text('Claro')),
                 ButtonSegment(value: ThemeMode.dark, label: Text('Escuro')),
-                ButtonSegment(value: ThemeMode.system, label: Text('Sistema')),
               ],
               selected: {mode},
               onSelectionChanged: (s) => deps.setThemeMode(s.first),

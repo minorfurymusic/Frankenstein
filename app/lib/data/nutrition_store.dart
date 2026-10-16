@@ -273,6 +273,12 @@ class NutritionStore {
     return [for (final r in jsonDecode(raw) as List) Recipe.fromJson(r as Map<String, dynamic>)];
   }
 
+  /// Tira a receita da lista. O alimento fica no banco: refeições antigas
+  /// continuam mostrando o que foi comido.
+  void deleteRecipe(String foodId) {
+    settings.setSetting('recipes', jsonEncode([for (final r in recipes()) if (r.foodId != foodId) r.toJson()]));
+  }
+
   Recipe? recipeFor(String foodId) {
     for (final r in recipes()) {
       if (r.foodId == foodId) return r;

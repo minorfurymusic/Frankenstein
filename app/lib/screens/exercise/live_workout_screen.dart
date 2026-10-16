@@ -11,6 +11,7 @@ import '../../theme/rlt_colors.dart';
 import '../../theme/rlt_theme.dart';
 import '../../widgets/common.dart';
 import '../../widgets/line_chart.dart';
+import '../../widgets/record_actions.dart';
 import 'share_helpers.dart';
 
 /// "34 kg" ou, sem carga, "peso do corpo" (flexão, barra, prancha…).
@@ -222,7 +223,21 @@ class _LiveWorkoutScreenState extends State<LiveWorkoutScreen> {
         ),
       ),
       body: ListView(padding: const EdgeInsets.all(RltSpace.l), children: [
-        Text(ex.name, style: t.headlineSmall),
+        Row(children: [
+          Expanded(child: Text(ex.name, style: t.headlineSmall)),
+          IconButton(
+            key: const Key('live_remove_exercise'),
+            tooltip: 'Remover exercício',
+            onPressed: () async {
+              if (!await confirmDelete(context, '${ex.name} deste treino')) return;
+              setState(() {
+                _exercises.removeAt(_current);
+                if (_current >= _exercises.length) _current = _exercises.isEmpty ? 0 : _exercises.length - 1;
+              });
+            },
+            icon: const Icon(Icons.delete_outline),
+          ),
+        ]),
         Text('${ex.sets.length} séries · descanso ${widget.restDuration.inSeconds} s', style: t.bodyMedium),
         const SizedBox(height: RltSpace.s),
         ClipRRect(
@@ -251,14 +266,21 @@ class _LiveWorkoutScreenState extends State<LiveWorkoutScreen> {
         const SizedBox(height: RltSpace.m),
         for (var i = 0; i < ex.sets.length; i++)
           i == activeIndex
-              ? _ActiveSetCard(key: Key('live_set_$i'), number: i + 1, set: ex.sets[i], onDone: () => _completeSet(ex, ex.sets[i]))
+              ? _ActiveSetCard(key: Key('live_set_$i'), number: i + 1, set: ex.sets[i], onDone: () => _completeSet(ex, ex.sets[i]),
+                  onRemove: () => setState(() => ex.sets.removeAt(i)))
               : ListTile(
                   contentPadding: EdgeInsets.zero,
                   leading: ex.sets[i].done
                       ? CircleAvatar(radius: 14, backgroundColor: c.primary, child: Icon(Icons.check, size: 16, color: c.onPrimary))
                       : CircleAvatar(radius: 14, backgroundColor: c.surfaceContainerHigh, child: Text('${i + 1}', style: t.labelMedium)),
                   title: Text('${loadLabel(ex.sets[i].loadKg)} × ${ex.sets[i].reps}', style: RltTheme.tabular(t.bodyLarge!)),
-                  trailing: Text(ex.sets[i].done ? 'RPE ${ex.sets[i].rpe.round()}' : '—', style: t.bodyMedium),
+                  subtitle: ex.sets[i].done ? Text('RPE ${ex.sets[i].rpe.round()}', style: t.bodySmall) : null,
+                  trailing: IconButton(
+                    key: Key('live_remove_set_$i'),
+                    tooltip: 'Excluir série',
+                    onPressed: () => setState(() => ex.sets.removeAt(i)),
+                    icon: const Icon(Icons.close),
+                  ),
                 ),
         TextButton.icon(
           onPressed: () => setState(() => ex.sets.add(_LiveSet(ex.sets.last.loadKg, ex.sets.last.reps, 7))),
@@ -274,7 +296,8 @@ class _ActiveSetCard extends StatefulWidget {
   final int number;
   final _LiveSet set;
   final VoidCallback onDone;
-  const _ActiveSetCard({super.key, required this.number, required this.set, required this.onDone});
+  final VoidCallback onRemove;
+  const _ActiveSetCard({super.key, required this.number, required this.set, required this.onDone, required this.onRemove});
 
   @override
   State<_ActiveSetCard> createState() => _ActiveSetCardState();
@@ -309,6 +332,12 @@ class _ActiveSetCardState extends State<_ActiveSetCard> {
             padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 2),
             decoration: BoxDecoration(color: c.primaryContainer, borderRadius: BorderRadius.circular(999)),
             child: Text('Agora', style: t.labelMedium?.copyWith(color: c.onPrimaryContainer)),
+          ),
+          IconButton(
+            key: const Key('live_remove_active_set'),
+            tooltip: 'Excluir série',
+            onPressed: widget.onRemove,
+            icon: const Icon(Icons.close),
           ),
         ]),
         const SizedBox(height: RltSpace.m),
@@ -361,7 +390,30 @@ class WorkoutSummaryScreen extends StatelessWidget {
   const WorkoutSummaryScreen({super.key, required this.deps, required this.session});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context) =>
+      ValueListenableBuilder<int>(valueListenable: deps.dataVersion, builder: (context, _, _) => _build(context));
+
+  Future<void> _editSet(BuildContext context, HealthEvent s) async {
+    final v = await askNumbers(context, 'Editar série ${s.payload['set_number']}', [
+      ('Carga total', (s.payload['load_kg'] as num).toDouble(), 'kg'),
+      ('Repetições', (s.payload['reps'] as num).toDouble(), null),
+    ]);
+    if (v == null || v[1] < 1) return;
+    deps.core.editEvent(s.id, payload: {...s.payload, 'load_kg': v[0], 'reps': v[1].round()});
+    deps.notifyDataChanged();
+  }
+
+  void _deleteWorkout(BuildContext context, List<HealthEvent> sets) {
+    for (final s in sets) {
+      deps.core.deleteEvent(s.id);
+    }
+    deps.core.deleteEvent(session.id);
+    deps.notifyDataChanged();
+    Navigator.of(context).pop();
+    showRltSaved(context, 'Treino excluído.');
+  }
+
+  Widget _build(BuildContext context) {
     final seconds = (session.payload['duration_seconds'] as num?)?.toInt();
     final weights = deps.healthRead.weights(days: 3650);
     // Pelas séries (carga × repetições, ADR-21); o relógio só mostra a
@@ -370,10 +422,19 @@ class WorkoutSummaryScreen extends StatelessWidget {
     final perHour = kcal == null || seconds == null || seconds < 60 ? null : kcal / (seconds / 3600);
     final sets = deps.core
         .queryByType(HealthEventType.setLog, from: session.occurredAt, to: session.occurredAt)
-        .where((e) => e.payload['session_event_id'] == session.id)
+        .where((e) => e.payload['session_event_id'] == session.rootId)
         .toList();
     return Scaffold(
-      appBar: AppBar(title: const Text('Treino salvo')),
+      appBar: AppBar(title: const Text('Treino salvo'), actions: [
+        IconButton(
+          key: const Key('workout_delete'),
+          tooltip: 'Excluir treino',
+          onPressed: () async {
+            if (await confirmDelete(context, 'este treino') && context.mounted) _deleteWorkout(context, sets);
+          },
+          icon: const Icon(Icons.delete_outline),
+        ),
+      ]),
       body: ListView(padding: const EdgeInsets.all(RltSpace.l), children: [
         RltTwoColumnGrid(children: [
           RltStatTile(
@@ -395,7 +456,17 @@ class WorkoutSummaryScreen extends StatelessWidget {
         RltSectionHeader('${sets.length} séries'),
         for (final s in sets)
           ListTile(
+            key: Key('saved_set_${s.rootId}'),
             contentPadding: EdgeInsets.zero,
+            trailing: RecordMenu(
+              keyPrefix: 'saved_set_${s.payload['set_number']}_${s.payload['exercise_id']}',
+              what: 'esta série',
+              onEdit: () => _editSet(context, s),
+              onDelete: () {
+                deps.core.deleteEvent(s.id);
+                deps.notifyDataChanged();
+              },
+            ),
             title: Text(s.payload['exercise_name'] as String),
             subtitle: Text('Série ${s.payload['set_number']} · ${loadLabel((s.payload['load_kg'] as num).toDouble())} × ${s.payload['reps']}'
                 '${s.payload['rpe'] == null ? '' : ' · RPE ${(s.payload['rpe'] as num).round()}'}'),

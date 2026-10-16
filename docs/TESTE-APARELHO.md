@@ -31,6 +31,10 @@ com os prints, num ciclo de correções. Prints em `docs/teste-aparelho/`.
 | 20 | 2026-10-16 | Treino › gasto | 6 kcal por tempo de tela; carga não contava | Carga × repetições | feito no código (ADR-21): retas de Reis 2017 por exercício + geral; recuperação de Knausenberger 2014; carga total + barra somada; kcal por hora no resumo |
 | 21 | 2026-10-16 | Alimentos › quantidade | Só gramas; café em g | Medidas caseiras, ml | feito no código: medida (ovo P/M/G, copo, colher, fio) × quantas; bebidas em ml; "Montar prato com ingredientes" na tela de adicionar. Dados novos (USDA/OFF) aguardando o usuário |
 
+| 22 | 2026-10-16 | Passos | Sem registro à mão | Registrar por passos ou km | feito no código: "Registrar passos" (passos ou distância → passos pela passada), editar e excluir; somam por cima do celular |
+| 23 | 2026-10-16 | Editar/excluir | Séries, exercícios e registros sem editar/excluir | Poder corrigir | feito no código: correção append-only (versão nova / excluído) — treino salvo (séries e treino), treino ao vivo, itens de refeição, linha do tempo do Início (água, peso, remédio, sintoma, pressão, atividades), registros do Corpo, sinais vitais, receitas, cadastro de remédio |
+| 24 | 2026-10-16 | Preferências › Tema | 3 opções | Só Claro e Escuro | feito no código; sem escolha guardada, começa como o celular |
+
 ## Prints recebidos (explicação do usuário pendente)
 
 | Arquivo | Tela | Observação minha (a confirmar com o usuário) |

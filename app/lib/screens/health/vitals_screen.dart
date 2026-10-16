@@ -8,6 +8,7 @@ import '../../theme/rlt_theme.dart';
 import '../../widgets/badges.dart';
 import '../../widgets/common.dart';
 import '../../widgets/line_chart.dart';
+import '../../widgets/record_actions.dart';
 import '../../widgets/state_views.dart';
 import '../account/devices_screen.dart';
 
@@ -161,12 +162,24 @@ class _VitalTabState extends State<_VitalTab> {
             contentPadding: EdgeInsets.zero,
             title: Text('${r.display} ${widget.kind.unit}${r.note == null ? '' : ' · ${r.note}'}', style: RltTheme.tabular(t.bodyLarge!)),
             subtitle: Text(relativeDayTime(r.local)),
-            trailing: Chip(
-              avatar: Icon(r.fromWearable ? Icons.watch_outlined : Icons.edit_outlined, size: 16),
-              label: Text(r.fromWearable ? 'Pulseira' : 'Manual'),
-              backgroundColor: c.secondaryContainer,
-              side: BorderSide.none,
-            ),
+            trailing: Row(mainAxisSize: MainAxisSize.min, children: [
+              Chip(
+                avatar: Icon(r.fromWearable ? Icons.watch_outlined : Icons.edit_outlined, size: 16),
+                label: Text(r.fromWearable ? 'Pulseira' : 'Manual'),
+                backgroundColor: c.secondaryContainer,
+                side: BorderSide.none,
+              ),
+              if (r.eventId != null)
+                RecordMenu(
+                  keyPrefix: 'vital_${r.eventId}',
+                  what: 'esta medida',
+                  onDelete: () {
+                    widget.deps.core.deleteEvent(r.eventId!);
+                    widget.deps.notifyDataChanged();
+                    setState(() {});
+                  },
+                ),
+            ]),
           ),
         const SizedBox(height: RltSpace.l),
         const HealthDisclaimer(),

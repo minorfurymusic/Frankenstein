@@ -134,31 +134,97 @@ class HealthDataCore {
     return _rowToEvent(rows.first);
   }
 
-  /// Eventos de um tipo, opcionalmente filtrados por intervalo de
-  /// `occurredAt` (UTC, inclusive nas duas pontas). Ordenados por
-  /// `occurredAt` crescente.
+  /// Edita um registro: grava uma correção (nova versão) apontando para o
+  /// original — append-only, nada é sobrescrito. [payload] substitui o da
+  /// versão atual; [occurredAt] opcional.
+  HealthEvent editEvent(String id, {required Map<String, dynamic> payload, DateTime? occurredAt, DateTime? at}) {
+    final current = currentVersion(id);
+    if (current == null) throw EventNotFoundException(id);
+    final correction = HealthEvent(
+      id: newId(),
+      type: current.type,
+      source: current.source,
+      occurredAt: occurredAt ?? current.occurredAt,
+      occurredAtTzOffsetMinutes: current.occurredAtTzOffsetMinutes,
+      recordedAt: _after(current.recordedAt, at),
+      payload: payload,
+      confidence: current.confidence,
+      deviceId: current.deviceId,
+      correctsEventId: current.rootId,
+    );
+    correctEvent(previousEventId: current.rootId, correction: correction);
+    return correction;
+  }
+
+  /// Exclui um registro: grava uma correção marcada `_deleted` — some das
+  /// consultas, mas continua no histórico (exportação mostra tudo).
+  void deleteEvent(String id, {DateTime? at}) {
+    final current = currentVersion(id);
+    if (current == null || current.isDeleted) return;
+    editEvent(id, payload: {...current.payload, '_deleted': true}, at: at);
+  }
+
+  /// Versão atual da cadeia do registro [id] (raiz ou qualquer versão).
+  HealthEvent? currentVersion(String id) {
+    final e = getById(id);
+    if (e == null) return null;
+    final chain = correctionChain(e.rootId);
+    return chain.last;
+  }
+
+  // A correção precisa ficar depois da versão anterior (ordem da cadeia).
+  static DateTime _after(DateTime previous, DateTime? at) {
+    final now = (at ?? DateTime.now()).toUtc();
+    return now.isAfter(previous) ? now : previous.add(const Duration(milliseconds: 1));
+  }
+
+  /// Todas as versões de um tipo (originais, correções e exclusões) — para
+  /// exportação e auditoria. Ordenados por `occurredAt` crescente.
+  List<HealthEvent> queryAllVersions(HealthEventType type, {DateTime? from, DateTime? to}) =>
+      _query(type, from: from, to: to, currentOnly: false);
+
+  /// Eventos de um tipo, na **versão atual** (editados aparecem como a
+  /// última correção; excluídos não aparecem), opcionalmente filtrados por
+  /// intervalo de `occurredAt` (UTC, inclusive nas duas pontas). Ordenados
+  /// por `occurredAt` crescente.
   List<HealthEvent> queryByType(
     HealthEventType type, {
     DateTime? from,
     DateTime? to,
+  }) =>
+      _query(type, from: from, to: to, currentOnly: true);
+
+  List<HealthEvent> _query(
+    HealthEventType type, {
+    DateTime? from,
+    DateTime? to,
+    required bool currentOnly,
   }) {
-    final where = StringBuffer('WHERE type = ?');
+    final where = StringBuffer('WHERE e.type = ?');
     final args = <Object?>[type.wireValue];
     if (from != null) {
       if (!from.isUtc) throw ArgumentError('from precisa estar em UTC');
-      where.write(' AND occurred_at >= ?');
+      where.write(' AND e.occurred_at >= ?');
       args.add(from.toIso8601String());
     }
     if (to != null) {
       if (!to.isUtc) throw ArgumentError('to precisa estar em UTC');
-      where.write(' AND occurred_at <= ?');
+      where.write(' AND e.occurred_at <= ?');
       args.add(to.toIso8601String());
     }
+    if (currentOnly) {
+      // Fica só a versão mais recente de cada cadeia (raiz = id do original).
+      where.write(' AND NOT EXISTS (SELECT 1 FROM health_events c'
+          ' WHERE c.corrects_event_id = COALESCE(e.corrects_event_id, e.id) AND c.id <> e.id'
+          ' AND (e.corrects_event_id IS NULL OR c.recorded_at > e.recorded_at'
+          ' OR (c.recorded_at = e.recorded_at AND c.id > e.id)))');
+    }
     final rows = _db.select(
-      'SELECT * FROM health_events $where ORDER BY occurred_at ASC',
+      'SELECT e.* FROM health_events e $where ORDER BY e.occurred_at ASC',
       args,
     );
-    return rows.map(_rowToEvent).toList();
+    final events = rows.map(_rowToEvent);
+    return (currentOnly ? events.where((e) => !e.isDeleted) : events).toList();
   }
 
   /// A cadeia de correções de um evento: o original seguido de cada

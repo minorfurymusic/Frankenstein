@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:frankstein_health_core/health_core.dart';
 import 'package:frankstein_health_records/health_records.dart';
 import 'package:frankstein_profile/profile.dart';
 
@@ -12,6 +13,7 @@ import '../../widgets/common.dart';
 import '../../widgets/weight_target.dart';
 import '../../widgets/line_chart.dart';
 import '../../widgets/state_views.dart';
+import '../records_screen.dart';
 
 /// O que dá para registrar em Corpo, com rótulo e unidade da tela.
 enum BodyField {
@@ -59,7 +61,25 @@ class _BodyScreenState extends State<BodyScreen> {
   Widget build(BuildContext context) {
     final deps = widget.deps;
     return Scaffold(
-      appBar: AppBar(title: const Text('Corpo')),
+      appBar: AppBar(title: const Text('Corpo'), actions: [
+        IconButton(
+          key: const Key('body_records'),
+          tooltip: 'Registros (editar ou excluir)',
+          icon: const Icon(Icons.history),
+          onPressed: () => Navigator.of(context).push(MaterialPageRoute<void>(
+            builder: (_) => RecordsScreen(deps: widget.deps, title: 'Registros do corpo', kinds: [
+              RecordKind(HealthEventType.weight, (e) => 'Peso · ${formatNumber((e.payload['kg'] as num).toDouble(), decimals: 1)} kg',
+                  editable: ('Peso', 'kg', 'kg')),
+              RecordKind(HealthEventType.bodyMeasurement, (e) {
+                final kind = '${e.payload['kind']}';
+                if (kind == 'body_fat') return '% de gordura · ${formatNumber((e.payload['fraction'] as num) * 100, decimals: 1)} %';
+                return '${BodyField.values.where((f) => f.wireKind == kind).firstOrNull?.label ?? kind} · '
+                    '${formatNumber((e.payload['meters'] as num) * 100, decimals: 1)} cm';
+              }),
+            ]),
+          )),
+        ),
+      ]),
       floatingActionButton: FloatingActionButton.extended(
         key: const Key('body_new'),
         onPressed: () => showModalBottomSheet<void>(

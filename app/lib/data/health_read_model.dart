@@ -94,7 +94,7 @@ class HealthReadModel {
     if (kind == VitalKind.heartRate) {
       return [
         for (final e in _lastDays(HealthEventType.heartRate, days).reversed)
-          VitalReading(
+          VitalReading(eventId: e.id, 
             kind: kind,
             value: (e.payload['bpm'] as num).toDouble(),
             local: localOf(e.occurredAt, e.occurredAtTzOffsetMinutes),
@@ -108,14 +108,14 @@ class HealthReadModel {
       final local = localOf(e.occurredAt, e.occurredAtTzOffsetMinutes);
       final wearable = e.source == HealthEventSource.wearable;
       readings.add(switch (kind) {
-        VitalKind.bloodPressure => VitalReading(
+        VitalKind.bloodPressure => VitalReading(eventId: e.id, 
             kind: kind,
             value: kpaToMmHg((e.payload['systolic_kpa'] as num).toDouble()),
             secondary: kpaToMmHg((e.payload['diastolic_kpa'] as num).toDouble()),
             local: local,
             fromWearable: wearable,
           ),
-        VitalKind.glucose => VitalReading(
+        VitalKind.glucose => VitalReading(eventId: e.id, 
             kind: kind,
             value: glucoseMmolLToMgDl((e.payload['mmol_per_l'] as num).toDouble()),
             local: local,
@@ -123,8 +123,8 @@ class HealthReadModel {
             fromWearable: wearable,
           ),
         VitalKind.temperature =>
-          VitalReading(kind: kind, value: (e.payload['celsius'] as num).toDouble(), local: local, fromWearable: wearable),
-        VitalKind.spo2 => VitalReading(
+          VitalReading(eventId: e.id, kind: kind, value: (e.payload['celsius'] as num).toDouble(), local: local, fromWearable: wearable),
+        VitalKind.spo2 => VitalReading(eventId: e.id, 
             kind: kind,
             value: fractionToPercent((e.payload['fraction'] as num).toDouble()),
             local: local,
@@ -228,6 +228,9 @@ class VitalReading {
   final DateTime local;
   final String? note;
   final bool fromWearable;
+
+  /// Registro de origem (para editar/excluir).
+  final String? eventId;
   VitalReading({
     required this.kind,
     required this.value,
@@ -235,6 +238,7 @@ class VitalReading {
     this.secondary,
     this.note,
     this.fromWearable = false,
+    this.eventId,
   });
 
   /// Texto do valor na unidade clínica: "122/81", "98", "36,7".

@@ -11,7 +11,8 @@ import 'package:frankstein_profile/profile.dart';
 import 'package:frankstein_summary/summary.dart';
 import 'package:frankstein_tool_registry/tool_registry.dart';
 
-import 'package:flutter/material.dart' show ThemeMode, ValueNotifier;
+import 'package:flutter/material.dart' show Brightness, ThemeMode, ValueNotifier;
+import 'dart:ui' show PlatformDispatcher;
 
 import 'ai/ai_settings.dart';
 import 'ai/document_tools.dart';
@@ -481,12 +482,13 @@ class AppDependencies {
       workoutLogger: workoutLogger,
       activityLogger: ActivityLogger(core: core),
       activityRead: activityRead,
-      themeMode: ValueNotifier(
-        ThemeMode.values.firstWhere(
-          (m) => m.name == profileRepository.getSetting('theme_mode'),
-          orElse: () => ThemeMode.system,
-        ),
-      ),
+      // Só claro ou escuro (decisão do usuário, 2026-10-16). Sem escolha
+      // guardada (ou o antigo "sistema"), começa como o celular está.
+      themeMode: ValueNotifier(switch (profileRepository.getSetting('theme_mode')) {
+        'light' => ThemeMode.light,
+        'dark' => ThemeMode.dark,
+        _ => PlatformDispatcher.instance.platformBrightness == Brightness.dark ? ThemeMode.dark : ThemeMode.light,
+      }),
     )
       ..dbDirectoryPath = dbDirectoryPath
       ..reminders = ReminderSync(

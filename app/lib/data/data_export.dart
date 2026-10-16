@@ -14,7 +14,7 @@ import '../app_dependencies.dart';
 Map<String, dynamic> buildFullExport(AppDependencies deps, {DateTime? now}) {
   final events = <Map<String, dynamic>>[];
   for (final type in HealthEventType.values) {
-    for (final e in deps.core.queryByType(type)) {
+    for (final e in deps.core.queryAllVersions(type)) {
       events.add({
         'id': e.id,
         'type': e.type.wireValue,

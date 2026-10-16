@@ -8,6 +8,7 @@ import '../../theme/rlt_theme.dart';
 import '../../widgets/badges.dart';
 import '../../widgets/common.dart';
 import '../../widgets/date_picker.dart';
+import '../../widgets/record_actions.dart';
 import 'medications_screen.dart';
 
 /// Frequências do layout (prancheta RemedioForm, "Frequência"). Cada uma
@@ -318,6 +319,18 @@ class _MedicationFormScreenState extends State<MedicationFormScreen> {
               onPressed: _endTreatment,
               icon: const Icon(Icons.event_busy_outlined),
               label: const Text('Encerrar tratamento hoje'),
+            ),
+            const SizedBox(height: RltSpace.s),
+            TextButton.icon(
+              key: const Key('medication_delete'),
+              onPressed: () async {
+                if (!await confirmDelete(context, 'este cadastro (para remédio cadastrado por engano; se parou de tomar, use Encerrar)')) return;
+                widget.deps.medicationRepository.delete(widget.existing!.id);
+                widget.deps.notifyDataChanged();
+                if (context.mounted) Navigator.of(context).pop();
+              },
+              icon: const Icon(Icons.delete_outline),
+              label: const Text('Excluir cadastro'),
             ),
           ],
           const SizedBox(height: RltSpace.xl),

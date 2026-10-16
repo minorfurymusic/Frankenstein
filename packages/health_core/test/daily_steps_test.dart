@@ -31,4 +31,18 @@ void main() {
     expect(dailyStepCount([_steps(1580, daily: true), _steps(400)]), 1580);
     expect(dailyStepCount([_steps(300, daily: true), _steps(400), _steps(200)]), 600);
   });
+
+  test('passos registrados à mão somam por cima das duas fontes', () {
+    final manual = HealthEvent(
+      id: HealthDataCore.newId(),
+      type: HealthEventType.steps,
+      source: HealthEventSource.manual,
+      occurredAt: DateTime.utc(2026, 10, 16, 12),
+      occurredAtTzOffsetMinutes: -180,
+      recordedAt: DateTime.utc(2026, 10, 16, 12),
+      payload: {'count': 1580},
+      confidence: 1,
+    );
+    expect(dailyStepCount([_steps(400), manual]), 1980);
+  });
 }

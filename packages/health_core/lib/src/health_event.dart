@@ -125,6 +125,13 @@ class HealthEvent {
       throw ArgumentError('confidence precisa estar entre 0.0 e 1.0');
     }
   }
+
+  /// Identidade estável do registro: o evento original de uma cadeia de
+  /// correções (editar/excluir não muda a identidade).
+  String get rootId => correctsEventId ?? id;
+
+  /// Versão "excluída" (correção que apaga, sem apagar nada do banco).
+  bool get isDeleted => payload['_deleted'] == true;
 }
 
 /// Um ponto de uma rota de GPS — tabela própria (`gps_track_points`),

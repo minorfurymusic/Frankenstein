@@ -77,6 +77,11 @@ class MedicationRepository {
   List<Medication> listAll() =>
       _db.select('SELECT * FROM medications ORDER BY name COLLATE NOCASE').map(_fromRow).toList();
 
+  /// Apaga um cadastro feito por engano. Doses já registradas continuam no
+  /// histórico (são eventos, com o nome do remédio). Quem parou de tomar
+  /// deve usar [endOn].
+  void delete(String id) => _db.execute('DELETE FROM medications WHERE id = ?', [id]);
+
   /// Encerra um remédio a partir de [lastDay] (inclusive), sem apagar nada.
   void endOn(String id, LocalDate lastDay) {
     final m = findById(id);
