@@ -1,6 +1,6 @@
 # ADRs
 
-21 registradas. **20 em vigor, 1 substituída** (ADR-2, pela ADR-11 em
+22 registradas. **21 em vigor, 1 substituída** (ADR-2, pela ADR-11 em
 2026-10-02). ADR-1 e ADR-7 foram alteradas pela ADR-12 (Android apenas); a
 ADR-7 também pela ADR-13 (login Google substitui o código de "Já assinei"
 quando houver servidor).
@@ -30,5 +30,6 @@ Nenhuma virou "aceita" sem confirmação explícita do usuário.
 | [ADR-18](018-plano-de-refeicoes.md) | Plano de refeições: importar do profissional (IA transcreve), montar ou pedir sugestão à IA (sugestão, sempre avisada) | nutrição | **aceito** |
 | [ADR-19](019-varios-documentos-no-cerebro.md) | Vários documentos de uma vez no Cérebro: a IA identifica o tipo, cada um vira cartão; dados pessoais lidos em cartão separado; foto qualquer: diz o que vê | cérebro | **aceito** |
 | [ADR-20](020-passos-pelo-health-connect.md) | Passos: Health Connect como fonte principal (total por dia), contador do app como reserva; uma fonte por dia; atualiza com o app aberto | passos | **aceito** |
+| [ADR-21](021-gasto-musculacao-por-carga.md) | Gasto da musculação por carga × repetições (retas de Reis 2017 por exercício + geral), recuperação de Knausenberger 2014, carga total + barra somada; altera ADR-15 | metas | **aceito** |
 
 `_MODELO.md` neste diretório é o template usado em todas.

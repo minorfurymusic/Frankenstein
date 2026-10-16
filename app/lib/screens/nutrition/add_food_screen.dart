@@ -11,6 +11,7 @@ import '../../theme/rlt_theme.dart';
 import '../../widgets/common.dart';
 import '../../widgets/state_views.dart';
 import 'barcode_scanner_screen.dart';
+import 'diet_screens.dart';
 import 'food_detail_screen.dart';
 import 'meal_labels.dart';
 import 'plate_photo_screen.dart';
@@ -138,6 +139,21 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
                   ));
                 }),
               ]),
+              const SizedBox(height: RltSpace.s),
+              // Prato com ingredientes da base ("2 ovos médios + 30 g de
+              // mussarela + 1 fio de óleo"): soma sozinho e vira item seu.
+              SizedBox(
+                width: double.infinity,
+                child: OutlinedButton.icon(
+                  key: const Key('add_build_plate'),
+                  onPressed: () async {
+                    await Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => RecipeFormScreen(deps: widget.deps)));
+                    if (mounted) setState(() {});
+                  },
+                  icon: const Icon(Icons.restaurant_menu),
+                  label: const Text('Montar prato com ingredientes'),
+                ),
+              ),
             ]),
           ),
           if (_results.isNotEmpty || _query.text.trim().length >= 2)

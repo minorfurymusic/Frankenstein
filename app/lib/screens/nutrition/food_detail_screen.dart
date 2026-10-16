@@ -5,9 +5,11 @@ import 'package:flutter/material.dart';
 import 'package:frankstein_nutrition/nutrition.dart';
 
 import '../../app_dependencies.dart';
+import '../../data/household_measures.dart';
 import '../../format.dart';
 import '../../theme/rlt_colors.dart';
 import '../../theme/rlt_theme.dart';
+import '../../widgets/amount_picker.dart';
 import '../../widgets/common.dart';
 import 'meal_labels.dart';
 
@@ -35,7 +37,7 @@ class FoodDetailScreen extends StatefulWidget {
 }
 
 class _FoodDetailScreenState extends State<FoodDetailScreen> {
-  late final TextEditingController _grams;
+  late double _amount;
   late MealType _meal;
   late TimeOfDay _time;
 
@@ -48,16 +50,10 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
     _time = TimeOfDay.fromDateTime(now);
     _meal = widget.mealType ?? mealTypeForTime(now);
     final recipe = widget.deps.nutrition.recipeFor(widget.food.id);
-    _grams = TextEditingController(text: formatNumber(recipe?.servingGrams ?? 100));
+    _amount = recipe?.servingGrams ?? 100;
   }
 
-  @override
-  void dispose() {
-    _grams.dispose();
-    super.dispose();
-  }
-
-  double get _amount => parseNumber(_grams.text) ?? 0;
+  String get _unit => isLiquidFood(widget.food) ? 'ml' : 'g';
 
   void _add() {
     final grams = _amount;
@@ -65,7 +61,7 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
     final local = DateTime(day.year, day.month, day.day, _time.hour, _time.minute);
     try {
       widget.deps.mealLogger.logMeal(
-        items: [MealItemInput(foodId: widget.food.id, grams: grams, inputMethod: widget.inputMethod)],
+        items: [MealItemInput(foodId: widget.food.id, grams: grams, inputMethod: widget.inputMethod, unit: _unit)],
         mealType: _meal,
         occurredAt: local.toUtc(),
         occurredAtTzOffsetMinutes: local.timeZoneOffset.inMinutes,
@@ -125,16 +121,11 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
         children: [
           Row(children: [
             Expanded(
-              child: TextField(
-                key: const Key('food_grams'),
-                controller: _grams,
-                keyboardType: const TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(
-                  labelText: 'Quantidade',
-                  suffixText: 'g',
-                  helperText: _isPortionItem ? '100 g = 1 porção do seu item' : null,
-                ),
-                onChanged: (_) => setState(() {}),
+              flex: 3,
+              child: AmountPicker(
+                food: widget.food,
+                initialGrams: _amount,
+                onChanged: (g) => setState(() => _amount = g),
               ),
             ),
             const SizedBox(width: RltSpace.m),
@@ -174,7 +165,11 @@ class _FoodDetailScreenState extends State<FoodDetailScreen> {
               ]),
             ]),
           ),
-          RltSectionHeader('Tabela nutricional · ${formatNumber(_amount)} g'),
+          if (_isPortionItem) Padding(
+            padding: const EdgeInsets.only(top: RltSpace.xs),
+            child: Text('100 g = 1 porção do seu item', style: t.bodySmall),
+          ),
+          RltSectionHeader('Tabela nutricional · ${formatNumber(_amount)} $_unit'),
           line('Valor energético', '${formatNumber(f.energyKcalPer100g * factor)} kcal', bold: true),
           line('Carboidratos', g(f.carbohydratesPer100g)),
           line('Açúcares', g(f.sugarPer100g), indent: true),

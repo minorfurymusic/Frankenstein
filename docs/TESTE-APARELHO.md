@@ -28,6 +28,9 @@ com os prints, num ciclo de correções. Prints em `docs/teste-aparelho/`.
 | 18 | 2026-10-16 | Treino ao vivo | Séries 2 e 3 vinham com 0 kg depois da 1ª com 34 kg; "0 kg" para peso do corpo | Herdar carga; mostrar "peso do corpo" | feito no código |
 | 19 | 2026-10-16 | Adição rápida | Usuário espera buscar alimento com cálculo automático | — | a busca existe (Adicionar alimento › buscar, TACO, sem IA); "cafe" não achava "Café" — busca passou a ignorar acento |
 
+| 20 | 2026-10-16 | Treino › gasto | 6 kcal por tempo de tela; carga não contava | Carga × repetições | feito no código (ADR-21): retas de Reis 2017 por exercício + geral; recuperação de Knausenberger 2014; carga total + barra somada; kcal por hora no resumo |
+| 21 | 2026-10-16 | Alimentos › quantidade | Só gramas; café em g | Medidas caseiras, ml | feito no código: medida (ovo P/M/G, copo, colher, fio) × quantas; bebidas em ml; "Montar prato com ingredientes" na tela de adicionar. Dados novos (USDA/OFF) aguardando o usuário |
+
 ## Prints recebidos (explicação do usuário pendente)
 
 | Arquivo | Tela | Observação minha (a confirmar com o usuário) |

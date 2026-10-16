@@ -12,6 +12,7 @@ import '../../documents/document_files.dart';
 import '../../format.dart';
 import '../../theme/rlt_colors.dart';
 import '../../theme/rlt_theme.dart';
+import '../../widgets/amount_picker.dart';
 import '../../widgets/common.dart';
 import '../../widgets/state_views.dart';
 import '../account/goals_screen.dart';
@@ -362,31 +363,19 @@ class _GramsDialog extends StatefulWidget {
 }
 
 class _GramsDialogState extends State<_GramsDialog> {
-  final _g = TextEditingController(text: '100');
-  @override
-  void dispose() {
-    _g.dispose();
-    super.dispose();
-  }
+  double _grams = 100;
 
   @override
   Widget build(BuildContext context) {
     return AlertDialog(
       title: Text(widget.food.name),
-      content: TextField(
-        key: const Key('grams_input'),
-        controller: _g,
-        autofocus: true,
-        keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        decoration: const InputDecoration(labelText: 'Quantidade', suffixText: 'g'),
-      ),
+      content: AmountPicker(food: widget.food, initialGrams: 100, onChanged: (g) => _grams = g),
       actions: [
         TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),
         FilledButton(
           key: const Key('grams_ok'),
           onPressed: () {
-            final v = parseNumber(_g.text);
-            if (v != null && v > 0) Navigator.pop(context, v);
+            if (_grams > 0) Navigator.pop(context, _grams);
           },
           child: const Text('Adicionar'),
         ),

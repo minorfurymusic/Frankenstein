@@ -45,6 +45,20 @@ class ActivityReadModel {
     return w.isEmpty ? null : w.first.value;
   }
 
+  /// Gasto de um treino de academia pelas séries (carga × repetições,
+  /// ADR-21), não pelo tempo de tela aberta.
+  double sessionKcal(HealthEvent session, double bodyWeightKg) => strengthSessionKcal(
+        days.core
+            .queryByType(HealthEventType.setLog, from: session.occurredAt, to: session.occurredAt)
+            .where((s) => s.payload['session_event_id'] == session.id)
+            .map((s) => (
+                  exerciseId: '${s.payload['exercise_id']}',
+                  loadKg: (s.payload['load_kg'] as num).toDouble(),
+                  reps: (s.payload['reps'] as num).toInt(),
+                )),
+        bodyWeightKg,
+      );
+
   List<ActivityEntry> forDay(DateTime day) {
     final kg = _weightKg;
     double kcal(double met, Duration? d) =>
@@ -73,7 +87,7 @@ class ActivityReadModel {
           title: 'Treino de academia',
           local: local,
           duration: duration,
-          kcal: kcal(strengthTrainingMet, duration),
+          kcal: kg == null ? 0 : sessionKcal(e, kg),
           detail: '${e.payload['sets_count']} séries',
         ));
       }

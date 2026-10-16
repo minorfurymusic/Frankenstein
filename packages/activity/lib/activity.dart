@@ -39,6 +39,7 @@ export 'src/run_tools.dart';
 export 'src/step_sensor.dart';
 export 'src/steps_repository.dart';
 export 'src/steps_sample.dart';
+export 'src/strength_energy.dart';
 export 'src/workout_logger.dart';
 export 'src/workout_plan.dart';
 export 'src/workout_repository.dart';

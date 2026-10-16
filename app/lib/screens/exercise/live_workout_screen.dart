@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:frankstein_activity/activity.dart';
 import 'package:frankstein_health_core/health_core.dart';
-import 'package:frankstein_profile/profile.dart';
 
 import '../../app_dependencies.dart';
 import '../../data/activity_read_model.dart';
@@ -319,7 +318,7 @@ class _ActiveSetCardState extends State<_ActiveSetCard> {
               key: const Key('live_load'),
               controller: _load,
               keyboardType: const TextInputType.numberWithOptions(decimal: true),
-              decoration: const InputDecoration(labelText: 'Carga', suffixText: 'kg', helperText: '0 = peso do corpo'),
+              decoration: const InputDecoration(labelText: 'Carga total', suffixText: 'kg', helperText: '0 = peso do corpo'),
               onChanged: (v) => widget.set.loadKg = parseNumber(v) ?? widget.set.loadKg,
             ),
           ),
@@ -365,9 +364,10 @@ class WorkoutSummaryScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final seconds = (session.payload['duration_seconds'] as num?)?.toInt();
     final weights = deps.healthRead.weights(days: 3650);
-    final kcal = seconds == null || weights.isEmpty
-        ? null
-        : HealthFormulas.activityKcal(met: strengthTrainingMet, weightKg: weights.first.value, duration: Duration(seconds: seconds));
+    // Pelas séries (carga × repetições, ADR-21); o relógio só mostra a
+    // duração e o rendimento por hora.
+    final kcal = weights.isEmpty ? null : deps.activityRead.sessionKcal(session, weights.first.value);
+    final perHour = kcal == null || seconds == null || seconds < 60 ? null : kcal / (seconds / 3600);
     final sets = deps.core
         .queryByType(HealthEventType.setLog, from: session.occurredAt, to: session.occurredAt)
         .where((e) => e.payload['session_event_id'] == session.id)
@@ -381,6 +381,7 @@ class WorkoutSummaryScreen extends StatelessWidget {
             iconColor: RltColors.of(context).primary,
             label: 'Duração',
             value: seconds == null ? '—' : durationLabel(Duration(seconds: seconds)),
+            caption: perHour == null ? null : '${formatNumber(perHour)} kcal por hora',
           ),
           RltStatTile(
             icon: Icons.local_fire_department_outlined,
