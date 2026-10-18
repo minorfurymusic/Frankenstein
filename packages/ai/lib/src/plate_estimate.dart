@@ -10,6 +10,9 @@ class PlateItem {
   final double fatGrams;
   final double? fiberGrams;
 
+  /// Açúcares totais da porção, quando a IA estimou.
+  final double? sugarGrams;
+
   /// Bebida: a quantidade em [grams] é em ml (1 ml ≈ 1 g para as contas).
   final bool liquid;
   const PlateItem({
@@ -20,6 +23,7 @@ class PlateItem {
     this.carbsGrams = 0,
     this.fatGrams = 0,
     this.fiberGrams,
+    this.sugarGrams,
     this.liquid = false,
   });
 
@@ -34,6 +38,7 @@ class PlateItem {
       carbsGrams: carbsGrams * f,
       fatGrams: fatGrams * f,
       fiberGrams: fiberGrams == null ? null : fiberGrams! * f,
+      sugarGrams: sugarGrams == null ? null : sugarGrams! * f,
       liquid: liquid,
     );
   }
@@ -73,6 +78,7 @@ const plateEstimateSchema = <String, dynamic>{
           'carbs_g': {'type': 'number'},
           'fat_g': {'type': 'number'},
           'fiber_g': {'type': 'number'},
+          'sugar_g': {'type': 'number'},
         },
         'required': ['name', 'grams', 'kcal', 'protein_g', 'carbs_g', 'fat_g'],
       },
@@ -86,7 +92,7 @@ Você estima o que há num prato de comida, a partir de uma foto, para um app de
 Regras:
 - Liste cada alimento visível separadamente, com nome comum em português (ex.: "Arroz branco", "Feijão carioca", "Frango grelhado").
 - Estime a porção em gramas pelo tamanho no prato. Se o peso total do prato for informado, distribua as porções para que a soma bata com esse peso (sem contar o prato).
-- Para cada alimento, estime kcal, protein_g, carbs_g, fat_g e, se souber, fiber_g, para a porção estimada (use valores típicos de tabelas brasileiras, como a TACO).
+- Para cada alimento, estime kcal, protein_g, carbs_g, fat_g e, se souber, fiber_g e sugar_g (açúcares totais), para a porção estimada (use valores típicos de tabelas brasileiras, como a TACO).
 - meal_type: seu palpite (café da manhã = breakfast, almoço = lunch, jantar = dinner, lanche = snack).
 - Se vier "A pessoa disse", use: ela sabe o que comeu (ex.: "pastel de carne, não comi a borda", "tirei a gordura"). Ajuste nomes, porções e valores a isso.
 - Se a foto não for de comida, devolva items vazio e, em not_food, diga em uma frase curta o que a foto mostra (ex.: "Print da tela de metas de um app.").
@@ -102,6 +108,7 @@ PlateEstimate parsePlateEstimate(Map<String, dynamic> json) {
     final grams = n(m['grams']);
     if (name.isEmpty || grams <= 0) continue;
     final fiber = m['fiber_g'];
+    final sugar = m['sugar_g'];
     items.add(PlateItem(
       name: name,
       grams: grams,
@@ -110,6 +117,7 @@ PlateEstimate parsePlateEstimate(Map<String, dynamic> json) {
       carbsGrams: n(m['carbs_g']),
       fatGrams: n(m['fat_g']),
       fiberGrams: fiber is num ? n(fiber) : null,
+      sugarGrams: sugar is num ? n(sugar) : null,
     ));
   }
   final notFood = json['not_food'];
@@ -171,6 +179,7 @@ Future<List<PlateItem>> refineMealItems(GeminiClient client, List<PlateItem> ite
               carbsGrams: i.carbsGrams,
               fatGrams: i.fatGrams,
               fiberGrams: i.fiberGrams,
+              sugarGrams: i.sugarGrams,
               liquid: true,
             ) : i,
   ];

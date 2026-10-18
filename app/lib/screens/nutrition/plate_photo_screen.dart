@@ -149,6 +149,7 @@ class _PlatePhotoScreenState extends State<PlatePhotoScreen> {
               carbs: i.carbsGrams,
               fat: i.fatGrams,
               fiber: i.fiberGrams,
+              sugar: i.sugarGrams,
             ),
             i.grams,
           ),

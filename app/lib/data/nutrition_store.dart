@@ -208,6 +208,7 @@ class NutritionStore {
     double carbs = 0,
     double fat = 0,
     double? fiber,
+    double? sugar,
     String idPrefix = 'photo',
   }) {
     if (name.trim().isEmpty) throw ArgumentError('dê um nome ao alimento');
@@ -222,6 +223,7 @@ class NutritionStore {
       carbohydratesPer100g: carbs * per100,
       fatPer100g: fat * per100,
       fiberPer100g: fiber == null ? null : fiber * per100,
+      sugarPer100g: sugar == null ? null : sugar * per100,
     );
     foods.insertCustomFood(food);
     return food;

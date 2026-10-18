@@ -20,6 +20,7 @@ import '../../data/meal_plan.dart';
 import '../../data/nutrition_store.dart';
 import '../../documents/document_files.dart';
 import '../../format.dart';
+import '../../insights/wellbeing.dart';
 import '../../theme/rlt_colors.dart';
 import '../../theme/rlt_theme.dart';
 import '../../widgets/badges.dart';
@@ -246,8 +247,15 @@ class _BrainScreenState extends State<BrainScreen> {
     'Bebi 500 ml de água',
     'bebi 2 L de água, comi 3 ovos e tomei dipirona às 9h',
     'fiz 3 séries de supino com 30 kg',
-    'resumo de hoje',
+    'Como estou?',
   ];
+
+  /// "Como estou?" e jeitos parecidos: análise com os resumos (ADR-25), sem
+  /// passar pelo planejamento.
+  static final _howAmI = RegExp(
+    r'^\s*(como (é que )?(eu )?(estou|to|tô|ando|vou)|como (está|esta|anda|tá|ta) (a )?minha sa[uú]de|me d[áa] um panorama)',
+    caseSensitive: false,
+  );
 
   /// Muda a tela e guarda a conversa (conversa vazia não é guardada).
   void _changed(VoidCallback fn) {
@@ -493,7 +501,7 @@ class _BrainScreenState extends State<BrainScreen> {
         if (name.isNotEmpty) 'name': name,
         'grams': g,
         // Novas gramas: kcal e macros acompanham na proporção.
-        for (final k in const ['kcal', 'protein_g', 'carbs_g', 'fat_g'])
+        for (final k in const ['kcal', 'protein_g', 'carbs_g', 'fat_g', 'sugar_g'])
           if (items[i][k] is num) k: (items[i][k] as num) * f,
       });
     }
@@ -520,6 +528,7 @@ class _BrainScreenState extends State<BrainScreen> {
             proteinGrams: (i['protein_g'] as num?)?.toDouble() ?? 0,
             carbsGrams: (i['carbs_g'] as num?)?.toDouble() ?? 0,
             fatGrams: (i['fat_g'] as num?)?.toDouble() ?? 0,
+            sugarGrams: (i['sugar_g'] as num?)?.toDouble(),
             liquid: i['unit'] == 'ml',
           ),
       ], note);
@@ -536,6 +545,7 @@ class _BrainScreenState extends State<BrainScreen> {
               'protein_g': i.proteinGrams,
               'carbs_g': i.carbsGrams,
               'fat_g': i.fatGrams,
+              'sugar_g': ?i.sugarGrams,
             },
         ];
         _mealFields(m);
@@ -725,7 +735,56 @@ class _BrainScreenState extends State<BrainScreen> {
       return;
     }
 
+    if (_howAmI.hasMatch(text)) {
+      await _wellbeing();
+      return;
+    }
     await _askAi('a sua mensagem', (caller) => caller.plan(text, deps.registry.specs));
+  }
+
+  /// "Como estou?" (ADR-25): resumos calculados aqui; só eles vão à IA, e a
+  /// pessoa vê o que foi enviado.
+  Future<void> _wellbeing() async {
+    final deps = widget.deps;
+    final snapshot = buildWellbeingSnapshot(deps);
+    if (snapshot.isEmpty) {
+      _changed(() => _messages.add(_BotMsg('Ainda não há registros suficientes para uma análise. Registre comida, peso, '
+          'passos ou humor por alguns dias e pergunte de novo.')));
+      return;
+    }
+    final what = 'os resumos da sua semana (médias de comida, peso, movimento, sono e remédios'
+        '${snapshot.includesMental ? ', e humor' : ''}) — sem histórico, exames ou documentos';
+    if (!await ensureAiConsent(context, deps, sending: what)) {
+      if (mounted) _changed(() => _messages.add(_BotMsg('Ok, não enviei nada.')));
+      return;
+    }
+    if (!mounted) return;
+    _changed(() {
+      _messages.add(_BotMsg('O que foi para a IA:\n${snapshot.text}'
+          '${snapshot.includesMental ? '' : '\n(Humor fica de fora. Para incluir, ligue em Conta › Cérebro (IA).)'}'));
+      _thinking = true;
+    });
+    _scrollToEnd();
+    try {
+      final r = await readWellbeing(await deps.ai.client(), snapshot);
+      if (!mounted) return;
+      _changed(() {
+        _thinking = false;
+        _messages.add(_BotMsg(
+          [r.summary, if (r.observations.isNotEmpty) r.observations.map((o) => '• $o').join('\n')].join('\n\n'),
+          fromAi: true,
+          model: _modelLabel,
+        ));
+        if (r.suggestions.isNotEmpty) _messages.add(_SuggestMsg(r.suggestions));
+      });
+    } catch (e) {
+      if (!mounted) return;
+      _changed(() {
+        _thinking = false;
+        _messages.add(_BotMsg(aiFailureMessage(e)));
+      });
+    }
+    _scrollToEnd();
   }
 
   /// Consentimento, IA, mensagens dela e um cartão por registro — o mesmo
@@ -1070,7 +1129,15 @@ class _BrainScreenState extends State<BrainScreen> {
       'meal_type': meal.wireValue,
       'items': [
         for (final i in estimate.items)
-          {'name': i.name, 'grams': i.grams, 'kcal': i.kcal, 'protein_g': i.proteinGrams, 'carbs_g': i.carbsGrams, 'fat_g': i.fatGrams},
+          {
+            'name': i.name,
+            'grams': i.grams,
+            'kcal': i.kcal,
+            'protein_g': i.proteinGrams,
+            'carbs_g': i.carbsGrams,
+            'fat_g': i.fatGrams,
+            'sugar_g': ?i.sugarGrams,
+          },
       ],
     });
     final results = await deps.pipeline.runPlan(ToolCallPlan(calls: [call]));

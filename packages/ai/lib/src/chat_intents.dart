@@ -164,6 +164,7 @@ const chatReadingSchema = <String, dynamic>{
                 'protein_g': {'type': 'number'},
                 'carbs_g': {'type': 'number'},
                 'fat_g': {'type': 'number'},
+                'sugar_g': {'type': 'number'},
               },
               'required': ['name', 'grams', 'kcal'],
             },
@@ -304,7 +305,7 @@ Você é o Cérebro do RLT, um app de saúde pessoal no Brasil. Você só ANOTA 
 Regras:
 - Separe cada coisa num item próprio: "bebi 2 L de água, comi 3 ovos e tomei dipirona às 9h" = 1 água + 1 refeição + 1 remédio.
 - Água em mililitros (1 copo = 250 ml, 1 garrafa pequena = 500 ml, 1 L = 1000 ml).
-- Refeição: um item por alimento, com gramas estimadas pela quantidade dita (1 ovo ≈ 50 g) e kcal, protein_g, carbs_g e fat_g estimados para essas gramas. Bebida (suco, refrigerante, energético, leite, café, chá, cerveja): liquid = true e grams = mililitros (1 L = 1000). kcal e macros são o TOTAL do item nas gramas/ml dele (2 copos = a soma dos dois), nunca por unidade. O que se põe na bebida ou na comida (açúcar, adoçante, leite, mel, azeite) é um item próprio, e o item da bebida conta só a bebida: "café com 15 g de açúcar" = "Café" (sem açúcar, ≈ 2 kcal por 100 ml) + "Açúcar" 15 g. Nunca conte o mesmo ingrediente duas vezes. Água pura vai em water, não em meals. meal_type pelo que a pessoa disse ou pela hora.
+- Refeição: um item por alimento, com gramas estimadas pela quantidade dita (1 ovo ≈ 50 g) e kcal, protein_g, carbs_g, fat_g e sugar_g (açúcares totais) estimados para essas gramas. Bebida (suco, refrigerante, energético, leite, café, chá, cerveja): liquid = true e grams = mililitros (1 L = 1000). kcal e macros são o TOTAL do item nas gramas/ml dele (2 copos = a soma dos dois), nunca por unidade. O que se põe na bebida ou na comida (açúcar, adoçante, leite, mel, azeite) é um item próprio, e o item da bebida conta só a bebida: "café com 15 g de açúcar" = "Café" (sem açúcar, ≈ 2 kcal por 100 ml) + "Açúcar" 15 g. Nunca conte o mesmo ingrediente duas vezes. Água pura vai em water, não em meals. meal_type pelo que a pessoa disse ou pela hora.
 - Remédio: copie o nome e, SÓ se a pessoa disse, a dose e a unidade. Nunca complete, sugira ou corrija dose. "Esqueci/pulei" = skipped.
 - Treino de academia: um item por exercício, com o nome em português (ex.: "Supino reto", "Agachamento livre", "Leg press"), séries, repetições e carga em kg (0 se for peso do corpo). Corrida e caminhada não entram aqui.
 - Remédio de uso (novo ou que a pessoa já toma: "comecei a tomar", "tomo", "faço uso", "uso todo dia") vai em new_medications, um item por remédio, com nome, dose e horários ditos. medication_doses é só para uma dose tomada ou pulada agora ("tomei a dipirona"). "Desde 01/02/2026" vai em start_date. Horário dito em relação a outro remédio ("30 min antes do enalapril pela manhã", com o enalapril às 07:00) vira o horário calculado ("06:30"), só nas doses que a pessoa disse. Se faltar dose ou horário, ponha o remédio mesmo assim com o que foi dito e pergunte o que falta em reply; em suggestions ofereça só horários comuns (ex.: "08:00", "12:00", "20:00") — nunca ofereça dose.
@@ -355,6 +356,7 @@ ChatReading parseChatReading(Map<String, dynamic> json) {
         proteinGrams: g('protein_g'),
         carbsGrams: g('carbs_g'),
         fatGrams: g('fat_g'),
+        sugarGrams: (i['sugar_g'] as num?) == null ? null : g('sugar_g'),
         liquid: i['liquid'] == true,
       ));
     }
