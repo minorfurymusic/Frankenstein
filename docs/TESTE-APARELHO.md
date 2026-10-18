@@ -83,3 +83,19 @@ com os prints, num ciclo de correções. Prints em `docs/teste-aparelho/`.
 Prints 21, 23 a 34 mostram exame de sangue real do usuário. O
 repositório é público; por isso ficaram **fora** dele, só na sessão de
 trabalho, até o usuário decidir (ver regra de dado de saúde / LGPD).
+
+## Para testar no aparelho (funções novas, 2026-10-18)
+
+| # | Onde | Como testar | Esperado |
+|---|---|---|---|
+| T1 | Saúde › Saúde mental | Tocar num rosto, completar energia/ansiedade/sentimentos, Salvar | "Humor salvo"; aparece na faixa de 30 dias e na lista; aba Saúde mostra "Último humor" |
+| T2 | Saúde › Saúde mental | "Registrar sintoma (tristeza, ansiedade…)" | Atalhos de sintomas mentais; salvo no Histórico médico |
+| T3 | Saúde › Saúde mental | Rolar até o fim | Aviso fixo CVV 188 / SAMU 192 |
+| T4 | Cérebro | Tocar "Como estou?" (ou escrever "como eu tô?") | Mostra "O que foi para a IA", a análise e sugestões tocáveis |
+| T5 | Conta › Cérebro (IA) | Ligar "Incluir saúde mental no Como estou?" e repetir T4 | Linha de humor aparece no que foi enviado |
+| T6 | Cérebro (com plano de refeições) | "não aguento mais ovo" | Cartão "Trocar no plano — <refeição>" com antes → depois; confirmar muda o plano |
+| T7 | Cérebro (com ficha de treino) | "enjoei do supino" → tocar numa opção | Cartão "Trocar na ficha"; confirmar troca o exercício (carga a definir) |
+| T8 | Conta › Lembretes › Rotina | Ver o liga/desliga geral e os 4 tipos | Cada tipo desliga sozinho |
+| T9 | Notificação de rotina | Registrar humor "Muito mal" 3 dias seguidos | No dia seguinte às 10h chega a notificação; abrir o app abre o Cérebro com a pergunta |
+| T10 | Cérebro › refeição | "comi um bolo de chocolate" | Cartão normal; o açúcar passa a entrar no "Como estou?" |
+| T11 | Conta › Permissões | Microfone negado | "Não permitida" + "Ativar" |
