@@ -224,6 +224,39 @@ void main() {
     expect(transport.bodies.single, contains('registre TODAS'));
   });
 
+  testWidgets('desabafo: a IA conversa e oferece salvar o humor; só grava ao confirmar', (tester) async {
+    transport.replies.add({
+      'reply': 'Sinto muito que o dia tenha sido assim. Brigas em casa pesam mesmo. Quer me contar o que aconteceu?',
+      'mood': {
+        'mood': 2,
+        'feelings': ['triste', 'cansado'],
+        'notes': 'Briga em casa',
+      },
+    });
+    await pump(tester);
+    await send(tester, 'tô muito pra baixo hoje, briguei em casa');
+    expect(find.textContaining('Quer me contar o que aconteceu?'), findsOneWidget);
+    expect(find.text('Humor — Mal'), findsOneWidget);
+    expect(find.textContaining('triste, cansado'), findsOneWidget);
+    expect(find.textContaining('A IA não é médica'), findsWidgets);
+    expect(deps.core.queryByType(HealthEventType.mood), isEmpty);
+
+    await tester.tap(find.byKey(const Key('confirmation_confirm')));
+    await tester.pumpAndSettle();
+    final e = deps.core.queryByType(HealthEventType.mood).single;
+    expect(e.payload['mood'], 2);
+    expect(e.payload['feelings'], ['triste', 'cansado']);
+    expect(e.payload['notes'], 'Briga em casa');
+  });
+
+  testWidgets('pergunta geral: a resposta da IA aparece, sem "nada para registrar"', (tester) async {
+    transport.replies.add({'reply': 'O enalapril é usado para tratar a pressão alta. Dúvidas sobre o seu caso, fale com seu médico.'});
+    await pump(tester);
+    await send(tester, 'pra que serve o enalapril?');
+    expect(find.textContaining('usado para tratar a pressão alta'), findsOneWidget);
+    expect(find.textContaining('Não encontrei nada para registrar'), findsNothing);
+  });
+
   testWidgets('tocar na própria mensagem abre Copiar e Editar e mandar de novo', (tester) async {
     transport.replies.add({'reply': 'Ok.'});
     await pump(tester);

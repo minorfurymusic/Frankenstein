@@ -96,6 +96,47 @@ ToolHandler logEstimatedMealHandler(
   };
 }
 
+/// Humor contado na conversa (ADR-23/27): vira cartão; só grava ao
+/// confirmar, no diário de Saúde › Saúde mental.
+final Map<String, dynamic> logMoodSchema = {
+  'type': 'object',
+  'properties': {
+    'mood': {'type': 'integer', 'minimum': 1, 'maximum': 5},
+    'feelings': {
+      'type': 'array',
+      'items': {'type': 'string'},
+    },
+    'notes': {'type': 'string'},
+  },
+  'required': ['mood'],
+};
+
+ToolSpec logMoodSpec() => ToolSpec(
+      name: 'log_mood',
+      description: 'Registra o humor do dia contado na conversa',
+      write: true,
+      confirm: true,
+      module: 'health_records',
+      parametersSchema: logMoodSchema,
+    );
+
+ToolHandler logMoodHandler(MoodLogger logger, {required int Function() tzOffsetMinutesProvider}) {
+  return (params) async {
+    try {
+      final e = logger.log(
+        mood: params['mood'] as int,
+        feelings: [for (final f in (params['feelings'] as List? ?? const [])) '$f'],
+        notes: params['notes'] as String?,
+        occurredAt: DateTime.now().toUtc(),
+        occurredAtTzOffsetMinutes: tzOffsetMinutesProvider(),
+      );
+      return ToolResult.ok({'event_id': e.id});
+    } on ArgumentError catch (e) {
+      return ToolResult.failure(e.message.toString());
+    }
+  };
+}
+
 /// Aviso fixo do app quando a IA marca `seek_care` — o texto é nosso, não
 /// da IA (`.claude/rules/brain.md`: sintoma preocupante = orientar a
 /// procurar profissional).
@@ -243,6 +284,7 @@ ToolCallPlan planFromReading(ChatReading r, {required List<Medication> medicatio
       'start_date': m.startDate ?? date,
     }));
   }
+  if (r.mood != null) calls.add(ToolCallDecision('log_mood', Map.of(r.mood!)));
   for (final h in r.history) {
     calls.add(ToolCallDecision('add_history_item', Map.of(h)));
   }

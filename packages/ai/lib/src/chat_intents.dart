@@ -87,6 +87,10 @@ class ChatReading {
   /// `plan` (`meal` ou `workout`), `item`, e `replacement`/`meal_type` se ditos.
   final List<Map<String, dynamic>> planSwaps;
 
+  /// Humor que a pessoa contou ("tô muito pra baixo"), já no formato de
+  /// `log_mood` — vira cartão, só salva se ela confirmar (ADR-23/27).
+  final Map<String, dynamic>? mood;
+
   /// Avisos do app sobre o que a IA entendeu mas faltou dado para virar
   /// cartão (ex.: remédio sem horário).
   final List<String> incomplete;
@@ -116,6 +120,7 @@ class ChatReading {
     this.history = const [],
     this.incomplete = const [],
     this.planSwaps = const [],
+    this.mood,
   });
 
   bool get isEmpty =>
@@ -129,8 +134,12 @@ class ChatReading {
       bodyMeasurements.isEmpty &&
       history.isEmpty &&
       planSwaps.isEmpty &&
+      mood == null &&
       questions.isEmpty;
 }
+
+/// Os mesmos sentimentos da tela Saúde mental (`MoodLogger.feelings`).
+const moodFeelings = ['feliz', 'calmo', 'grato', 'cansado', 'triste', 'ansioso', 'irritado', 'sem vontade', 'sozinho', 'agitado'];
 
 const _at = {'type': 'string', 'description': 'ISO 8601 com fuso, ex.: 2026-10-05T09:00:00-03:00. Omita se a pessoa não disse quando.'};
 
@@ -280,6 +289,22 @@ const chatReadingSchema = <String, dynamic>{
         'required': ['kind', 'value'],
       },
     },
+    'mood': {
+      'type': 'object',
+      'description': 'Só quando a pessoa conta como está se sentindo.',
+      'properties': {
+        'mood': {'type': 'integer', 'description': '1 muito mal, 2 mal, 3 mais ou menos, 4 bem, 5 muito bem'},
+        'feelings': {
+          'type': 'array',
+          'items': {
+            'type': 'string',
+            'enum': moodFeelings,
+          },
+        },
+        'notes': {'type': 'string', 'description': 'Resumo curto do que aconteceu, nas palavras dela.'},
+      },
+      'required': ['mood'],
+    },
     'history_items': {
       'type': 'array',
       'items': {
@@ -336,6 +361,7 @@ Regras:
 - Remédio: copie o nome e, SÓ se a pessoa disse, a dose e a unidade. Nunca complete, sugira ou corrija dose. "Esqueci/pulei" = skipped.
 - Treino de academia: um item por exercício, com o nome em português (ex.: "Supino reto", "Agachamento livre", "Leg press"), séries, repetições e carga em kg (0 se for peso do corpo). Corrida e caminhada não entram aqui.
 - Remédio de uso (novo ou que a pessoa já toma: "comecei a tomar", "tomo", "faço uso", "uso todo dia") vai em new_medications, um item por remédio, com nome, dose e horários ditos. medication_doses é só para uma dose tomada ou pulada agora ("tomei a dipirona"). "Desde 01/02/2026" vai em start_date. Horário dito em relação a outro remédio ("30 min antes do enalapril pela manhã", com o enalapril às 07:00) vira o horário calculado ("06:30"), só nas doses que a pessoa disse. Se faltar dose ou horário, ponha o remédio mesmo assim com o que foi dito e pergunte o que falta em reply; em suggestions ofereça só horários comuns (ex.: "08:00", "12:00", "20:00") — nunca ofereça dose.
+- Sentimentos: quando a pessoa desabafa ou conta como está ("tô muito pra baixo", "hoje foi um dia ótimo"), CONVERSE com acolhimento em reply (ouça, valide, ajude a pensar, sem julgar) e preencha mood com o humor dela (1 a 5), sentimentos e um resumo curto; o app oferece salvar no diário de saúde mental. Não rotule transtorno. Se houver risco (pensar em se machucar, desespero), seek_care = true.
 - Histórico: doença, alergia, cirurgia, vacina ou consulta que a pessoa diz ter ou ter tido ("tenho hipertensão", "sou alérgico a dipirona") vai em history_items, com o nome como ela disse. Remédio citado junto continua indo em new_medications. Nunca deduza doença a partir de remédio (enalapril sozinho não vira hipertensão).
 - Sintoma: nome curto; intensidade de 0 a 10 só se a pessoa deu. Não interprete nem dê diagnóstico.
 - Sinais vitais: pressão "12 por 8" = 120/80 mmHg; temperatura em °C; glicemia em mg/dL; saturação em %; frequência em bpm.
@@ -490,6 +516,17 @@ ChatReading parseChatReading(Map<String, dynamic> json) {
     vitalSigns: vitals,
     bodyMeasurements: body,
     questions: [for (final q in (json['questions'] as List? ?? const [])) q as String],
+    mood: () {
+      final m = json['mood'];
+      if (m is! Map) return null;
+      final v = m['mood'];
+      if (v is! int || v < 1 || v > 5) return null;
+      return <String, dynamic>{
+        'mood': v,
+        'feelings': [for (final f in (m['feelings'] as List? ?? const [])) if (moodFeelings.contains(f)) f as String],
+        if (_text(m['notes']) != null) 'notes': _text(m['notes']),
+      };
+    }(),
     planSwaps: [
       for (final p in list('plan_swaps'))
         if ((p['plan'] == 'meal' || p['plan'] == 'workout') && _text(p['item']) != null)

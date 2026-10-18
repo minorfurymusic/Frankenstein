@@ -413,6 +413,7 @@ class AppDependencies {
       // Lido de documentos no Cérebro (ADR-19).
       ..register(addHistoryItemSpec(), addHistoryItemHandler(medicalHistory))
       ..register(updateHeightSpec(), updateHeightHandler(profileRepository))
+      ..register(logMoodSpec(), logMoodHandler(MoodLogger(core: core), tzOffsetMinutesProvider: tzOffsetMinutesProvider))
       // Trocas equivalentes no plano (ADR-26).
       ..register(swapPlanItemSpec(), swapPlanItemHandler(MealPlanStore(profileRepository)))
       ..register(swapPlanExerciseSpec(), swapPlanExerciseHandler(workoutRepository))

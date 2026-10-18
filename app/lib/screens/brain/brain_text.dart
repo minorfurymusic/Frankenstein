@@ -8,6 +8,7 @@ import '../../app_dependencies.dart';
 import '../../format.dart';
 import '../../widgets/health_area.dart';
 import '../health/documents_screens.dart' show formatMarkerValue;
+import '../health/mental_health_screen.dart' show moodLabels;
 
 /// Como um cartão de proposta mostra uma ferramenta de escrita: área de
 /// destino, título, detalhe e onde fica salvo depois de confirmado.
@@ -155,6 +156,16 @@ ProposalView describeProposal(AppDependencies deps, String tool, Map<String, dyn
         '${kind?.label ?? 'Histórico'} — ${p['title']}',
         extra.isEmpty ? null : extra,
         'Saúde › Histórico médico',
+      );
+    case 'log_mood':
+      final v = (p['mood'] as num?)?.toInt() ?? 3;
+      final feelings = (p['feelings'] as List? ?? const []).join(', ');
+      return ProposalView(
+        HealthArea.mood,
+        'Humor — ${moodLabels[(v - 1).clamp(0, 4)]}',
+        [if (feelings.isNotEmpty) feelings, ?(p['notes'] as String?)].join('\n'),
+        'Saúde › Saúde mental',
+        when: 'hoje, agora',
       );
     case 'swap_plan_item':
       String item(Object? raw) {
