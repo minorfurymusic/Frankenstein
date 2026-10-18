@@ -212,7 +212,7 @@ void main() {
     });
     await pump(tester);
     await send(tester, 'sou hipertenso desde 01/02/2026, tomo enalapril 20 mg às 7 e 18h e pantoprazol 20 mg meia hora antes pela manhã; almocei 400 g de frango');
-    expect(find.textContaining('Para cadastrar Losartana, me diga a dose e os horários'), findsOneWidget);
+    expect(find.textContaining('Para cadastrar Losartana, me diga a dose (como está na receita ou na embalagem) e os horários'), findsOneWidget);
     // Os cartões vêm um de cada vez; confirmar todos grava tudo.
     for (var i = 0; i < 4; i++) {
       await tester.tap(find.byKey(const Key('confirmation_confirm')).first);

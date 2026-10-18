@@ -120,4 +120,24 @@ void main() {
     });
     expect(r.meals.single.items.map((i) => (i.name, i.liquid)), [('Energético sem açúcar', true), ('Pão', false)]);
   });
+
+  test('remédio sem horário: o aviso usa a dose dita; sem dose, pede a da receita — nunca sugere número', () {
+    final r = parseChatReading({
+      'reply': 'Ok.',
+      'new_medications': [
+        {'name': 'Creatina', 'dose_amount': 6, 'dose_unit': 'g', 'times': []},
+        {'name': 'Hidroclorotiazida', 'times': []},
+      ],
+    });
+    expect(r.newMedications, isEmpty);
+    expect(r.incomplete, [
+      'Para cadastrar Creatina 6 g, me diga os horários (ex.: "às 08:00 e às 20:00").',
+      'Para cadastrar Hidroclorotiazida, me diga a dose (como está na receita ou na embalagem) e os horários.',
+    ]);
+  });
+
+  test('a instrução proíbe perguntar de novo o que o app já pergunta e usar questions sem pergunta', () {
+    expect(chatReadingInstruction, contains('Em reply, não repita essa pergunta'));
+    expect(chatReadingInstruction, contains('contar o que toma não é perguntar'));
+  });
 }

@@ -339,7 +339,8 @@ Regras:
 - Sinais vitais: pressão "12 por 8" = 120/80 mmHg; temperatura em °C; glicemia em mg/dL; saturação em %; frequência em bpm.
 - Medidas: peso em kg, gordura em %, circunferências em cm.
 - at: use a hora que a pessoa disse, no fuso dela (veja "Agora"). "Às 9h" de hoje que ainda não chegou = ontem. Sem hora dita, omita.
-- Perguntas sobre os próprios dados ("quantos passos dei?", "resumo do dia", "que remédios tenho hoje?") vão em questions; não responda você.
+- Perguntas sobre os próprios dados ("quantos passos dei?", "resumo do dia", "que remédios tenho hoje?") vão em questions; não responda você. Só use questions quando a pessoa PERGUNTA; contar o que toma não é perguntar.
+- Remédio com dose ou horário faltando: ponha em new_medications mesmo assim, com o que foi dito; o app pergunta o que falta. Em reply, não repita essa pergunta e não diga que anotou o que ficou faltando.
 - Nunca diagnostique, prescreva ou recomende remédio, dose, dieta ou tratamento. Se pedirem, diga em reply que o app só registra e que um profissional pode orientar.
 - seek_care = true se a pessoa descreve algo que pede atenção profissional rápida (dor no peito, falta de ar, desmaio, sangramento forte, pensamentos de se machucar, febre muito alta, pressão ou glicemia muito altas ou baixas).
 - Mensagem de voz (áudio anexo): escreva em transcript o que a pessoa falou e entenda o áudio como a mensagem.
@@ -362,6 +363,8 @@ double? _pos(Object? v) {
 }
 
 String? _text(Object? v) => v is String && v.trim().isNotEmpty ? v.trim() : null;
+
+String _fmt(double v) => v == v.roundToDouble() ? v.toInt().toString() : v.toString().replaceAll('.', ',');
 
 ChatReading parseChatReading(Map<String, dynamic> json) {
   List<Map<String, dynamic>> list(String key) => [for (final e in (json[key] as List? ?? const [])) e as Map<String, dynamic>];
@@ -412,8 +415,12 @@ ChatReading parseChatReading(Map<String, dynamic> json) {
     if (name == null) continue;
     if (amount == null || unit == null || times.isEmpty) {
       // Sem dose ou horário não vira cartão, mas não some calado.
-      final missing = [if (amount == null || unit == null) 'a dose', if (times.isEmpty) 'os horários'].join(' e ');
-      incomplete.add('Para cadastrar $name, me diga $missing (ex.: "$name 20 mg às 07:00").');
+      // Exemplo sem número de dose: o app nunca sugere dose.
+      final dose = amount != null && unit != null ? ' ${_fmt(amount)} $unit' : '';
+      incomplete.add(dose.isEmpty
+          ? 'Para cadastrar $name, me diga a dose (como está na receita ou na embalagem)'
+              '${times.isEmpty ? ' e os horários' : ''}.'
+          : 'Para cadastrar $name$dose, me diga os horários (ex.: "às 08:00 e às 20:00").');
       continue;
     }
     final start = _text(m['start_date']);
