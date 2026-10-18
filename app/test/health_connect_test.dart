@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:frankstein/ai/voice_recorder.dart';
 import 'package:frankstein/app_dependencies.dart';
 import 'package:frankstein/card_image_capturer.dart';
 import 'package:frankstein/confirmation_gate.dart';
@@ -225,5 +226,23 @@ void main() {
     expect(find.textContaining('Sono e batimentos via Health Connect (só leitura).\nPermitida'), findsOneWidget);
     await pump(tester, PrivacyScreen(deps: deps));
     expect(find.byKey(const Key('privacy_health_connect')), findsOneWidget);
+  });
+
+  testWidgets('Permissões: microfone negado mostra "Não permitida" e "Ativar" pede ao Android', (tester) async {
+    final mic = FakeVoiceRecorder(granted: false);
+    final d = AppDependencies.inMemory(
+      confirmationGate: AppConfirmationGate(GlobalKey<NavigatorState>()),
+      shareSheet: FakeShareSheet(),
+      imageCapturer: FakeCardImageCapturer(),
+      voiceRecorder: mic,
+    );
+    addTearDown(d.close);
+    await pump(tester, PermissionsScreen(deps: d));
+    expect(find.textContaining('não fica guardado.\nNão permitida'), findsOneWidget);
+    mic.granted = true;
+    await tester.tap(find.text('Ativar').last);
+    await tester.pumpAndSettle();
+    expect(mic.permissionRequests, 1);
+    expect(find.textContaining('não fica guardado.\nPermitida'), findsOneWidget);
   });
 }

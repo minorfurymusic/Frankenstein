@@ -263,14 +263,23 @@ class PermissionsScreen extends StatelessWidget {
               snap.data == null ? 'Verificando…' : (snap.data! ? 'Permitida' : 'O Android pergunta quando você inicia uma corrida'),
             ),
           ),
-          FutureBuilder<bool>(
-            key: const Key('permission_mic'),
-            future: deps.voiceRecorder.hasPermission(),
-            builder: (context, snap) => row(
-              Icons.mic_none,
-              'Microfone',
-              'Falar com o Cérebro (com a IA ativa). O áudio vai à IA só quando você solta o botão e não fica guardado.',
-              snap.data == null ? 'Verificando…' : (snap.data! ? 'Permitida' : 'O Android pergunta quando você segura o microfone no Cérebro'),
+          // "Ativar" pede ao Android e a linha confere de novo.
+          StatefulBuilder(
+            builder: (context, refresh) => FutureBuilder<bool>(
+              key: const Key('permission_mic'),
+              future: deps.voiceRecorder.hasPermission(),
+              builder: (context, snap) => row(
+                Icons.mic_none,
+                'Microfone',
+                'Falar com o Cérebro (com a IA ativa). O áudio vai à IA só quando você manda e não fica guardado.',
+                snap.data == null ? 'Verificando…' : (snap.data! ? 'Permitida' : 'Não permitida'),
+                onTap: snap.data == false
+                    ? () async {
+                        await deps.voiceRecorder.requestPermission();
+                        refresh(() {});
+                      }
+                    : null,
+              ),
             ),
           ),
         ]),
