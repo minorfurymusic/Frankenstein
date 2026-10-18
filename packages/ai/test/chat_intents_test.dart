@@ -163,4 +163,9 @@ void main() {
       {'activity': 'walking', 'distance_m': 500.0},
     ]);
   });
+
+  test('"caminhei até a praia, uns 700 m" = ida e volta por padrão (jeito comum de falar)', () {
+    expect(chatReadingInstruction, contains('caminhada ou corrida até um lugar = round_trip = true'));
+    expect(chatReadingInstruction, contains('voltou de outro jeito'));
+  });
 }

@@ -288,7 +288,7 @@ void main() {
     expect(transport.bodies.single, contains('Não calcule passos nem calorias'));
   });
 
-  testWidgets('ida e volta: "fui e voltei" dobra; no cartão, o botão Ida e volta também dobra', (tester) async {
+  testWidgets('ida e volta: dobra a distância de um trecho; no cartão, o botão Ida e volta liga e desliga', (tester) async {
     transport.replies.add({
       'reply': 'Anotei.',
       'activities': [
@@ -304,12 +304,12 @@ void main() {
     await tester.pumpAndSettle();
 
     transport.replies.add({
-      'reply': 'Anotei a ida. A volta também foi a pé?',
+      'reply': 'Anotei. Voltei de carona, então só a ida.',
       'activities': [
         {'activity': 'walking', 'distance_m': 700, 'label': 'Praia'},
       ],
     });
-    await send(tester, 'caminhei até a praia, uns 700 m');
+    await send(tester, 'caminhei até a praia, uns 700 m, e voltei de carona');
     expect(find.text('Passos — ≈ 933'), findsOneWidget);
     await tester.tap(find.byIcon(Icons.edit_outlined));
     await tester.pumpAndSettle();
