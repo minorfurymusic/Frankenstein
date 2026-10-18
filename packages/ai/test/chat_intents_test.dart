@@ -140,4 +140,12 @@ void main() {
     expect(chatReadingInstruction, contains('Em reply, não repita essa pergunta'));
     expect(chatReadingInstruction, contains('contar o que toma não é perguntar'));
   });
+
+  test('ADR-27: conversa e explica remédio como a bula, sem mandar mudar tratamento nem afirmar diagnóstico', () {
+    expect(chatReadingInstruction, contains('CONVERSA como um assistente de IA comum'));
+    expect(chatReadingInstruction, contains('explica remédios e doenças como a bula'));
+    expect(chatReadingInstruction, contains('não mande a pessoa começar, parar, trocar ou mudar a dose'));
+    expect(chatReadingInstruction, contains('não diga que a pessoa TEM uma doença'));
+    expect(chatReadingInstruction, isNot(contains('o app só registra')));
+  });
 }

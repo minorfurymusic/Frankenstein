@@ -1593,7 +1593,7 @@ class _Bubble extends StatelessWidget {
           if (disclaimer) ...[
             const SizedBox(height: 6),
             Text(
-              '${model == null ? '' : '$model · '}O RLT registra; não diagnostica nem prescreve.',
+              '${model == null ? '' : '$model · '}A IA não é médica: decisões de saúde, com um profissional.',
               key: const Key('brain_ai_disclaimer'),
               style: Theme.of(context).textTheme.bodySmall?.copyWith(color: c.onSurfaceVariant),
             ),
