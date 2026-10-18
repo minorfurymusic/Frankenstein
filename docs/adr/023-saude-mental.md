@@ -29,9 +29,13 @@ Opção 1, recomendada e escolhida pelo usuário (2026-10-18):
 - Aviso fixo do app, sempre visível na tela e no Cérebro quando a IA
   marca `seek_care`: CVV 188 (24 h, gratuito) e SAMU 192. O texto é do
   app, nunca da IA.
-- Questionários de rastreio (PHQ-9, GAD-7): entram só com o texto
-  oficial em português conferido na fonte — até lá, pendentes
-  (`TODO(frankstein)`). Mostram pontuação e evolução, nunca diagnóstico.
+- Questionários de rastreio (PHQ-9, GAD-7) com o texto oficial em
+  português do Brasil ("Portuguese for Brazil version", Pfizer), cuja
+  licença diz "Não é necessária permissão para reproduzir, traduzir,
+  exibir ou distribuir". Fontes em `app/lib/screens/health/questionnaires.dart`.
+  Mostram a pontuação e o ponto de corte dos autores (10), nunca
+  diagnóstico. Item 9 do PHQ-9 acima de "nenhuma vez" mostra na hora o
+  aviso do CVV. Novo tipo de evento `screening`.
 - Cuidador (ex.: Alzheimer) fica para depois: pede perfil de cuidador.
 
 ## Consequências

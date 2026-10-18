@@ -142,11 +142,6 @@ class AiSettings {
     return list;
   }
 
-  /// Humor e sintomas mentais nas análises da IA (ADR-25): consentimento
-  /// próprio, desligado por padrão.
-  bool get mentalHealthConsent => settings.getSetting('ai_mental_consent') == 'on';
-  set mentalHealthConsent(bool on) => settings.setSetting('ai_mental_consent', on ? 'on' : 'off');
-
   /// Consentimento (prancheta CerebroConsentimento), por provedor.
   DateTime? get consentedAt {
     final v = settings.getSetting('ai_consent_gemini');

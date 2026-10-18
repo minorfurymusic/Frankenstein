@@ -88,6 +88,18 @@ class HealthReadModel {
           ),
       ];
 
+  /// Questionários respondidos (PHQ-9, GAD-7), do mais recente ao mais antigo.
+  List<ScreeningView> screenings(String instrument, {int days = 365}) => [
+        for (final e in _lastDays(HealthEventType.screening, days).reversed)
+          if (e.payload['instrument'] == instrument)
+            ScreeningView(
+              instrument: instrument,
+              score: (e.payload['score'] as num).toInt(),
+              answers: [for (final a in e.payload['answers'] as List) (a as num).toInt()],
+              local: localOf(e.occurredAt, e.occurredAtTzOffsetMinutes),
+            ),
+      ];
+
   List<SymptomView> symptoms({int days = 365}) => [
         for (final e in _lastDays(HealthEventType.symptom, days).reversed)
           SymptomView(
@@ -210,6 +222,14 @@ class Adherence {
 
   /// `null` quando não havia dose prevista no período.
   double? get ratio => expected == 0 ? null : taken / expected;
+}
+
+class ScreeningView {
+  final String instrument;
+  final int score;
+  final List<int> answers;
+  final DateTime local;
+  ScreeningView({required this.instrument, required this.score, required this.answers, required this.local});
 }
 
 class MoodView {

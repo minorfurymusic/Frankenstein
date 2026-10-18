@@ -37,4 +37,15 @@ void main() {
     expect(() => logger.log(mood: 0, occurredAt: at, occurredAtTzOffsetMinutes: 0), throwsArgumentError);
     expect(() => logger.log(mood: 3, anxiety: 6, occurredAt: at, occurredAtTzOffsetMinutes: 0), throwsArgumentError);
   });
+
+  test('questionário: respostas de 0 a 3, soma gravada; número de itens conferido', () {
+    final logger = ScreeningLogger(core: core);
+    final at = DateTime.utc(2026, 10, 18);
+    logger.log(instrument: 'gad7', answers: const [1, 2, 0, 3, 1, 1, 0], difficulty: 1, occurredAt: at, occurredAtTzOffsetMinutes: 0);
+    expect(core.queryByType(HealthEventType.screening).single.payload,
+        {'instrument': 'gad7', 'answers': [1, 2, 0, 3, 1, 1, 0], 'score': 8, 'difficulty': 1});
+    expect(() => logger.log(instrument: 'phq9', answers: const [1, 2], occurredAt: at, occurredAtTzOffsetMinutes: 0), throwsArgumentError);
+    expect(() => logger.log(instrument: 'gad7', answers: const [4, 0, 0, 0, 0, 0, 0], occurredAt: at, occurredAtTzOffsetMinutes: 0),
+        throwsArgumentError);
+  });
 }

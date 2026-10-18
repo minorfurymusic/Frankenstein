@@ -96,6 +96,7 @@ class AppDependencies {
   final MedicationDoseLogger doseLogger;
   final SymptomLogger symptomLogger;
   final MoodLogger moodLogger;
+  final ScreeningLogger screeningLogger;
   final VitalSignLogger vitalSignLogger;
   final BodyLogger bodyLogger;
   final HealthReadModel healthRead;
@@ -170,6 +171,7 @@ class AppDependencies {
     required this.doseLogger,
     required this.symptomLogger,
     required this.moodLogger,
+    required this.screeningLogger,
     required this.vitalSignLogger,
     required this.bodyLogger,
     required this.healthRead,
@@ -479,6 +481,7 @@ class AppDependencies {
       doseLogger: doseLogger,
       symptomLogger: symptomLogger,
       moodLogger: MoodLogger(core: core),
+      screeningLogger: ScreeningLogger(core: core),
       vitalSignLogger: vitalSignLogger,
       bodyLogger: bodyLogger,
       healthRead: healthRead,

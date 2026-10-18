@@ -25,7 +25,9 @@ String _n(num v, [int d = 0]) => formatNumber(v, decimals: d);
 /// próprio, desligado por padrão).
 WellbeingSnapshot buildWellbeingSnapshot(AppDependencies deps, {DateTime? now, bool? includeMental}) {
   final today = now ?? DateTime.now();
-  final mental = includeMental ?? deps.ai.mentalHealthConsent;
+  // Humor e saúde mental entram sempre que a pessoa registrou (decisão do
+  // usuário, 2026-10-18 — revisão do ADR-25).
+  final mental = includeMental ?? true;
   final day0 = DateTime(today.year, today.month, today.day);
   List<DateTime> range(int from, int count) => [for (var i = from; i < from + count; i++) day0.subtract(Duration(days: i))];
   final week = [for (final d in range(0, 7)) deps.dayRead.totals(d)];
@@ -128,8 +130,15 @@ WellbeingSnapshot buildWellbeingSnapshot(AppDependencies deps, {DateTime? now, b
       lines.add('Humor (1 a 5) em 14 dias: média ${_n(avg(moods.map((m) => m.mood)), 1)}; $low registros "mal" ou "muito mal"'
           '${top.isEmpty ? '' : '; sentimentos mais marcados: ${top.map((e) => e.key).join(', ')}'}.');
     }
+    for (final (id, label, max) in const [('phq9', 'PHQ-9 (humor)', 27), ('gad7', 'GAD-7 (ansiedade)', 21)]) {
+      final s = deps.healthRead.screenings(id, days: 60);
+      if (s.isEmpty) continue;
+      lines.add('Questionário $label: ${s.first.score} de $max em ${ddmmyyyy(s.first.local)}'
+          '${s.length > 1 ? ' (antes: ${s[1].score} em ${ddmmyyyy(s[1].local)})' : ''}.');
+    }
   }
-  return WellbeingSnapshot(lines, includesMental: mental);
+  final hasMental = lines.any((l) => l.startsWith('Humor') || l.startsWith('Questionário'));
+  return WellbeingSnapshot(lines, includesMental: hasMental);
 }
 
 /// O que a IA devolve para "Como estou?".

@@ -109,6 +109,44 @@ class MoodLogger {
   }
 }
 
+/// Questionário de rastreio respondido (PHQ-9 ou GAD-7, ADR-23): as
+/// respostas (0 a 3) e a soma. Pontuação, nunca diagnóstico.
+class ScreeningLogger {
+  final HealthDataCore core;
+
+  ScreeningLogger({required this.core});
+
+  static const itemCount = {'phq9': 9, 'gad7': 7};
+
+  HealthEvent log({
+    required String instrument,
+    required List<int> answers,
+    required DateTime occurredAt,
+    required int occurredAtTzOffsetMinutes,
+    int? difficulty,
+  }) {
+    final n = itemCount[instrument];
+    if (n == null) throw ArgumentError('questionário desconhecido: $instrument');
+    if (answers.length != n || answers.any((a) => a < 0 || a > 3)) {
+      throw ArgumentError('$instrument tem $n respostas de 0 a 3');
+    }
+    if (difficulty != null && (difficulty < 0 || difficulty > 3)) throw ArgumentError('dificuldade vai de 0 a 3');
+    final e = _event(
+      HealthEventType.screening,
+      {
+        'instrument': instrument,
+        'answers': answers,
+        'score': answers.fold<int>(0, (s, a) => s + a),
+        'difficulty': ?difficulty,
+      },
+      occurredAt,
+      occurredAtTzOffsetMinutes,
+    );
+    core.insertEvent(e);
+    return e;
+  }
+}
+
 /// Sinais vitais. Entrada em unidade clínica (como a pessoa e o médico falam);
 /// gravação em SI. Frequência cardíaca manual vai no tipo `heart_rate`, em bpm,
 /// igual ao que o wearable já grava (`packages/wearable`) — mesma série.

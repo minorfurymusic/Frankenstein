@@ -20,6 +20,15 @@ mentais, questionários) só entram se a pessoa ligar um consentimento
 separado, desligado por padrão. A resposta vem com sugestões em cartões;
 a IA não diagnostica nem prescreve.
 
+## Revisão (2026-10-18, decisão do usuário)
+
+"Deveria sempre considerar o humor. Se a pessoa não alimenta os dados,
+não considera; se alimenta, deve sempre considerar." O consentimento
+separado para saúde mental foi retirado: humor, sintomas mentais e
+pontuação dos questionários entram nos resumos sempre que registrados. A
+pessoa continua vendo, no Cérebro, exatamente o que foi enviado, e o
+consentimento geral da IA (ADR-11) continua valendo.
+
 ## Consequências
 
 - Precisa guardar açúcar dos alimentos para falar de açúcar (hoje não

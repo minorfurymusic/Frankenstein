@@ -16,7 +16,10 @@ enum HealthEventType {
   bodyMeasurement,
 
   /// Humor do dia (saúde mental, ADR-23).
-  mood;
+  mood,
+
+  /// Questionário de rastreio respondido (PHQ-9, GAD-7 — ADR-23).
+  screening;
 
   /// Valor gravado no banco — snake_case, igual à documentação.
   String get wireValue => switch (this) {
@@ -35,6 +38,7 @@ enum HealthEventType {
         HealthEventType.vitalSign => 'vital_sign',
         HealthEventType.bodyMeasurement => 'body_measurement',
         HealthEventType.mood => 'mood',
+        HealthEventType.screening => 'screening',
       };
 
   static HealthEventType fromWireValue(String value) => switch (value) {
@@ -53,6 +57,7 @@ enum HealthEventType {
         'vital_sign' => HealthEventType.vitalSign,
         'body_measurement' => HealthEventType.bodyMeasurement,
         'mood' => HealthEventType.mood,
+        'screening' => HealthEventType.screening,
         _ => throw ArgumentError('tipo de HealthEvent desconhecido: $value'),
       };
 }

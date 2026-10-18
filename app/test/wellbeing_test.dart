@@ -79,20 +79,26 @@ void main() {
     deps.moodLogger.log(mood: 1, feelings: const ['triste'], occurredAt: low.toUtc(), occurredAtTzOffsetMinutes: 0);
   }
 
-  test('resumos: comida, açúcar e peso; humor só com o consentimento próprio', () {
+  test('resumos: comida, açúcar, peso e — sempre que registrado — humor e questionários', () {
     seed();
+    deps.screeningLogger.log(
+        instrument: 'gad7', answers: const [2, 2, 1, 1, 0, 2, 1], occurredAt: today.toUtc(), occurredAtTzOffsetMinutes: 0);
     final s = buildWellbeingSnapshot(deps, now: today);
     expect(s.text, contains('Comida: 5 de 7 dias com registro; média de 2.600 kcal/dia'));
     expect(s.text, contains('acima da meta em'));
     expect(s.text, contains('Açúcar (onde foi estimado): média de 60 g/dia'));
     expect(s.text, contains('80,0 kg'));
     expect(s.text, contains('+1,2 kg'));
+    expect(s.text, contains('Humor (1 a 5) em 14 dias: média 1,0; 1 registros "mal" ou "muito mal"; sentimentos mais marcados: triste'));
+    expect(s.text, contains('Questionário GAD-7 (ansiedade): 9 de 21'));
+    expect(s.includesMental, isTrue);
+  });
+
+  test('sem registro de humor, o humor não entra', () {
+    deps.bodyLogger.weight(kg: 80, occurredAt: today.toUtc(), occurredAtTzOffsetMinutes: 0);
+    final s = buildWellbeingSnapshot(deps, now: today);
     expect(s.text, isNot(contains('Humor')));
     expect(s.includesMental, isFalse);
-
-    deps.ai.mentalHealthConsent = true;
-    final withMental = buildWellbeingSnapshot(deps, now: today);
-    expect(withMental.text, contains('Humor (1 a 5) em 14 dias: média 1,0; 1 registros "mal" ou "muito mal"; sentimentos mais marcados: triste'));
   });
 
   testWidgets('"Como estou?" no Cérebro: mostra o que foi, a IA responde e as sugestões viram toques', (tester) async {
@@ -112,8 +118,7 @@ void main() {
 
     final sent = transport.bodies.single;
     expect(sent, contains('Açúcar (onde foi estimado)'));
-    expect(sent, isNot(contains('Humor'))); // sem o consentimento próprio
-    expect(sent, isNot(contains('triste')));
+    expect(sent, contains('Humor (1 a 5)')); // registrado: sempre entra
     expect(find.textContaining('O que foi para a IA:'), findsOneWidget);
     expect(find.textContaining('Seu peso subiu um pouco'), findsOneWidget);
     expect(find.textContaining('• O peso subiu 1,2 kg'), findsOneWidget);

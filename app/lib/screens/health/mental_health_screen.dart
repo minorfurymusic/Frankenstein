@@ -8,6 +8,7 @@ import '../../theme/rlt_colors.dart';
 import '../../theme/rlt_theme.dart';
 import '../../widgets/badges.dart';
 import '../../widgets/common.dart';
+import 'questionnaires.dart';
 import 'symptoms_screen.dart';
 
 /// Rótulo de cada nível de humor (1 a 5).
@@ -25,8 +26,6 @@ const mentalSymptoms = ['Tristeza', 'Crise de ansiedade', 'Insônia', 'Irritaç�
 
 /// Saúde › Saúde mental (ADR-23): humor do dia em um toque, histórico dos
 /// últimos 30 dias e o aviso fixo de crise. Tudo fica no celular.
-// TODO(frankstein): questionários PHQ-9 e GAD-7 — só com o texto oficial em
-// português conferido na fonte (ADR-23).
 class MentalHealthScreen extends StatelessWidget {
   final AppDependencies deps;
   const MentalHealthScreen({super.key, required this.deps});
@@ -77,6 +76,11 @@ class MentalHealthScreen extends StatelessWidget {
               icon: const Icon(Icons.add),
               label: const Text('Registrar sintoma (tristeza, ansiedade, insônia…)'),
             ),
+            const RltSectionHeader('Questionários'),
+            Text('Os mesmos que profissionais usam. Mostram uma pontuação para acompanhar com o tempo — não são diagnóstico.',
+                style: t.bodySmall),
+            QuestionnaireTile(deps: deps, questionnaire: phq9),
+            QuestionnaireTile(deps: deps, questionnaire: gad7),
             const RltSectionHeader('Últimos 30 dias'),
             if (moods.isEmpty)
               Text('Nenhum registro ainda. Um toque por dia já mostra como o humor muda com o tempo.', style: t.bodyMedium)

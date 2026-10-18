@@ -92,10 +92,11 @@ trabalho, até o usuário decidir (ver regra de dado de saúde / LGPD).
 | T2 | Saúde › Saúde mental | "Registrar sintoma (tristeza, ansiedade…)" | Atalhos de sintomas mentais; salvo no Histórico médico |
 | T3 | Saúde › Saúde mental | Rolar até o fim | Aviso fixo CVV 188 / SAMU 192 |
 | T4 | Cérebro | Tocar "Como estou?" (ou escrever "como eu tô?") | Mostra "O que foi para a IA", a análise e sugestões tocáveis |
-| T5 | Conta › Cérebro (IA) | Ligar "Incluir saúde mental no Como estou?" e repetir T4 | Linha de humor aparece no que foi enviado |
+| T5 | Cérebro | Com humor registrado, repetir T4 | A linha de humor (e de questionários) aparece sempre no que foi enviado |
 | T6 | Cérebro (com plano de refeições) | "não aguento mais ovo" | Cartão "Trocar no plano — <refeição>" com antes → depois; confirmar muda o plano |
 | T7 | Cérebro (com ficha de treino) | "enjoei do supino" → tocar numa opção | Cartão "Trocar na ficha"; confirmar troca o exercício (carga a definir) |
 | T8 | Conta › Lembretes › Rotina | Ver o liga/desliga geral e os 4 tipos | Cada tipo desliga sozinho |
 | T9 | Notificação de rotina | Registrar humor "Muito mal" 3 dias seguidos | No dia seguinte às 10h chega a notificação; abrir o app abre o Cérebro com a pergunta |
 | T10 | Cérebro › refeição | "comi um bolo de chocolate" | Cartão normal; o açúcar passa a entrar no "Como estou?" |
 | T11 | Conta › Permissões | Microfone negado | "Não permitida" + "Ativar" |
+| T12 | Saúde › Saúde mental › Questionários | Responder PHQ-9 e GAD-7 | Pontuação e ponto de corte (10), sem diagnóstico; última pontuação aparece na linha; item 9 do PHQ-9 acima de "nenhuma vez" mostra o CVV |

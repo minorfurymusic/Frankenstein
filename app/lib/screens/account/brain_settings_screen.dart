@@ -202,15 +202,6 @@ class _BrainSettingsScreenState extends State<BrainSettingsScreen> {
             const SizedBox(height: RltSpace.m),
             _modelPicker(t),
             const RltSectionHeader('O que é enviado'),
-            SwitchListTile(
-              key: const Key('ai_mental_consent'),
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Incluir saúde mental no "Como estou?"'),
-              subtitle: const Text('Média do humor, sentimentos mais marcados e sintomas como tristeza ou ansiedade. '
-                  'Desligado: isso nunca sai do celular.'),
-              value: _ai.mentalHealthConsent,
-              onChanged: (v) => setState(() => _ai.mentalHealthConsent = v),
-            ),
             bullet('Só o que você mandar, quando você mandar: a foto ou o PDF do exame que você anexou, a foto do prato, '
                 'o plano de refeições que você importou, ou o pedido de sugestão com suas metas e preferências.',
                 icon: Icons.check, color: c.success),

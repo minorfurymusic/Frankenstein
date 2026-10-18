@@ -7,6 +7,7 @@ import 'package:frankstein/confirmation_gate.dart';
 import 'package:frankstein/data/data_export.dart';
 import 'package:frankstein/screens/health/health_tab.dart';
 import 'package:frankstein/screens/health/mental_health_screen.dart';
+import 'package:frankstein/screens/health/questionnaires.dart';
 import 'package:frankstein/share_sheet.dart';
 import 'package:frankstein/theme/rlt_theme.dart';
 import 'package:frankstein_health_core/health_core.dart';
@@ -81,6 +82,45 @@ void main() {
     deps.moodLogger.log(mood: 4, occurredAt: now.toUtc(), occurredAtTzOffsetMinutes: now.timeZoneOffset.inMinutes);
     await pump(tester, HealthTab(deps: deps));
     expect(find.text('Último humor: Bem'), findsOneWidget);
+  });
+
+  testWidgets('PHQ-9 com o texto oficial: responde tudo, salva a pontuação, mostra o ponto de corte e não diagnostica',
+      (tester) async {
+    await pump(tester, MentalHealthScreen(deps: deps));
+    await tester.tap(find.byKey(const Key('questionnaire_phq9')));
+    await tester.pumpAndSettle();
+    expect(find.text('1. Pouco interesse ou pouco prazer em fazer as coisas'), findsOneWidget);
+    expect(find.textContaining('Não é necessária permissão para reproduzir'), findsOneWidget);
+    // Sem todas as respostas, não salva.
+    expect(tester.widget<FilledButton>(find.byKey(const Key('questionnaire_save'))).onPressed, isNull);
+    for (var i = 0; i < 9; i++) {
+      final key = Key('q_${i}_${i < 6 ? 2 : 0}');
+      await tester.ensureVisible(find.byKey(key));
+      await tester.tap(find.byKey(key));
+      await tester.pump();
+    }
+    expect(find.byKey(const Key('crisis_notice')), findsNothing);
+    await tester.ensureVisible(find.byKey(const Key('questionnaire_save')));
+    await tester.tap(find.byKey(const Key('questionnaire_save')));
+    await tester.pumpAndSettle();
+    expect(find.textContaining('Pontuação 12 de 27'), findsOneWidget);
+    expect(find.textContaining('Isto não é diagnóstico'), findsOneWidget);
+    expect(deps.healthRead.screenings('phq9').single.score, 12);
+  });
+
+  testWidgets('PHQ-9: qualquer resposta acima de "nenhuma vez" no item 9 mostra o aviso do CVV na hora', (tester) async {
+    await pump(tester, QuestionnaireScreen(deps: deps, questionnaire: phq9));
+    await tester.ensureVisible(find.byKey(const Key('q_8_1')));
+    await tester.tap(find.byKey(const Key('q_8_1')));
+    await tester.pumpAndSettle();
+    expect(find.byKey(const Key('crisis_notice')), findsOneWidget);
+  });
+
+  test('GAD-7 tem 7 itens; os dois questionários usam o ponto de corte 10 dos autores', () {
+    expect(gad7.items, hasLength(7));
+    expect(gad7.items.first, 'Sentir-se nervoso(a), ansioso(a) ou muito tenso(a).');
+    expect(scoreMessage(gad7, 10), contains('10 ou mais'));
+    expect(scoreMessage(phq9, 4), contains('Abaixo de 10'));
   });
 
   test('aviso de procurar ajuda do Cérebro cita o CVV 188 e o SAMU 192 (texto do app)', () {

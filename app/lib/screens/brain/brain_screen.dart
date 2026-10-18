@@ -761,7 +761,7 @@ class _BrainScreenState extends State<BrainScreen> {
     if (!mounted) return;
     _changed(() {
       _messages.add(_BotMsg('O que foi para a IA:\n${snapshot.text}'
-          '${snapshot.includesMental ? '' : '\n(Humor fica de fora. Para incluir, ligue em Conta › Cérebro (IA).)'}'));
+          ''));
       _thinking = true;
     });
     _scrollToEnd();
