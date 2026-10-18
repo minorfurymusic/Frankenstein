@@ -87,6 +87,10 @@ class ChatReading {
   /// `plan` (`meal` ou `workout`), `item`, e `replacement`/`meal_type` se ditos.
   final List<Map<String, dynamic>> planSwaps;
 
+  /// Atividades contadas sem gravar ("caminhei 700 m", "brinquei 1 hora"):
+  /// `activity`, `label`, `minutes`, `distance_m`, `effort` (1–10), `at`.
+  final List<Map<String, dynamic>> activities;
+
   /// Humor que a pessoa contou ("tô muito pra baixo"), já no formato de
   /// `log_mood` — vira cartão, só salva se ela confirmar (ADR-23/27).
   final Map<String, dynamic>? mood;
@@ -120,6 +124,7 @@ class ChatReading {
     this.history = const [],
     this.incomplete = const [],
     this.planSwaps = const [],
+    this.activities = const [],
     this.mood,
   });
 
@@ -134,9 +139,13 @@ class ChatReading {
       bodyMeasurements.isEmpty &&
       history.isEmpty &&
       planSwaps.isEmpty &&
+      activities.isEmpty &&
       mood == null &&
       questions.isEmpty;
 }
+
+/// Códigos de `OtherActivity` (pacote de atividade), para o esquema.
+const activityCodes = ['walking', 'running', 'cycling', 'swimming', 'soccer', 'dance', 'yoga', 'functional', 'strength', 'other'];
 
 /// Os mesmos sentimentos da tela Saúde mental (`MoodLogger.feelings`).
 const moodFeelings = ['feliz', 'calmo', 'grato', 'cansado', 'triste', 'ansioso', 'irritado', 'sem vontade', 'sozinho', 'agitado'];
@@ -289,6 +298,24 @@ const chatReadingSchema = <String, dynamic>{
         'required': ['kind', 'value'],
       },
     },
+    'activities': {
+      'type': 'array',
+      'items': {
+        'type': 'object',
+        'properties': {
+          'activity': {
+            'type': 'string',
+            'enum': activityCodes,
+          },
+          'label': {'type': 'string', 'description': 'Como a pessoa disse (ex.: "Brincar com a filha").'},
+          'minutes': {'type': 'number'},
+          'distance_m': {'type': 'number'},
+          'effort': {'type': 'integer', 'description': 'Esforço de 1 a 10, só se a pessoa disse.'},
+          'at': _at,
+        },
+        'required': ['activity'],
+      },
+    },
     'mood': {
       'type': 'object',
       'description': 'Só quando a pessoa conta como está se sentindo.',
@@ -361,6 +388,7 @@ Regras:
 - Remédio: copie o nome e, SÓ se a pessoa disse, a dose e a unidade. Nunca complete, sugira ou corrija dose. "Esqueci/pulei" = skipped.
 - Treino de academia: um item por exercício, com o nome em português (ex.: "Supino reto", "Agachamento livre", "Leg press"), séries, repetições e carga em kg (0 se for peso do corpo). Corrida e caminhada não entram aqui.
 - Remédio de uso (novo ou que a pessoa já toma: "comecei a tomar", "tomo", "faço uso", "uso todo dia") vai em new_medications, um item por remédio, com nome, dose e horários ditos. medication_doses é só para uma dose tomada ou pulada agora ("tomei a dipirona"). "Desde 01/02/2026" vai em start_date. Horário dito em relação a outro remédio ("30 min antes do enalapril pela manhã", com o enalapril às 07:00) vira o horário calculado ("06:30"), só nas doses que a pessoa disse. Se faltar dose ou horário, ponha o remédio mesmo assim com o que foi dito e pergunte o que falta em reply; em suggestions ofereça só horários comuns (ex.: "08:00", "12:00", "20:00") — nunca ofereça dose.
+- Atividade sem gravar: caminhada ou corrida que a pessoa conta ("caminhei até a praia, uns 700 m"), bicicleta, natação, futebol, dança, brincar com os filhos, faxina pesada… vão em activities (um item por atividade), com a distância em metros e/ou o tempo em minutos que ela disse e o esforço de 1 a 10 se ela disse. Brincadeira, faxina e o que não tiver código vai como other, com label. Não calcule passos nem calorias: o app calcula pela passada e pelo peso dela.
 - Sentimentos: quando a pessoa desabafa ou conta como está ("tô muito pra baixo", "hoje foi um dia ótimo"), CONVERSE com acolhimento em reply (ouça, valide, ajude a pensar, sem julgar) e preencha mood com o humor dela (1 a 5), sentimentos e um resumo curto; o app oferece salvar no diário de saúde mental. Não rotule transtorno. Se houver risco (pensar em se machucar, desespero), seek_care = true.
 - Histórico: doença, alergia, cirurgia, vacina ou consulta que a pessoa diz ter ou ter tido ("tenho hipertensão", "sou alérgico a dipirona") vai em history_items, com o nome como ela disse. Remédio citado junto continua indo em new_medications. Nunca deduza doença a partir de remédio (enalapril sozinho não vira hipertensão).
 - Sintoma: nome curto; intensidade de 0 a 10 só se a pessoa deu. Não interprete nem dê diagnóstico.
@@ -527,6 +555,18 @@ ChatReading parseChatReading(Map<String, dynamic> json) {
         if (_text(m['notes']) != null) 'notes': _text(m['notes']),
       };
     }(),
+    activities: [
+      for (final a in list('activities'))
+        if (activityCodes.contains(a['activity']) && (_pos(a['minutes']) != null || _pos(a['distance_m']) != null))
+          {
+            'activity': a['activity'],
+            if (_text(a['label']) != null) 'label': _text(a['label']),
+            if (_pos(a['minutes']) != null) 'minutes': _pos(a['minutes']),
+            if (_pos(a['distance_m']) != null) 'distance_m': _pos(a['distance_m']),
+            if (a['effort'] is int && (a['effort'] as int) >= 1 && (a['effort'] as int) <= 10) 'effort': a['effort'],
+            if (_iso(a['at']) != null) 'at': _iso(a['at']),
+          },
+    ],
     planSwaps: [
       for (final p in list('plan_swaps'))
         if ((p['plan'] == 'meal' || p['plan'] == 'workout') && _text(p['item']) != null)

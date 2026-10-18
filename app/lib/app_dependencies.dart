@@ -15,6 +15,7 @@ import 'package:flutter/material.dart' show Brightness, ThemeMode, ValueNotifier
 import 'dart:ui' show PlatformDispatcher;
 
 import 'ai/ai_settings.dart';
+import 'ai/activity_chat_tools.dart';
 import 'ai/document_tools.dart';
 import 'ai/plan_swaps.dart';
 import 'ai/brain_ai.dart';
@@ -413,6 +414,15 @@ class AppDependencies {
       // Lido de documentos no Cérebro (ADR-19).
       ..register(addHistoryItemSpec(), addHistoryItemHandler(medicalHistory))
       ..register(updateHeightSpec(), updateHeightHandler(profileRepository))
+      // Atividade contada no Cérebro, sem gravar.
+      ..register(
+        logManualStepsSpec(),
+        logManualStepsHandler(core, tzOffsetMinutesProvider: tzOffsetMinutesProvider, stepMeters: () {
+          final p = profileRepository.load();
+          return p == null ? 0.75 : HealthFormulas.stepLengthMeters(p.sex, p.heightMeters);
+        }),
+      )
+      ..register(logOtherActivitySpec(), logOtherActivityHandler(ActivityLogger(core: core), tzOffsetMinutesProvider: tzOffsetMinutesProvider))
       ..register(logMoodSpec(), logMoodHandler(MoodLogger(core: core), tzOffsetMinutesProvider: tzOffsetMinutesProvider))
       // Trocas equivalentes no plano (ADR-26).
       ..register(swapPlanItemSpec(), swapPlanItemHandler(MealPlanStore(profileRepository)))

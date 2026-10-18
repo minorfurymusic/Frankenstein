@@ -9,6 +9,7 @@ import 'package:frankstein_tool_registry/tool_registry.dart';
 
 import '../data/meal_plan.dart';
 import '../data/nutrition_store.dart';
+import 'activity_chat_tools.dart';
 import 'plan_swaps.dart';
 
 /// Refeição estimada pela IA a partir do que a pessoa escreveu no Cérebro
@@ -285,6 +286,25 @@ ToolCallPlan planFromReading(ChatReading r, {required List<Medication> medicatio
     }));
   }
   if (r.mood != null) calls.add(ToolCallDecision('log_mood', Map.of(r.mood!)));
+  for (final a in r.activities) {
+    final walk = a['activity'] == 'walking' || a['activity'] == 'running';
+    if (walk && a['distance_m'] != null && a['minutes'] == null) {
+      // Só a distância: vira passos pela passada (o gasto entra pelos passos).
+      calls.add(ToolCallDecision('log_manual_steps', {
+        'distance_m': a['distance_m'],
+        'label': ?a['label'],
+        'at': ?a['at'],
+      }));
+    } else if (a['minutes'] != null) {
+      calls.add(ToolCallDecision('log_other_activity', {
+        'activity': a['activity'],
+        'minutes': a['minutes'],
+        'intensity': intensityForEffort(a['effort'] as int?).name,
+        'label': ?a['label'],
+        'at': ?a['at'],
+      }));
+    }
+  }
   for (final h in r.history) {
     calls.add(ToolCallDecision('add_history_item', Map.of(h)));
   }

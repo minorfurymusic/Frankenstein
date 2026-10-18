@@ -257,6 +257,37 @@ void main() {
     expect(find.textContaining('Não encontrei nada para registrar'), findsNothing);
   });
 
+  testWidgets('caminhada contada vira passos pela passada; brincadeira de 1 h com esforço 4 vira atividade com gasto', (tester) async {
+    deps.bodyLogger.weight(kg: 80, occurredAt: DateTime.now().toUtc(), occurredAtTzOffsetMinutes: 0);
+    transport.replies.add({
+      'reply': 'Que passeio bom! Anotei a caminhada e a brincadeira.',
+      'activities': [
+        {'activity': 'walking', 'distance_m': 700, 'label': 'Caminhada até a praia'},
+        {'activity': 'other', 'minutes': 60, 'effort': 4, 'label': 'Brincar com a filha'},
+      ],
+    });
+    await pump(tester);
+    await send(tester, 'caminhei até a praia da uns 700m, brinquei 1 hora com minha filha. calcule os passos e o gasto calórico. esforço 4');
+    // Sem perfil, passada de 75 cm: 700 m ≈ 933 passos.
+    expect(find.text('Passos — ≈ 933'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('confirmation_confirm')).first);
+    await tester.pumpAndSettle();
+    // Esforço 4 → moderada (MET 4,5): (4,5 − 1) × 80 kg × 1 h = 280 kcal.
+    expect(find.text('Brincar com a filha — 60 min'), findsOneWidget);
+    expect(find.textContaining('Outra · moderada · ≈ 280 kcal'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('confirmation_confirm')).first);
+    await tester.pumpAndSettle();
+
+    final steps = deps.core.queryByType(HealthEventType.steps).single;
+    expect(steps.payload, {'count': 933, 'distance_m': 700.0, 'manual': true});
+    final act = deps.core.queryByType(HealthEventType.workoutSession).single;
+    expect(act.payload['kind'], 'other_activity');
+    expect(act.payload['intensity'], 'moderate');
+    expect(act.payload['duration_seconds'], 3600);
+    expect(act.payload['notes'], 'Brincar com a filha');
+    expect(transport.bodies.single, contains('Não calcule passos nem calorias'));
+  });
+
   testWidgets('tocar na própria mensagem abre Copiar e Editar e mandar de novo', (tester) async {
     transport.replies.add({'reply': 'Ok.'});
     await pump(tester);

@@ -1,3 +1,4 @@
+import 'package:frankstein_activity/activity.dart';
 import 'package:frankstein_ai/ai.dart';
 import 'package:frankstein_brain/brain.dart';
 import 'package:frankstein_health_records/health_records.dart';
@@ -156,6 +157,35 @@ ProposalView describeProposal(AppDependencies deps, String tool, Map<String, dyn
         '${kind?.label ?? 'Histórico'} — ${p['title']}',
         extra.isEmpty ? null : extra,
         'Saúde › Histórico médico',
+      );
+    case 'log_manual_steps':
+      final profile = deps.profileRepository.load();
+      final stride = profile == null ? 0.75 : HealthFormulas.stepLengthMeters(profile.sex, profile.heightMeters);
+      final meters = (p['distance_m'] as num).toDouble();
+      return ProposalView(
+        HealthArea.steps,
+        'Passos — ≈ ${n((meters / stride).round())}',
+        '${p['label'] ?? 'Caminhada'}: ${n(meters)} m pela sua passada (${n(stride * 100)} cm). Soma aos passos do celular.',
+        'Exercícios › Passos',
+        when: when ?? 'hoje, agora',
+        estimated: true,
+      );
+    case 'log_other_activity':
+      final activity = OtherActivity.fromCode('${p['activity']}');
+      final intensity = ActivityIntensity.values.where((i) => i.name == p['intensity']).firstOrNull ?? ActivityIntensity.moderate;
+      final minutes = (p['minutes'] as num).toDouble();
+      final weights = deps.healthRead.weights();
+      final kcal = weights.isEmpty
+          ? null
+          : HealthFormulas.activityKcal(
+              met: activity.met(intensity), weightKg: weights.first.value, duration: Duration(seconds: (minutes * 60).round()));
+      return ProposalView(
+        HealthArea.workout,
+        '${p['label'] ?? activity.label} — ${n(minutes)} min',
+        '${activity.label} · ${intensity.label.toLowerCase()}${kcal == null ? '' : ' · ≈ ${n(kcal)} kcal'}',
+        'Exercícios › Outras atividades',
+        when: when ?? 'hoje, agora',
+        estimated: true,
       );
     case 'log_mood':
       final v = (p['mood'] as num?)?.toInt() ?? 3;
