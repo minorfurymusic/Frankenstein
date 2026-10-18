@@ -156,6 +156,26 @@ ProposalView describeProposal(AppDependencies deps, String tool, Map<String, dyn
         extra.isEmpty ? null : extra,
         'Saúde › Histórico médico',
       );
+    case 'swap_plan_item':
+      String item(Object? raw) {
+        final m = (raw as Map?) ?? const {};
+        return '${m['description']}${m['kcal'] is num ? ' (${n(m['kcal'])} kcal, ${n(m['protein_g'] ?? 0)} g proteína)' : ''}';
+      }
+      return ProposalView(
+        HealthArea.meal,
+        'Trocar no plano — ${_mealLabelOf(p['meal_type'])}',
+        '${item(p['from'])}\n→ ${item(p['to'])}\nAs metas não mudam. Avise seu nutricionista.',
+        'Nutrição › Plano de refeições',
+        estimated: true,
+      );
+    case 'swap_plan_exercise':
+      return ProposalView(
+        HealthArea.workout,
+        'Trocar na ficha — ${p['plan_name'] ?? 'treino'}',
+        '${p['from_name']} → ${p['to_name']} (${p['group']}); mesmas séries e repetições, carga a definir.\n'
+            'Avise seu profissional de educação física.',
+        'Exercícios › Academia',
+      );
     case 'update_height':
       return ProposalView(HealthArea.body, 'Altura — ${n(p['height_cm'])} cm', 'atualiza o perfil e as metas', 'Conta › Perfil',
           when: 'lido do documento');

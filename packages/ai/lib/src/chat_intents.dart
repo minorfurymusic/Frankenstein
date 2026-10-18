@@ -83,6 +83,10 @@ class ChatReading {
   final List<Map<String, dynamic>> vitalSigns;
   final List<Map<String, dynamic>> bodyMeasurements;
 
+  /// Pedidos de troca no plano de refeições ou na ficha de treino (ADR-26):
+  /// `plan` (`meal` ou `workout`), `item`, e `replacement`/`meal_type` se ditos.
+  final List<Map<String, dynamic>> planSwaps;
+
   /// Avisos do app sobre o que a IA entendeu mas faltou dado para virar
   /// cartão (ex.: remédio sem horário).
   final List<String> incomplete;
@@ -111,6 +115,7 @@ class ChatReading {
     this.questions = const [],
     this.history = const [],
     this.incomplete = const [],
+    this.planSwaps = const [],
   });
 
   bool get isEmpty =>
@@ -123,6 +128,7 @@ class ChatReading {
       vitalSigns.isEmpty &&
       bodyMeasurements.isEmpty &&
       history.isEmpty &&
+      planSwaps.isEmpty &&
       questions.isEmpty;
 }
 
@@ -289,6 +295,25 @@ const chatReadingSchema = <String, dynamic>{
         'required': ['kind', 'title'],
       },
     },
+    'plan_swaps': {
+      'type': 'array',
+      'items': {
+        'type': 'object',
+        'properties': {
+          'plan': {
+            'type': 'string',
+            'enum': ['meal', 'workout'],
+          },
+          'item': {'type': 'string', 'description': 'O que a pessoa quer tirar, como está no plano (ex.: "ovo", "supino").'},
+          'replacement': {'type': 'string', 'description': 'Só se a pessoa disse pelo que quer trocar.'},
+          'meal_type': {
+            'type': 'string',
+            'enum': ['breakfast', 'lunch', 'dinner', 'snack'],
+          },
+        },
+        'required': ['plan', 'item'],
+      },
+    },
     'questions': {
       'type': 'array',
       'items': {
@@ -319,6 +344,7 @@ Regras:
 - seek_care = true se a pessoa descreve algo que pede atenção profissional rápida (dor no peito, falta de ar, desmaio, sangramento forte, pensamentos de se machucar, febre muito alta, pressão ou glicemia muito altas ou baixas).
 - Mensagem de voz (áudio anexo): escreva em transcript o que a pessoa falou e entenda o áudio como a mensagem.
 - "Conversa até agora" (quando houver) é o que já foi dito e o que a pessoa confirmou ou descartou nesta conversa. Use para entender a mensagem nova (ex.: "pode salvar a dipirona" = registrar de novo o remédio descartado). Não repita registros já confirmados.
+- Troca no plano: quando a pessoa enjoou ou não quer mais algo do plano de refeições ("não aguento mais ovo", "troca o ovo da janta por bife") ou da ficha de treino ("troca o supino por outro"), vá em plan_swaps (plan = meal ou workout, item, replacement se ela disse, meal_type se ela disse). Não registre isso como refeição nem como treino; o app calcula a troca equivalente.
 - Mensagem longa com várias coisas (doença, remédios, refeição, água): registre TODAS, nenhuma fica de fora.
 - reply: uma frase curta em português. Se faltar algo essencial para registrar, pergunte. Não repita os valores dos itens.
 ''';
@@ -455,6 +481,16 @@ ChatReading parseChatReading(Map<String, dynamic> json) {
     vitalSigns: vitals,
     bodyMeasurements: body,
     questions: [for (final q in (json['questions'] as List? ?? const [])) q as String],
+    planSwaps: [
+      for (final p in list('plan_swaps'))
+        if ((p['plan'] == 'meal' || p['plan'] == 'workout') && _text(p['item']) != null)
+          {
+            'plan': p['plan'],
+            'item': _text(p['item']),
+            if (_text(p['replacement']) != null) 'replacement': _text(p['replacement']),
+            if (const ['breakfast', 'lunch', 'dinner', 'snack'].contains(p['meal_type'])) 'meal_type': p['meal_type'],
+          },
+    ],
     history: [
       for (final h in list('history_items'))
         if (const ['condition', 'allergy', 'surgery', 'vaccine', 'appointment'].contains(h['kind']) && _text(h['title']) != null)

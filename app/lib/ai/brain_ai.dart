@@ -7,7 +7,9 @@ import 'package:frankstein_health_records/health_records.dart';
 import 'package:frankstein_nutrition/nutrition.dart';
 import 'package:frankstein_tool_registry/tool_registry.dart';
 
+import '../data/meal_plan.dart';
 import '../data/nutrition_store.dart';
+import 'plan_swaps.dart';
 
 /// Refeição estimada pela IA a partir do que a pessoa escreveu no Cérebro
 /// ("comi 3 ovos"). Ferramenta do app, não do pacote de nutrição: o
@@ -268,8 +270,19 @@ class AiToolCaller implements PlanningToolCaller {
   /// O que já foi dito nesta conversa (para "pode salvar", "foi às 9h").
   final String Function()? history;
 
-  AiToolCaller({required this.client, required this.medications, this.history, DateTime Function()? clock})
-      : clock = clock ?? DateTime.now;
+  /// Planos para as trocas equivalentes (ADR-26). O plano não vai à IA na
+  /// leitura da mensagem; só o item a trocar vai, na segunda chamada.
+  final MealPlan? Function()? mealPlan;
+  final List<WorkoutPlan> Function()? workoutPlans;
+
+  AiToolCaller({
+    required this.client,
+    required this.medications,
+    this.history,
+    this.mealPlan,
+    this.workoutPlans,
+    DateTime Function()? clock,
+  }) : clock = clock ?? DateTime.now;
 
   @override
   Future<ToolCallPlan> plan(String userInput, List<ToolSpec> availableTools) => _plan(userInput, availableTools);
@@ -282,7 +295,25 @@ class AiToolCaller implements PlanningToolCaller {
   Future<ToolCallPlan> _plan(String userInput, List<ToolSpec> availableTools, {AiPart? audio}) async {
     final now = clock();
     final reading = await readChatMessage(await client(), userInput, now: now, audio: audio, history: history?.call());
-    final plan = planFromReading(reading, medications: medications(), now: now);
+    var plan = planFromReading(reading, medications: medications(), now: now);
+    if (reading.planSwaps.isNotEmpty) {
+      final swaps = await resolvePlanSwaps(
+        reading.planSwaps,
+        client: client,
+        mealPlan: mealPlan ?? () => null,
+        workoutPlans: workoutPlans ?? () => const [],
+      );
+      plan = ToolCallPlan(
+        calls: [...plan.calls, ...swaps.calls],
+        // "Não encontrei nada para registrar" não vale quando houve troca.
+        messages: [
+          for (final m in plan.messages)
+            if (m != 'Não encontrei nada para registrar nessa mensagem.') m,
+          ...swaps.messages,
+        ],
+        suggestions: [...plan.suggestions, ...swaps.suggestions],
+      );
+    }
     final names = {for (final t in availableTools) t.name};
     return ToolCallPlan(
       calls: [for (final c in plan.calls) if (names.contains(c.toolName)) c],

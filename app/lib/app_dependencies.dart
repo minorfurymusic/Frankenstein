@@ -16,6 +16,7 @@ import 'dart:ui' show PlatformDispatcher;
 
 import 'ai/ai_settings.dart';
 import 'ai/document_tools.dart';
+import 'ai/plan_swaps.dart';
 import 'ai/brain_ai.dart';
 import 'ai/voice_recorder.dart';
 import 'card_image_capturer.dart';
@@ -410,6 +411,9 @@ class AppDependencies {
       // Lido de documentos no Cérebro (ADR-19).
       ..register(addHistoryItemSpec(), addHistoryItemHandler(medicalHistory))
       ..register(updateHeightSpec(), updateHeightHandler(profileRepository))
+      // Trocas equivalentes no plano (ADR-26).
+      ..register(swapPlanItemSpec(), swapPlanItemHandler(MealPlanStore(profileRepository)))
+      ..register(swapPlanExerciseSpec(), swapPlanExerciseHandler(workoutRepository))
       ..register(
         logWaterSpec(),
         logWaterHandler(waterLogger, tzOffsetMinutesProvider: tzOffsetMinutesProvider),

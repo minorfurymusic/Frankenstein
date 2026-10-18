@@ -800,7 +800,13 @@ class _BrainScreenState extends State<BrainScreen> {
     ToolCallPlan plan;
     try {
       final history = _historyText();
-      plan = await ask(AiToolCaller(client: deps.ai.client, medications: deps.medicationRepository.listAll, history: () => history));
+      plan = await ask(AiToolCaller(
+        client: deps.ai.client,
+        medications: deps.medicationRepository.listAll,
+        history: () => history,
+        mealPlan: deps.mealPlans.load,
+        workoutPlans: deps.workoutRepository.listPlans,
+      ));
     } catch (e) {
       if (!mounted) return;
       _changed(() {
