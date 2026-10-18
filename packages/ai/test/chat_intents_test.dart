@@ -148,4 +148,19 @@ void main() {
     expect(chatReadingInstruction, contains('não diga que a pessoa TEM uma doença'));
     expect(chatReadingInstruction, isNot(contains('o app só registra')));
   });
+
+  test('atividade ida e volta: a distância de um trecho é dobrada; sem round_trip fica como dita', () {
+    final r = parseChatReading({
+      'reply': 'Ok.',
+      'activities': [
+        {'activity': 'walking', 'distance_m': 700, 'round_trip': true},
+        {'activity': 'walking', 'distance_m': 500},
+        {'activity': 'other', 'label': 'Brincar'},
+      ],
+    });
+    expect(r.activities, [
+      {'activity': 'walking', 'distance_m': 1400.0, 'round_trip': true},
+      {'activity': 'walking', 'distance_m': 500.0},
+    ]);
+  });
 }

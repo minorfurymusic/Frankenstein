@@ -288,6 +288,41 @@ void main() {
     expect(transport.bodies.single, contains('Não calcule passos nem calorias'));
   });
 
+  testWidgets('ida e volta: "fui e voltei" dobra; no cartão, o botão Ida e volta também dobra', (tester) async {
+    transport.replies.add({
+      'reply': 'Anotei.',
+      'activities': [
+        {'activity': 'walking', 'distance_m': 700, 'round_trip': true, 'label': 'Praia'},
+      ],
+    });
+    await pump(tester);
+    await send(tester, 'fui e voltei da praia a pé, uns 700 m');
+    // 1.400 m ÷ 0,75 m ≈ 1.867 passos.
+    expect(find.text('Passos — ≈ 1.867'), findsOneWidget);
+    expect(find.textContaining('1.400 m (ida e volta)'), findsOneWidget);
+    await tester.tap(find.byKey(const Key('confirmation_cancel')));
+    await tester.pumpAndSettle();
+
+    transport.replies.add({
+      'reply': 'Anotei a ida. A volta também foi a pé?',
+      'activities': [
+        {'activity': 'walking', 'distance_m': 700, 'label': 'Praia'},
+      ],
+    });
+    await send(tester, 'caminhei até a praia, uns 700 m');
+    expect(find.text('Passos — ≈ 933'), findsOneWidget);
+    await tester.tap(find.byIcon(Icons.edit_outlined));
+    await tester.pumpAndSettle();
+    expect(tester.widget<TextField>(find.byKey(const Key('proposal_distance'))).controller!.text, '700');
+    await tester.tap(find.byKey(const Key('proposal_round_trip')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('confirmation_confirm')));
+    await tester.pumpAndSettle();
+    final steps = deps.core.queryByType(HealthEventType.steps).single;
+    expect(steps.payload['distance_m'], 1400.0);
+    expect(steps.payload['count'], 1867);
+  });
+
   testWidgets('tocar na própria mensagem abre Copiar e Editar e mandar de novo', (tester) async {
     transport.replies.add({'reply': 'Ok.'});
     await pump(tester);

@@ -20,6 +20,7 @@ final Map<String, dynamic> logManualStepsSchema = {
   'type': 'object',
   'properties': {
     'distance_m': {'type': 'number', 'exclusiveMinimum': 0},
+    'round_trip': {'type': 'boolean'},
     'label': {'type': 'string'},
     'at': {'type': 'string', 'format': 'date-time'},
   },

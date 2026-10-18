@@ -292,6 +292,7 @@ ToolCallPlan planFromReading(ChatReading r, {required List<Medication> medicatio
       // Só a distância: vira passos pela passada (o gasto entra pelos passos).
       calls.add(ToolCallDecision('log_manual_steps', {
         'distance_m': a['distance_m'],
+        'round_trip': ?a['round_trip'],
         'label': ?a['label'],
         'at': ?a['at'],
       }));

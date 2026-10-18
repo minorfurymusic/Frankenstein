@@ -165,7 +165,8 @@ ProposalView describeProposal(AppDependencies deps, String tool, Map<String, dyn
       return ProposalView(
         HealthArea.steps,
         'Passos — ≈ ${n((meters / stride).round())}',
-        '${p['label'] ?? 'Caminhada'}: ${n(meters)} m pela sua passada (${n(stride * 100)} cm). Soma aos passos do celular.',
+        '${p['label'] ?? 'Caminhada'}: ${n(meters)} m${p['round_trip'] == true ? ' (ida e volta)' : ''} pela sua passada '
+            '(${n(stride * 100)} cm). Soma aos passos do celular.',
         'Exercícios › Passos',
         when: when ?? 'hoje, agora',
         estimated: true,

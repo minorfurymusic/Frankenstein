@@ -163,7 +163,10 @@ class _ProposalMsg extends _Msg {
   DateTime? when;
   _ProposalMsg(this.tool, this.params);
 
-  bool get editable => const {'log_estimated_meal', 'log_water', 'log_symptom', 'add_medication'}.contains(tool);
+  /// Edição de passos contados: a distância é de um trecho; ida e volta dobra.
+  bool roundTrip = false;
+
+  bool get editable => const {'log_estimated_meal', 'log_water', 'log_symptom', 'add_medication', 'log_manual_steps'}.contains(tool);
 
   void disposeFields() {
     for (final c in [...?gramFields, ...?nameFields, amountField, noteField, nameField, unitField, timesField, startField]) {
@@ -465,6 +468,10 @@ class _BrainScreenState extends State<BrainScreen> {
           m.timesField = TextEditingController(text: (m.params['times'] as List).join(', '));
           final start = DateTime.tryParse('${m.params['start_date']}');
           m.startField = TextEditingController(text: start == null ? '' : ddmmyyyy(start));
+        case 'log_manual_steps':
+          m.roundTrip = m.params['round_trip'] == true;
+          final meters = (m.params['distance_m'] as num).toDouble();
+          m.amountField = TextEditingController(text: formatNumber(m.roundTrip ? meters / 2 : meters));
         case 'log_water':
           m.amountField = TextEditingController(text: formatNumber(m.params['amount_ml'] as num));
         case 'log_symptom':
@@ -608,6 +615,14 @@ class _BrainScreenState extends State<BrainScreen> {
           ..['times'] = (times.toSet().toList()..sort())
           ..['start_date'] =
               '${start.year}-${start.month.toString().padLeft(2, '0')}-${start.day.toString().padLeft(2, '0')}';
+      case 'log_manual_steps':
+        final leg = _parse(m.amountField!.text);
+        if (leg == null || leg <= 0 || leg > 100000) {
+          warn('Informe a distância em metros.');
+          return false;
+        }
+        m.params['distance_m'] = leg * (m.roundTrip ? 2 : 1);
+        m.params['round_trip'] = m.roundTrip;
       case 'log_water':
         final ml = _parse(m.amountField!.text);
         if (ml == null || ml <= 0 || ml > 5000) {
@@ -661,6 +676,23 @@ class _BrainScreenState extends State<BrainScreen> {
             },
             icon: const Icon(Icons.schedule, size: 18),
             label: Text(w == null ? 'Agora' : '${two(w.hour)}:${two(w.minute)}'),
+          ),
+        ]);
+      case 'log_manual_steps':
+        return Column(children: [
+          TextField(
+            key: const Key('proposal_distance'),
+            controller: m.amountField,
+            keyboardType: TextInputType.number,
+            inputFormatters: [FilteringTextInputFormatter.allow(RegExp(r'[0-9.,]'))],
+            decoration: const InputDecoration(labelText: 'Distância (um trecho)', suffixText: 'm', isDense: true),
+          ),
+          SwitchListTile(
+            key: const Key('proposal_round_trip'),
+            contentPadding: EdgeInsets.zero,
+            title: const Text('Ida e volta (conta duas vezes)'),
+            value: m.roundTrip,
+            onChanged: (v) => _changed(() => m.roundTrip = v),
           ),
         ]);
       case 'add_medication':
