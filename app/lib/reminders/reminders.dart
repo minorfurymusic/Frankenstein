@@ -144,15 +144,24 @@ class ReminderSync {
   final List<Medication> Function() medications;
   final ReminderPrefs Function() prefs;
   final DateTime Function() clock;
+
+  /// Avisos que não são lembrete fixo (ex.: quebra de rotina, ADR-24).
+  final List<PlannedReminder> Function()? extra;
   bool _pending = false;
   bool _disposed = false;
 
-  ReminderSync({required this.scheduler, required this.medications, required this.prefs, DateTime Function()? clock})
+  ReminderSync({required this.scheduler, required this.medications, required this.prefs, this.extra, DateTime Function()? clock})
       : clock = clock ?? DateTime.now;
 
   Future<void> syncNow() async {
     try {
-      await scheduler.sync(planReminders(medications: medications(), prefs: prefs(), now: clock()));
+      final now = clock();
+      final planned = [
+        ...planReminders(medications: medications(), prefs: prefs(), now: now),
+        for (final r in extra?.call() ?? const <PlannedReminder>[])
+          if (r.atUtc.isAfter(now.toUtc())) r,
+      ];
+      await scheduler.sync(planned);
     } on PlatformException {
       // Sem canal nativo (ex.: build sem o código Android) — lembrete é
       // melhor esforço, nunca derruba o app.

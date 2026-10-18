@@ -297,6 +297,18 @@ class _BrainScreenState extends State<BrainScreen> {
   void initState() {
     super.initState();
     _gate?.presenter = _present;
+    widget.deps.brainInbox.addListener(_inbox);
+    WidgetsBinding.instance.addPostFrameCallback((_) => _inbox());
+  }
+
+  /// Pergunta do app (aviso de quebra de rotina, ADR-24): entra como
+  /// mensagem do Cérebro; a IA só é chamada se a pessoa responder.
+  void _inbox() {
+    final q = widget.deps.brainInbox.value;
+    if (q == null || !mounted) return;
+    widget.deps.brainInbox.value = null;
+    _changed(() => _messages.add(_BotMsg(q)));
+    _scrollToEnd();
   }
 
   /// Segurar uma mensagem: copiar o texto; nas suas, também trazer de volta
@@ -391,6 +403,7 @@ class _BrainScreenState extends State<BrainScreen> {
 
   @override
   void dispose() {
+    widget.deps.brainInbox.removeListener(_inbox);
     _composer.dispose();
     if (_gate?.presenter == _present) _gate?.presenter = null;
     for (final m in _messages) {

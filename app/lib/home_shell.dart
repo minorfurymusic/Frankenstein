@@ -30,7 +30,10 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addObserver(this);
-    WidgetsBinding.instance.addPostFrameCallback((_) => _checkOpenTracks());
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _checkOpenTracks();
+      _checkRoutine();
+    });
   }
 
   @override
@@ -41,7 +44,22 @@ class _HomeShellState extends State<HomeShell> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.resumed) _checkOpenTracks();
+    if (state == AppLifecycleState.resumed) {
+      _checkOpenTracks();
+      _checkRoutine();
+    }
+  }
+
+  /// Aviso de quebra de rotina que já chegou (ADR-24): abre o Cérebro com a
+  /// pergunta, uma vez só.
+  void _checkRoutine() {
+    if (!mounted) return;
+    final deps = widget.dependencies;
+    final n = deps.routineWatch.due();
+    if (n == null) return;
+    deps.routineWatch.markShown(n);
+    deps.brainInbox.value = n.question;
+    setState(() => _tab = RltTab.cerebro);
   }
 
   /// O OpenTracks pode abrir o RLT com uma trilha ("mostrar no painel"):

@@ -125,6 +125,19 @@ class _RemindersScreenState extends State<RemindersScreen> {
           icon: const Icon(Icons.schedule),
           label: Text('Horário: ${two((_prefs['workout_time'] as int) ~/ 60)}:${two((_prefs['workout_time'] as int) % 60)}'),
         ),
+        const RltSectionHeader('Rotina'),
+        SwitchListTile(
+          key: const Key('reminder_routine'),
+          contentPadding: EdgeInsets.zero,
+          title: const Text('Perguntar quando a rotina mudar'),
+          subtitle: const Text('Ex.: 3 dias sem caminhada, 2 dias sem registrar comida ou humor baixo. '
+              'Calculado no celular; nada vai para a internet.'),
+          value: widget.deps.routineWatch.enabled,
+          onChanged: (v) => setState(() {
+            widget.deps.routineWatch.enabled = v;
+            widget.deps.reminders.schedule();
+          }),
+        ),
       ]),
     );
   }

@@ -26,6 +26,7 @@ import 'data/health_read_model.dart';
 import 'data/meal_plan.dart';
 import 'data/nutrition_store.dart';
 import 'documents/document_files.dart';
+import 'insights/routine_watch.dart';
 import 'run/opentracks.dart';
 import 'run/run_recorder.dart';
 import 'wearables/health_connect.dart';
@@ -116,6 +117,12 @@ class AppDependencies {
 
   /// Lembretes locais do Android, replanejados quando os dados mudam.
   late final ReminderSync reminders;
+
+  /// Aviso de quebra de rotina (ADR-24), calculado no celular.
+  late final RoutineWatch routineWatch;
+
+  /// Pergunta do app que o Cérebro mostra ao abrir (aviso de rotina).
+  final ValueNotifier<String?> brainInbox = ValueNotifier(null);
 
   /// Pulseira/relógio via Health Connect (ADR-4a): só leitura, local.
   late final WearableSync wearables;
@@ -494,11 +501,18 @@ class AppDependencies {
       }),
     )
       ..dbDirectoryPath = dbDirectoryPath
-      ..reminders = ReminderSync(
-        scheduler: reminderScheduler,
-        medications: medicationRepository.listAll,
-        prefs: () => ReminderPrefs.fromSettings(profileRepository),
-      );
+      ..routineWatch = RoutineWatch(core: core, settings: profileRepository);
+    deps.reminders = ReminderSync(
+      scheduler: reminderScheduler,
+      medications: medicationRepository.listAll,
+      prefs: () => ReminderPrefs.fromSettings(profileRepository),
+      extra: () {
+        final n = deps.routineWatch.next();
+        return n == null
+            ? const <PlannedReminder>[]
+            : [PlannedReminder(id: 400000, atUtc: n.atLocal.toUtc(), title: n.title, body: n.question)];
+      },
+    );
     return deps
       ..wearables = WearableSync(
         bridge: healthConnect,
