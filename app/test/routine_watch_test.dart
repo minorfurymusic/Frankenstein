@@ -73,6 +73,32 @@ void main() {
       expect(n.question, contains('188'));
     });
 
+    test('remédio que a pessoa sempre marca, 2 dias sem marcar: aviso às 21h com o nome', () {
+      final n = planRoutineNudge(
+        activityLocal: daily(last, [for (var i = 0; i < 28; i++) i]),
+        mealLocal: const [],
+        moodLocal: const [],
+        medsTakenLocal: [('Enalapril', daily(last, [for (var i = 0; i < 8; i++) i]))],
+        now: DateTime(2026, 10, 11, 9),
+      )!;
+      expect(n.kind, 'meds'); // vem antes da atividade
+      expect(n.atLocal, DateTime(2026, 10, 12, 21));
+      expect(n.question, contains('Enalapril'));
+      expect(n.question, contains('só com o seu médico'));
+    });
+
+    test('tipo desligado pula para o próximo', () {
+      final n = planRoutineNudge(
+        activityLocal: daily(last, [for (var i = 0; i < 28; i++) i]),
+        mealLocal: const [],
+        moodLocal: const [],
+        medsTakenLocal: [('Enalapril', daily(last, [for (var i = 0; i < 8; i++) i]))],
+        now: DateTime(2026, 10, 11, 9),
+        skip: const {'meds'},
+      )!;
+      expect(n.kind, 'activity');
+    });
+
     test('humor misto não avisa', () {
       final n = planRoutineNudge(
         activityLocal: const [],
@@ -127,6 +153,16 @@ void main() {
       deps.routineWatch.enabled = false;
       await deps.reminders.syncNow();
       expect(scheduler.last.where((r) => r.id == 400000), isEmpty);
+    });
+
+    test('cada tipo de aviso liga e desliga sozinho', () {
+      expect(deps.routineWatch.kindEnabled('meds'), isTrue);
+      deps.routineWatch.setKind('meds', false);
+      deps.routineWatch.setKind('meals', false);
+      expect(deps.routineWatch.disabledKinds, {'meds', 'meals'});
+      deps.routineWatch.setKind('meds', true);
+      expect(deps.routineWatch.kindEnabled('meds'), isTrue);
+      expect(deps.routineWatch.kindEnabled('meals'), isFalse);
     });
 
     test('agendamento do Android leva o aviso futuro', () async {

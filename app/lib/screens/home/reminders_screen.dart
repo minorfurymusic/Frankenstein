@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:frankstein_health_records/health_records.dart';
 
 import '../../app_dependencies.dart';
+import '../../insights/routine_watch.dart';
 import '../../format.dart';
 import '../../theme/rlt_theme.dart';
 import '../../widgets/common.dart';
@@ -138,6 +139,18 @@ class _RemindersScreenState extends State<RemindersScreen> {
             widget.deps.reminders.schedule();
           }),
         ),
+        if (widget.deps.routineWatch.enabled)
+          for (final MapEntry(key: kind, value: label) in RoutineWatch.kinds.entries)
+            CheckboxListTile(
+              key: Key('reminder_routine_$kind'),
+              contentPadding: const EdgeInsets.only(left: RltSpace.l),
+              title: Text(label),
+              value: widget.deps.routineWatch.kindEnabled(kind),
+              onChanged: (v) => setState(() {
+                widget.deps.routineWatch.setKind(kind, v ?? true);
+                widget.deps.reminders.schedule();
+              }),
+            ),
       ]),
     );
   }

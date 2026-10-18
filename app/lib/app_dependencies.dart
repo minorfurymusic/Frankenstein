@@ -505,7 +505,8 @@ class AppDependencies {
       }),
     )
       ..dbDirectoryPath = dbDirectoryPath
-      ..routineWatch = RoutineWatch(core: core, settings: profileRepository);
+      ..routineWatch = (RoutineWatch(core: core, settings: profileRepository)
+        ..activeMedicationIds = () => {for (final m in healthRead.activeMedications()) m.id});
     deps.reminders = ReminderSync(
       scheduler: reminderScheduler,
       medications: medicationRepository.listAll,
