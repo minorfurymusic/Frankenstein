@@ -60,6 +60,55 @@ class SymptomLogger {
   }
 }
 
+/// Humor do dia (Saúde › Saúde mental, ADR-23). Registra o que a pessoa
+/// marcou — não interpreta nem rotula transtorno.
+class MoodLogger {
+  final HealthDataCore core;
+
+  MoodLogger({required this.core});
+
+  /// Sentimentos que a tela oferece (a pessoa escolhe quantos quiser).
+  static const feelings = [
+    'feliz',
+    'calmo',
+    'grato',
+    'cansado',
+    'triste',
+    'ansioso',
+    'irritado',
+    'sem vontade',
+    'sozinho',
+    'agitado',
+  ];
+
+  HealthEvent log({
+    required int mood,
+    required DateTime occurredAt,
+    required int occurredAtTzOffsetMinutes,
+    int? energy,
+    int? anxiety,
+    List<String> feelings = const [],
+    String? notes,
+  }) {
+    bool scale(int? v) => v == null || (v >= 1 && v <= 5);
+    if (!scale(mood) || !scale(energy) || !scale(anxiety)) throw ArgumentError('humor, energia e ansiedade vão de 1 a 5');
+    final e = _event(
+      HealthEventType.mood,
+      {
+        'mood': mood,
+        'energy': ?energy,
+        'anxiety': ?anxiety,
+        if (feelings.isNotEmpty) 'feelings': [for (final f in feelings) f.trim()],
+        if (notes != null && notes.trim().isNotEmpty) 'notes': notes.trim(),
+      },
+      occurredAt,
+      occurredAtTzOffsetMinutes,
+    );
+    core.insertEvent(e);
+    return e;
+  }
+}
+
 /// Sinais vitais. Entrada em unidade clínica (como a pessoa e o médico falam);
 /// gravação em SI. Frequência cardíaca manual vai no tipo `heart_rate`, em bpm,
 /// igual ao que o wearable já grava (`packages/wearable`) — mesma série.

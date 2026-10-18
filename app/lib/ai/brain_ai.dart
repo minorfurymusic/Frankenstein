@@ -96,7 +96,8 @@ ToolHandler logEstimatedMealHandler(
 /// da IA (`.claude/rules/brain.md`: sintoma preocupante = orientar a
 /// procurar profissional).
 const seekCareMessage = 'Isso merece atenção de um profissional de saúde. Se for forte ou piorar, '
-    'procure atendimento agora — em emergência, ligue 192 (SAMU).';
+    'procure atendimento agora — em emergência, ligue 192 (SAMU). Se for sofrimento emocional ou '
+    'pensamento de se machucar, ligue 188 (CVV, 24 h, gratuito) ou fale com alguém de confiança.';
 
 /// Normaliza nome de remédio para comparar ("Dipirona Sódica" ~ "dipirona").
 String _norm(String s) {

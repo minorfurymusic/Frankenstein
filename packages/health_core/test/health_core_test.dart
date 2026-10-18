@@ -346,6 +346,7 @@ void main() {
       expect(HealthEventType.symptom.wireValue, 'symptom');
       expect(HealthEventType.vitalSign.wireValue, 'vital_sign');
       expect(HealthEventType.bodyMeasurement.wireValue, 'body_measurement');
+      expect(HealthEventType.mood.wireValue, 'mood');
     });
   });
 

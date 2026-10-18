@@ -93,6 +93,7 @@ class AppDependencies {
   // pipeline é para o que a IA propõe — `.claude/rules/brain.md`).
   final MedicationDoseLogger doseLogger;
   final SymptomLogger symptomLogger;
+  final MoodLogger moodLogger;
   final VitalSignLogger vitalSignLogger;
   final BodyLogger bodyLogger;
   final HealthReadModel healthRead;
@@ -160,6 +161,7 @@ class AppDependencies {
     required this.stepTracking,
     required this.doseLogger,
     required this.symptomLogger,
+    required this.moodLogger,
     required this.vitalSignLogger,
     required this.bodyLogger,
     required this.healthRead,
@@ -465,6 +467,7 @@ class AppDependencies {
       stepTracking: stepTracking,
       doseLogger: doseLogger,
       symptomLogger: symptomLogger,
+      moodLogger: MoodLogger(core: core),
       vitalSignLogger: vitalSignLogger,
       bodyLogger: bodyLogger,
       healthRead: healthRead,

@@ -12,6 +12,7 @@ import '../../widgets/common.dart';
 import 'body_screen.dart';
 import 'documents_screens.dart';
 import 'medications_screen.dart';
+import 'mental_health_screen.dart';
 import 'sleep_screen.dart';
 import 'symptoms_screen.dart';
 import 'vitals_screen.dart';
@@ -38,6 +39,7 @@ class HealthTab extends StatelessWidget {
         final read = deps.healthRead;
         final next = read.nextDose();
         final symptoms = read.symptoms(days: 90);
+        final moods = read.moods(days: 30);
         final pressure = read.vitals(VitalKind.bloodPressure, days: 90);
         final weights = read.weights();
         final active = read.activeMedications();
@@ -138,6 +140,14 @@ class HealthTab extends StatelessWidget {
                         title: 'Histórico médico',
                         subtitle: 'Sintomas, condições, consultas',
                         onTap: () => _open(context, SymptomsScreen(deps: deps)),
+                      ),
+                      RltSectionTile(
+                        key: const Key('section_mental'),
+                        icon: Icons.self_improvement_outlined,
+                        iconColor: c.primary,
+                        title: 'Saúde mental',
+                        subtitle: moods.isEmpty ? 'Como você está hoje?' : 'Último humor: ${moodLabels[moods.first.mood - 1]}',
+                        onTap: () => _open(context, MentalHealthScreen(deps: deps)),
                       ),
                       RltSectionTile(
                         key: const Key('section_exames'),

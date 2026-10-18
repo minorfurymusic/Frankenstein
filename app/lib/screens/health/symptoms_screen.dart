@@ -107,7 +107,10 @@ class SymptomsScreen extends StatelessWidget {
 /// intensidade 0–10, começo, "ainda sentindo" ou fim, observação.
 class SymptomFormScreen extends StatefulWidget {
   final AppDependencies deps;
-  const SymptomFormScreen({super.key, required this.deps});
+
+  /// Atalhos de nome (ex.: os sintomas mentais na tela Saúde mental).
+  final List<String>? suggestions;
+  const SymptomFormScreen({super.key, required this.deps, this.suggestions});
 
   @override
   State<SymptomFormScreen> createState() => _SymptomFormScreenState();
@@ -115,6 +118,7 @@ class SymptomFormScreen extends StatefulWidget {
 
 class _SymptomFormScreenState extends State<SymptomFormScreen> {
   static const _common = ['Dor de cabeça', 'Náusea', 'Febre', 'Tontura', 'Cansaço'];
+  List<String> get _shortcuts => widget.suggestions ?? _common;
   final _name = TextEditingController();
   final _notes = TextEditingController();
   double _intensity = 4;
@@ -181,7 +185,7 @@ class _SymptomFormScreenState extends State<SymptomFormScreen> {
           ),
           const SizedBox(height: RltSpace.m),
           Wrap(spacing: RltSpace.s, runSpacing: RltSpace.s, children: [
-            for (final s in _common)
+            for (final s in _shortcuts)
               ChoiceChip(
                 label: Text(s),
                 selected: _name.text == s,

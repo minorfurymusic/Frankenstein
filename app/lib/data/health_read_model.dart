@@ -75,6 +75,19 @@ class HealthReadModel {
 
   // ---------- Sintomas ----------
 
+  /// Humor do dia (ADR-23), do mais recente ao mais antigo.
+  List<MoodView> moods({int days = 30}) => [
+        for (final e in _lastDays(HealthEventType.mood, days).reversed)
+          MoodView(
+            mood: (e.payload['mood'] as num).toInt(),
+            energy: (e.payload['energy'] as num?)?.toInt(),
+            anxiety: (e.payload['anxiety'] as num?)?.toInt(),
+            feelings: [for (final f in (e.payload['feelings'] as List? ?? const [])) '$f'],
+            notes: e.payload['notes'] as String?,
+            local: localOf(e.occurredAt, e.occurredAtTzOffsetMinutes),
+          ),
+      ];
+
   List<SymptomView> symptoms({int days = 365}) => [
         for (final e in _lastDays(HealthEventType.symptom, days).reversed)
           SymptomView(
@@ -197,6 +210,16 @@ class Adherence {
 
   /// `null` quando não havia dose prevista no período.
   double? get ratio => expected == 0 ? null : taken / expected;
+}
+
+class MoodView {
+  final int mood;
+  final int? energy;
+  final int? anxiety;
+  final List<String> feelings;
+  final String? notes;
+  final DateTime local;
+  MoodView({required this.mood, this.energy, this.anxiety, this.feelings = const [], this.notes, required this.local});
 }
 
 class SymptomView {

@@ -26,6 +26,10 @@ Rede e privacidade:
 
 Saúde:
 - A IA registra, não prescreve: nunca sugere dose, troca ou suspensão de remédio.
+- Exceção (ADR-26): pode propor troca equivalente dentro do plano alimentar ou de treino
+  já existente, sem mudar metas, sempre como cartão confirmado. Dieta nova, não.
+- Saúde mental (ADR-23/25): nunca rotula transtorno; humor só vai à IA com o
+  consentimento próprio. Crise: texto fixo do app com CVV 188 e SAMU 192.
 - Toda resposta de saúde carrega o aviso: o app não diagnostica nem prescreve.
 - Sintoma preocupante = orientar a procurar profissional.
 - Estimativa (ex.: calorias por foto) é sempre marcada como estimativa e editável.
