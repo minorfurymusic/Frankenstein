@@ -6,6 +6,7 @@ import 'package:frankstein_nutrition/nutrition.dart';
 import 'package:frankstein_profile/profile.dart';
 
 import '../../app_dependencies.dart';
+import '../../data/household_measures.dart';
 import '../../format.dart';
 import '../../widgets/health_area.dart';
 import '../health/documents_screens.dart' show formatMarkerValue;
@@ -70,7 +71,7 @@ ProposalView describeProposal(AppDependencies deps, String tool, Map<String, dyn
       for (final i in items) {
         final food = deps.foodRepository.findById('${i['food_id']}');
         final grams = (i['grams'] as num).toDouble();
-        names.add('${food?.name ?? i['food_id']} ${n(grams)} g');
+        names.add('${food?.name ?? i['food_id']} ${n(grams)} ${food != null && isLiquidFood(food) ? 'ml' : 'g'}');
         if (food != null) kcal += food.energyKcalPer100g * grams / 100;
       }
       final label = _mealLabelOf(p['meal_type']);
@@ -79,13 +80,15 @@ ProposalView describeProposal(AppDependencies deps, String tool, Map<String, dyn
       final items = (p['items'] as List? ?? const []).cast<Map<String, dynamic>>();
       final kcal = items.fold<double>(0, (s, i) => s + (i['kcal'] as num).toDouble());
       final label = _mealLabelOf(p['meal_type']);
+      // Itens já salvos (código de barras, refeição repetida) não são palpite.
+      final estimated = items.any((i) => i['food_id'] == null);
       return ProposalView(
         HealthArea.meal,
         '$label — ${items.map((i) => '${i['name']} ${n(i['grams'])} ${i['unit'] == 'ml' ? 'ml' : 'g'}').join(', ')}',
-        '≈ ${n(kcal)} kcal (estimativa)',
+        estimated ? '≈ ${n(kcal)} kcal (estimativa)' : '${n(kcal)} kcal (dos seus itens salvos)',
         'Nutrição › $label',
         when: when,
-        estimated: true,
+        estimated: estimated,
       );
     case 'log_workout_session':
       final sets = (p['sets'] as List? ?? const []).cast<Map<String, dynamic>>();
@@ -260,6 +263,18 @@ String describeReadResult(String tool, Map<String, dynamic> data, {double? stepM
           '${runKm > 0 ? ' e ${n(runKm, d: 1)} km de corrida/caminhada gravada' : ''}.';
     case 'get_steps':
       return 'Hoje: ${n(data['total_steps'])} passos.';
+    case 'get_meals':
+      final meals = (data['meals'] as List? ?? const []).cast<Map<String, dynamic>>();
+      final day = DateTime.tryParse('${data['date']}');
+      final now = DateTime.now();
+      final isToday = day != null && day.year == now.year && day.month == now.month && day.day == now.day;
+      final dayText = isToday ? 'hoje' : (day == null ? 'nesse dia' : 'em ${ddmm(day)}');
+      if (meals.isEmpty) return 'Nenhuma refeição salva $dayText.';
+      final total = meals.fold<double>(0, (s, m) => s + ((m['kcal'] as num?)?.toDouble() ?? 0));
+      return 'Refeições $dayText (${n(total)} kcal):\n${meals.map((m) {
+        final items = (m['items'] as List? ?? const []).cast<Map<String, dynamic>>();
+        return '• ${m['time']} ${_mealLabelOf(m['meal_type'])} — ${items.map((i) => '${i['name']} ${n(i['grams'])} ${i['unit']}').join(', ')} (${n(m['kcal'])} kcal)';
+      }).join('\n')}';
     case 'search_food':
       final results = (data['results'] as List? ?? const []).cast<Map<String, dynamic>>();
       if (results.isEmpty) return 'Não achei esse alimento no catálogo.';

@@ -13,11 +13,27 @@ class HouseholdMeasure {
 
 bool _starts(String name, List<String> prefixes) => prefixes.any(name.startsWith);
 
-/// Bebida: quantidade em ml. Pelo nome da TACO e dos itens próprios.
+/// Alimento que a IA estimou (foto do prato ou conversa no Cérebro).
+bool isEstimatedFood(Food f) => RegExp(r'^(chat|photo)-').hasMatch(f.id);
+
+/// Bebida: quantidade em ml. Estimado pela IA como bebida (marcado no id),
+/// ou pelo nome da TACO e dos itens próprios.
 // TODO(frankstein): trocar pela coluna "liquido" da base nova de alimentos.
 bool isLiquidFood(Food f) {
+  if (RegExp(r'^(chat|photo)-ml-').hasMatch(f.id)) return true;
   final n = foldForSearch(f.name);
+  const drinks = ['cafe', 'cha', 'leite', 'suco', 'refrigerante', 'agua', 'cerveja', 'vinho', 'energetico', 'refresco'];
+  if (drinks.contains(n)) return true;
   return _starts(n, [
+    'cafe preto',
+    'cafe com ',
+    'cafe sem ',
+    'cafe pingado',
+    'cafe expresso',
+    'energetico',
+    'agua ',
+    'refresco',
+    'achocolatado liquido',
     'suco',
     'leite, de vaca',
     'leite de vaca',

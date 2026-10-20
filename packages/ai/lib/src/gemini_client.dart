@@ -95,8 +95,11 @@ enum AiFailure {
   /// Limite de uso da chave atingido.
   quota,
 
-  /// Sem internet / tempo esgotado.
+  /// Sem internet (o pedido nem chegou ao provedor).
   network,
+
+  /// O provedor demorou mais que o limite para responder.
+  timeout,
 
   /// O provedor recusou o conteúdo (filtro de segurança) ou não respondeu.
   blocked,
@@ -217,7 +220,7 @@ class GeminiClient {
       } on SocketException catch (e) {
         throw AiException(AiFailure.network, e.message);
       } on TimeoutException {
-        throw const AiException(AiFailure.network, 'tempo esgotado');
+        throw const AiException(AiFailure.timeout, 'tempo esgotado');
       } on HttpException catch (e) {
         throw AiException(AiFailure.network, e.message);
       }
@@ -351,7 +354,7 @@ class GeminiClient {
       } on SocketException catch (e) {
         throw AiException(AiFailure.network, e.message);
       } on TimeoutException {
-        throw const AiException(AiFailure.network, 'tempo esgotado');
+        throw const AiException(AiFailure.timeout, 'tempo esgotado');
       } on HttpException catch (e) {
         throw AiException(AiFailure.network, e.message);
       }

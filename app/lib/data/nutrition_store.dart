@@ -7,6 +7,8 @@ import 'package:frankstein_health_core/health_core.dart';
 import 'package:frankstein_nutrition/nutrition.dart';
 import 'package:frankstein_profile/profile.dart';
 
+import 'household_measures.dart';
+
 /// Ingrediente de uma receita própria: alimento do catálogo + gramas.
 class RecipeIngredient {
   final String foodId;
@@ -198,8 +200,26 @@ class NutritionStore {
     return food;
   }
 
+  /// Busca por nome, sem repetir os alimentos que a IA estimou: o mesmo
+  /// nome com os mesmos valores aparece uma vez só.
+  List<Food> searchFoods(String query, {int limit = 20}) {
+    final seen = <String>{};
+    return [
+      for (final f in foods.searchByName(query, limit: limit + 30))
+        if (!isEstimatedFood(f) || seen.add(_estimateKey(f.name, isLiquidFood(f), f))) f,
+    ].take(limit).toList();
+  }
+
+  static String _estimateKey(String name, bool liquid, Food f) => [
+        foldForSearch(name),
+        liquid,
+        for (final v in [f.energyKcalPer100g, f.proteinPer100g, f.carbohydratesPer100g, f.fatPer100g]) v.round(),
+      ].join('|');
+
   /// Alimento estimado pela IA na foto do prato: valores da porção
   /// convertidos para 100 g. Não entra em "Meus itens" (é de uma refeição).
+  /// [liquid]: bebida — fica marcada no id para as medidas virem em ml.
+  /// Se já existe um estimado igual (mesmo nome e valores), usa ele.
   Food createEstimatedFood({
     required String name,
     required double grams,
@@ -210,12 +230,13 @@ class NutritionStore {
     double? fiber,
     double? sugar,
     String idPrefix = 'photo',
+    bool liquid = false,
   }) {
     if (name.trim().isEmpty) throw ArgumentError('dê um nome ao alimento');
     if (grams <= 0) throw ArgumentError('a porção precisa ser maior que zero');
     final per100 = 100 / grams;
     final food = Food(
-      id: '$idPrefix-${HealthDataCore.newId()}',
+      id: '$idPrefix${liquid ? '-ml' : ''}-${HealthDataCore.newId()}',
       name: name.trim(),
       source: FoodSource.custom,
       energyKcalPer100g: kcal * per100,
@@ -225,6 +246,10 @@ class NutritionStore {
       fiberPer100g: fiber == null ? null : fiber * per100,
       sugarPer100g: sugar == null ? null : sugar * per100,
     );
+    final key = _estimateKey(food.name, liquid, food);
+    for (final f in foods.searchByName(food.name, limit: 50)) {
+      if (isEstimatedFood(f) && isLiquidFood(f) == liquid && _estimateKey(f.name, liquid, f) == key) return f;
+    }
     foods.insertCustomFood(food);
     return food;
   }

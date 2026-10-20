@@ -8,6 +8,7 @@ import 'package:frankstein_ai/ai.dart';
 import 'package:frankstein_nutrition/nutrition.dart';
 
 import '../../ai/ai_consent.dart';
+import '../../ai/brain_ai.dart';
 import '../../ai/ai_settings.dart';
 import '../../app_dependencies.dart';
 import '../../data/nutrition_store.dart';
@@ -99,9 +100,38 @@ class _PlatePhotoScreenState extends State<PlatePhotoScreen> {
       final grams = _grams.text.trim().isEmpty ? null : parseNumber(_grams.text);
       final e = await estimatePlate(await deps.ai.client(), AiPart.file(photo.bytes, photo.mimeType), plateGrams: grams);
       if (!mounted) return;
+      // Código de barras na foto: vale o item cadastrado, não um palpite.
+      final missing = <String>[];
+      final items = <PlateItem>[];
+      for (final i in e.items) {
+        final code = i.barcode;
+        if (code == null) {
+          items.add(i);
+        } else if (deps.foodRepository.findByBarcode(code) case final f?) {
+          final m = savedFoodItem(f, i.grams);
+          items.add(PlateItem(
+            name: f.name,
+            grams: i.grams,
+            kcal: m['kcal'] as double,
+            proteinGrams: m['protein_g'] as double,
+            carbsGrams: m['carbs_g'] as double,
+            fatGrams: m['fat_g'] as double,
+            sugarGrams: m['sugar_g'] as double?,
+            liquid: m['unit'] == 'ml',
+            barcode: code,
+          ));
+        } else {
+          missing.add(code);
+        }
+      }
+      if (missing.isNotEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+          content: Text('O código ${missing.join(', ')} não está nos seus itens. Cadastre pelo Código de barras e tente de novo.'),
+        ));
+      }
       setState(() {
         _busy = false;
-        _items = [...e.items];
+        _items = items;
         final guess = MealType.values.where((m) => m.wireValue == e.mealType).firstOrNull;
         if (!_mealChosen && guess != null) _meal = guess;
         if (e.items.isEmpty) _error = 'A IA não achou comida nesta foto. Tente outra foto ou registre pela busca.';
@@ -141,21 +171,26 @@ class _PlatePhotoScreenState extends State<PlatePhotoScreen> {
       final foods = [
         for (final i in items)
           (
-            deps.nutrition.createEstimatedFood(
-              name: i.name,
-              grams: i.grams,
-              kcal: i.kcal,
-              protein: i.proteinGrams,
-              carbs: i.carbsGrams,
-              fat: i.fatGrams,
-              fiber: i.fiberGrams,
-              sugar: i.sugarGrams,
-            ),
-            i.grams,
+            (i.barcode == null ? null : deps.foodRepository.findByBarcode(i.barcode!)) ??
+                deps.nutrition.createEstimatedFood(
+                  name: i.name,
+                  grams: i.grams,
+                  kcal: i.kcal,
+                  protein: i.proteinGrams,
+                  carbs: i.carbsGrams,
+                  fat: i.fatGrams,
+                  fiber: i.fiberGrams,
+                  sugar: i.sugarGrams,
+                  liquid: i.liquid,
+                ),
+            i,
           ),
       ];
       final event = deps.mealLogger.logMeal(
-        items: [for (final (f, g) in foods) MealItemInput(foodId: f.id, grams: g, inputMethod: MealItemInputMethod.photo)],
+        items: [
+          for (final (f, i) in foods)
+            MealItemInput(foodId: f.id, grams: i.grams, inputMethod: MealItemInputMethod.photo, unit: i.liquid ? 'ml' : 'g'),
+        ],
         mealType: _meal,
         occurredAt: local.toUtc(),
         occurredAtTzOffsetMinutes: local.timeZoneOffset.inMinutes,
@@ -290,7 +325,7 @@ class _PlatePhotoScreenState extends State<PlatePhotoScreen> {
                       dense: true,
                       contentPadding: EdgeInsets.zero,
                       title: Text(items[i].name),
-                      subtitle: Text('${formatNumber(items[i].grams)} g · toque para ajustar'),
+                      subtitle: Text('${formatNumber(items[i].grams)} ${items[i].liquid ? 'ml' : 'g'} · toque para ajustar'),
                       onTap: () => _editGrams(i),
                       trailing: Row(mainAxisSize: MainAxisSize.min, children: [
                         Text('${formatNumber(items[i].kcal)} kcal', style: RltTheme.tabular(t.bodyMedium!)),
@@ -375,7 +410,7 @@ class _PortionDialogState extends State<_PortionDialog> {
         controller: _ctrl,
         autofocus: true,
         keyboardType: const TextInputType.numberWithOptions(decimal: true),
-        decoration: const InputDecoration(labelText: 'Porção', suffixText: 'g'),
+        decoration: InputDecoration(labelText: 'Porção', suffixText: widget.item.liquid ? 'ml' : 'g'),
       ),
       actions: [
         TextButton(onPressed: () => Navigator.pop(context), child: const Text('Cancelar')),

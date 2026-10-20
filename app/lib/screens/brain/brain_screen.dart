@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:frankstein_activity/activity.dart';
 import 'package:frankstein_ai/ai.dart';
 import 'package:frankstein_brain/brain.dart';
+import 'package:frankstein_health_core/health_core.dart';
 import 'package:frankstein_health_records/health_records.dart';
 import 'package:frankstein_nutrition/nutrition.dart';
 import 'package:frankstein_tool_registry/tool_registry.dart';
@@ -504,7 +505,9 @@ class _BrainScreenState extends State<BrainScreen> {
       final name = m.nameFields![i].text.trim();
       final f = g / (items[i]['grams'] as num).toDouble();
       next.add({
-        ...items[i],
+        // Nome trocado: deixa de ser o item salvo e vira estimativa.
+        for (final e in items[i].entries)
+          if (e.key != 'food_id' || name.isEmpty || name == items[i]['name']) e.key: e.value,
         if (name.isNotEmpty) 'name': name,
         'grams': g,
         // Novas gramas: kcal e macros acompanham na proporção.
@@ -838,6 +841,9 @@ class _BrainScreenState extends State<BrainScreen> {
         history: () => history,
         mealPlan: deps.mealPlans.load,
         workoutPlans: deps.workoutRepository.listPlans,
+        findBarcode: deps.foodRepository.findByBarcode,
+        findFood: deps.foodRepository.findById,
+        mealsOn: (day) => deps.dayRead.eventsOnLocalDay(HealthEventType.meal, day),
       ));
     } catch (e) {
       if (!mounted) return;
@@ -1163,20 +1169,14 @@ class _BrainScreenState extends State<BrainScreen> {
     }
     final now = DateTime.now();
     final meal = MealType.values.where((t) => t.name == estimate.mealType).firstOrNull ?? mealTypeForHour(now.hour);
+    // Código de barras na foto: o app procura nos itens cadastrados.
+    final notes = <String>[];
+    final items = [for (final i in estimate.items) ?mealItemParams(i, findBarcode: deps.foodRepository.findByBarcode, messages: notes)];
+    if (notes.isNotEmpty) _changed(() => _messages.addAll([for (final n in notes) _BotMsg(n, fromAi: true, model: _modelLabel)]));
+    if (items.isEmpty) return;
     final call = ToolCallDecision('log_estimated_meal', {
       'meal_type': meal.wireValue,
-      'items': [
-        for (final i in estimate.items)
-          {
-            'name': i.name,
-            'grams': i.grams,
-            'kcal': i.kcal,
-            'protein_g': i.proteinGrams,
-            'carbs_g': i.carbsGrams,
-            'fat_g': i.fatGrams,
-            'sugar_g': ?i.sugarGrams,
-          },
-      ],
+      'items': items,
     });
     final results = await deps.pipeline.runPlan(ToolCallPlan(calls: [call]));
     final r = results.single;

@@ -15,6 +15,11 @@ class PlateItem {
 
   /// Bebida: a quantidade em [grams] é em ml (1 ml ≈ 1 g para as contas).
   final bool liquid;
+
+  /// Números do código de barras que a pessoa digitou ou que aparecem na
+  /// foto. A IA não sabe que produto é: quem procura é o app, nos itens
+  /// cadastrados no aparelho.
+  final String? barcode;
   const PlateItem({
     required this.name,
     required this.grams,
@@ -25,6 +30,7 @@ class PlateItem {
     this.fiberGrams,
     this.sugarGrams,
     this.liquid = false,
+    this.barcode,
   });
 
   /// Mesma comida, outra porção: valores proporcionais.
@@ -40,8 +46,16 @@ class PlateItem {
       fiberGrams: fiberGrams == null ? null : fiberGrams! * f,
       sugarGrams: sugarGrams == null ? null : sugarGrams! * f,
       liquid: liquid,
+      barcode: barcode,
     );
   }
+}
+
+/// Só os dígitos de um código de barras (8 a 14), ou `null`.
+String? barcodeDigits(Object? raw) {
+  if (raw is! String) return null;
+  final d = raw.replaceAll(RegExp(r'[\s.-]'), '');
+  return RegExp(r'^\d{8,14}$').hasMatch(d) ? d : null;
 }
 
 class PlateEstimate {
@@ -79,6 +93,8 @@ const plateEstimateSchema = <String, dynamic>{
           'fat_g': {'type': 'number'},
           'fiber_g': {'type': 'number'},
           'sugar_g': {'type': 'number'},
+          'liquid': {'type': 'boolean'},
+          'barcode': {'type': 'string'},
         },
         'required': ['name', 'grams', 'kcal', 'protein_g', 'carbs_g', 'fat_g'],
       },
@@ -93,6 +109,9 @@ Regras:
 - Liste cada alimento visível separadamente, com nome comum em português (ex.: "Arroz branco", "Feijão carioca", "Frango grelhado").
 - Estime a porção em gramas pelo tamanho no prato. Se o peso total do prato for informado, distribua as porções para que a soma bata com esse peso (sem contar o prato).
 - Para cada alimento, estime kcal, protein_g, carbs_g, fat_g e, se souber, fiber_g e sugar_g (açúcares totais), para a porção estimada (use valores típicos de tabelas brasileiras, como a TACO).
+- Bebida (suco, refrigerante, café, leite, chá, energético, cerveja): liquid = true e grams = mililitros.
+- Código de barras: se a foto mostra os números de um código de barras (ou a pessoa digitou os números), devolva um item com barcode = só os dígitos, name = "Produto do código" seguido dos dígitos, grams = a quantidade que a pessoa disse (estime as gramas pelo que ela contou, ex.: 6 biscoitos recheados ≈ 60 g) e kcal, protein_g, carbs_g e fat_g = 0. Nunca diga nem adivinhe qual é o produto pelo número: o app procura o código nos itens cadastrados pela pessoa. Código de barras não é "não é comida".
+- Rótulo com tabela nutricional na foto: use os valores do rótulo para a quantidade que a pessoa disse.
 - meal_type: seu palpite (café da manhã = breakfast, almoço = lunch, jantar = dinner, lanche = snack).
 - Se vier "A pessoa disse", use: ela sabe o que comeu (ex.: "pastel de carne, não comi a borda", "tirei a gordura"). Ajuste nomes, porções e valores a isso.
 - Se a foto não for de comida, devolva items vazio e, em not_food, diga em uma frase curta o que a foto mostra (ex.: "Print da tela de metas de um app.").
@@ -118,6 +137,8 @@ PlateEstimate parsePlateEstimate(Map<String, dynamic> json) {
       fatGrams: n(m['fat_g']),
       fiberGrams: fiber is num ? n(fiber) : null,
       sugarGrams: sugar is num ? n(sugar) : null,
+      liquid: m['liquid'] == true,
+      barcode: barcodeDigits(m['barcode']),
     ));
   }
   final notFood = json['not_food'];

@@ -392,6 +392,7 @@ class AppDependencies {
     );
 
     final nutrition = NutritionStore(foods: foodRepository, settings: profileRepository, core: core);
+    final dayRead = DayReadModel(core: core);
 
     final registry = ToolRegistry()
       ..register(getStepsSpec(), getStepsHandler(core))
@@ -411,6 +412,7 @@ class AppDependencies {
         logEstimatedMealSpec(),
         logEstimatedMealHandler(nutrition, mealLogger, tzOffsetMinutesProvider: tzOffsetMinutesProvider),
       )
+      ..register(getMealsSpec(), getMealsHandler(dayRead))
       // Lido de documentos no Cérebro (ADR-19).
       ..register(addHistoryItemSpec(), addHistoryItemHandler(medicalHistory))
       ..register(updateHeightSpec(), updateHeightHandler(profileRepository))
@@ -459,7 +461,6 @@ class AppDependencies {
       );
 
     final healthRead = HealthReadModel(core: core, medications: medicationRepository, agenda: agenda);
-    final dayRead = DayReadModel(core: core);
     final activityRead = ActivityReadModel(days: dayRead, health: healthRead);
 
     final pipeline = BrainPipeline(

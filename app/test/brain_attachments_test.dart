@@ -167,6 +167,33 @@ void main() {
     });
   }
 
+  testWidgets('foto com código de barras e bebida: usa o item cadastrado e a bebida fica em ml', (tester) async {
+    deps.ai.giveConsent();
+    deps.nutrition.createBarcodeItem(barcode: '7622210592750', name: 'Biscoito Trakinas', kcalPer100g: 459, carbsPer100g: 70, fatPer100g: 17);
+    await pump(tester);
+    final c = {
+      ..._cases('pratos').first,
+      'ai_reply': {
+        'meal_type': 'breakfast',
+        'items': [
+          {'name': 'Produto do código 7622210592750', 'grams': 63, 'kcal': 0, 'protein_g': 0, 'carbs_g': 0, 'fat_g': 0, 'barcode': '7622210592750'},
+          {'name': 'Café', 'grams': 200, 'kcal': 4, 'protein_g': 0, 'carbs_g': 0, 'fat_g': 0, 'liquid': true},
+        ],
+      },
+    };
+    await attach(tester, c, 'plate', 'camera');
+    expect(find.textContaining('Biscoito Trakinas 63 g, Café 200 ml'), findsOneWidget);
+
+    await tester.runAsync(() async {
+      await tester.tap(find.byKey(const Key('confirmation_confirm')));
+      await Future<void>.delayed(const Duration(milliseconds: 80));
+    });
+    await tester.pumpAndSettle();
+    final items = (deps.core.queryByType(HealthEventType.meal).single.payload['items'] as List).cast<Map<String, dynamic>>();
+    expect(items.map((i) => (i['name'], i['unit'])), [('Biscoito Trakinas', 'g'), ('Café', 'ml')]);
+    expect(items.first['energy_kcal'], closeTo(289.2, 0.1));
+  });
+
   for (final c in _cases('receitas')) {
     testWidgets('receita ${c['file']}: lida no Cérebro, revisada no formulário e salva com os remédios', (tester) async {
       deps.ai.giveConsent();

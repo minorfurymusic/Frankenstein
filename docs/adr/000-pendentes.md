@@ -37,5 +37,6 @@ Nenhuma virou "aceita" sem confirmação explícita do usuário.
 | [ADR-25](025-analise-como-estou.md) | "Como estou?": a IA recebe só resumos; humor entra sempre que registrado (revisão de 2026-10-18) | cérebro | **aceito, revisado** |
 | [ADR-26](026-trocas-equivalentes-no-plano.md) | A IA pode propor trocas equivalentes no plano do profissional, sem mudar metas | cérebro | **aceito** |
 | [ADR-27](027-cerebro-conversa.md) | O Cérebro conversa como a IA da pessoa, com avisos e travas mínimas | cérebro | **aceito** |
+| [ADR-28](028-cerebro-procura-o-que-esta-salvo.md) | O Cérebro procura no aparelho o que está salvo: código de barras nos itens cadastrados, repetir refeição, "o que comi"; bebidas em ml; estimados sem repetir; tempo esgotado com mensagem própria | cérebro | **aceito** |
 
 `_MODELO.md` neste diretório é o template usado em todas.

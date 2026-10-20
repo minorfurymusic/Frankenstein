@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
@@ -114,6 +115,13 @@ void main() {
     await expectLater(
       GeminiClient(apiKey: 'k', transport: t).ping(),
       throwsA(isA<AiException>().having((e) => e.failure, 'failure', AiFailure.network)),
+    );
+
+    // Tempo esgotado não é falta de internet: a tela diz coisas diferentes.
+    final slow = FakeTransport([])..throwOnCall = TimeoutException('lento');
+    await expectLater(
+      GeminiClient(apiKey: 'k', transport: slow).ping(),
+      throwsA(isA<AiException>().having((e) => e.failure, 'failure', AiFailure.timeout)),
     );
   });
 

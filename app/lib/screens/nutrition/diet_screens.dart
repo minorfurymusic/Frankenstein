@@ -324,7 +324,7 @@ class _RecipeFormScreenState extends State<RecipeFormScreen> {
           key: const Key('recipe_search'),
           controller: _search,
           decoration: const InputDecoration(labelText: 'Buscar ingrediente', prefixIcon: Icon(Icons.search)),
-          onChanged: (q) => setState(() => _results = q.trim().length < 2 ? const [] : widget.deps.foodRepository.searchByName(q.trim(), limit: 10)),
+          onChanged: (q) => setState(() => _results = q.trim().length < 2 ? const [] : widget.deps.nutrition.searchFoods(q.trim(), limit: 10)),
         ),
         for (var i = 0; i < _results.length; i++)
           ListTile(

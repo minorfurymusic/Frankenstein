@@ -28,9 +28,16 @@ uma rodada de testes no aparelho e o usuário confirmou no celular as
 funções da lista "Confirmadas" de `docs/PENDENCIAS-V1.md`. **O que falta
 para a versão 1.0, as decisões em aberto e o que só foi testado por teste
 automático estão em `docs/PENDENCIAS-V1.md`** (fonte única de pendências).
-Diário do teste no aparelho: `docs/TESTE-APARELHO.md` (itens 1–34 e roteiro
-T1–T12). Último commit verde: `d0297c3`; `make test` = 241 testes no app
+Diário do teste no aparelho: `docs/TESTE-APARELHO.md` (itens 1–34, rodada de
+2026-10-20 e roteiro T1–T18). `make test` em 2026-10-20 = 250 testes no app
 (mais os dos pacotes), todos passando.
+
+Rodada de 2026-10-20 (ADR-28): o Cérebro procura no aparelho o que está
+salvo. Código de barras (texto ou números na foto) usa o item cadastrado,
+e a IA não nomeia mais produto pelo número. "Repete o café da manhã" e "o
+que eu comi hoje/ontem?" funcionam. Bebidas ficam em ml, inclusive na foto.
+Estimados iguais não se repetem na busca. Tempo esgotado tem mensagem
+própria. Ainda sem teste no aparelho (T13–T18).
 
 Rodadas de 2026-10-15 a 2026-10-18 (detalhe nos commits e ADRs 19–27):
 - **Cérebro:** vários documentos de uma vez (ADR-19); escada de modelos

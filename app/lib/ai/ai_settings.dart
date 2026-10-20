@@ -214,6 +214,7 @@ String aiFailureMessage(Object error) {
     AiFailure.badKey => 'O provedor recusou a chave. Confira em Conta › Cérebro (IA).',
     AiFailure.quota => 'A chave atingiu o limite de uso do provedor. Tente mais tarde.',
     AiFailure.network => 'Sem conexão com a IA. Confira a internet e tente de novo.',
+    AiFailure.timeout => 'A IA demorou demais para responder (mais de 90 segundos). Tente de novo; com foto, uma imagem menor ajuda.',
     AiFailure.blocked => 'A IA não quis ler este conteúdo. Tente outra foto ou preencha à mão.',
     AiFailure.tooLarge => 'Arquivo grande demais para a IA (máx. 15 MB). Tente uma foto ou um PDF menor.',
     AiFailure.invalidOutput => 'A IA respondeu fora do formato. Tente de novo ou preencha à mão.',

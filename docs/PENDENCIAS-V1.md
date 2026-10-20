@@ -31,6 +31,7 @@ automáticos (`make test`) não contam como confirmação no aparelho.
 - Avisos de rotina e liga/desliga por tipo.
 - Vários documentos de uma vez.
 - Exportação de dados, lembretes, sono e batimentos do relógio, card de compartilhamento.
+- Cérebro e comida salva (ADR-28, 2026-10-20): código de barras procurado nos itens cadastrados (texto e foto), "repete o café da manhã", "o que eu comi hoje/ontem?", bebidas em ml (também na foto), estimados sem repetir na busca, mensagem própria para tempo esgotado. Roteiro T13–T18 em `docs/TESTE-APARELHO.md`.
 
 ## 3. Decisões que dependem do usuário
 

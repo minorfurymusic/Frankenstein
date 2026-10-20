@@ -3,12 +3,16 @@ import 'dart:typed_data';
 import 'package:frankstein_activity/activity.dart';
 import 'package:frankstein_ai/ai.dart';
 import 'package:frankstein_brain/brain.dart';
+import 'package:frankstein_health_core/health_core.dart';
 import 'package:frankstein_health_records/health_records.dart';
 import 'package:frankstein_nutrition/nutrition.dart';
 import 'package:frankstein_tool_registry/tool_registry.dart';
 
+import '../data/day_read_model.dart';
+import '../data/household_measures.dart';
 import '../data/meal_plan.dart';
 import '../data/nutrition_store.dart';
+import '../format.dart';
 import 'activity_chat_tools.dart';
 import 'plan_swaps.dart';
 
@@ -31,6 +35,9 @@ final Map<String, dynamic> logEstimatedMealSchema = {
       'items': {
         'type': 'object',
         'properties': {
+          // Item já salvo no aparelho (código de barras ou refeição
+          // repetida): grava esse alimento, não uma estimativa nova.
+          'food_id': {'type': 'string'},
           'name': {'type': 'string', 'minLength': 1},
           'grams': {'type': 'number', 'exclusiveMinimum': 0},
           // Bebida: a quantidade em `grams` é em ml.
@@ -71,7 +78,8 @@ ToolHandler logEstimatedMealHandler(
       for (final raw in (params['items'] as List).cast<Map<String, dynamic>>()) {
         final grams = (raw['grams'] as num).toDouble();
         double n(String k) => (raw[k] as num?)?.toDouble() ?? 0;
-        final food = nutrition.createEstimatedFood(
+        final saved = raw['food_id'] is String ? nutrition.foods.findById(raw['food_id'] as String) : null;
+        final food = saved ?? nutrition.createEstimatedFood(
           name: raw['name'] as String,
           grams: grams,
           kcal: n('kcal'),
@@ -80,6 +88,7 @@ ToolHandler logEstimatedMealHandler(
           fat: n('fat_g'),
           sugar: (raw['sugar_g'] as num?)?.toDouble(),
           idPrefix: 'chat',
+          liquid: raw['unit'] == 'ml',
         );
         items.add(MealItemInput(foodId: food.id, grams: grams, unit: raw['unit'] == 'ml' ? 'ml' : 'g'));
       }
@@ -185,10 +194,102 @@ String _slug(String s) => _norm(s).replaceAll(RegExp(r'[^a-z0-9]+'), '-').replac
 String _todayIso(DateTime now) =>
     '${now.year}-${now.month.toString().padLeft(2, '0')}-${now.day.toString().padLeft(2, '0')}';
 
+/// Alimento já salvo no aparelho, na quantidade dita, no formato de um item
+/// de `log_estimated_meal` (com `food_id`: grava esse alimento).
+Map<String, dynamic> savedFoodItem(Food food, double grams, {String? unit}) {
+  final f = grams / 100;
+  final liquid = unit == null ? isLiquidFood(food) : unit == 'ml';
+  return {
+    'food_id': food.id,
+    'name': food.name,
+    'grams': grams,
+    if (liquid) 'unit': 'ml',
+    'kcal': food.energyKcalPer100g * f,
+    'protein_g': food.proteinPer100g * f,
+    'carbs_g': food.carbohydratesPer100g * f,
+    'fat_g': food.fatPer100g * f,
+    if (food.sugarPer100g != null) 'sugar_g': food.sugarPer100g! * f,
+  };
+}
+
+/// Item dito na conversa ou visto na foto → item do cartão. Com código de
+/// barras, o app procura o código nos itens cadastrados (a IA não sabe que
+/// produto é): achou, usa os valores cadastrados; não achou, o item sai e
+/// a pessoa fica sabendo em [messages].
+Map<String, dynamic>? mealItemParams(PlateItem i, {Food? Function(String barcode)? findBarcode, required List<String> messages}) {
+  final code = i.barcode;
+  if (code != null) {
+    final food = findBarcode?.call(code);
+    if (food != null) return savedFoodItem(food, i.grams);
+    messages.add('O código $code não está nos seus itens, então não registrei esse produto. '
+        'Cadastre em Nutrição › Adicionar › Código de barras (dá para digitar os números) e mande de novo.');
+    return null;
+  }
+  return {
+    'name': i.name,
+    'grams': i.grams,
+    if (i.liquid) 'unit': 'ml',
+    'kcal': i.kcal,
+    'protein_g': i.proteinGrams,
+    'carbs_g': i.carbsGrams,
+    'fat_g': i.fatGrams,
+    'sugar_g': ?i.sugarGrams,
+  };
+}
+
+const _mealNames = {'breakfast': 'café da manhã', 'lunch': 'almoço', 'dinner': 'jantar', 'snack': 'lanche'};
+
+/// "Repete o café da manhã de ontem": acha a refeição salva **no aparelho**
+/// e devolve os itens dela para um cartão novo. `null` se não achou.
+List<Map<String, dynamic>>? repeatedMealItems(
+  Map<String, String> ask, {
+  required DateTime now,
+  required List<HealthEvent> Function(DateTime localDay) mealsOn,
+  required Food? Function(String id) findFood,
+}) {
+  final today = DateTime(now.year, now.month, now.day);
+  final days = switch (ask['day']) {
+    'today' => [today],
+    'yesterday' => [today.subtract(const Duration(days: 1))],
+    _ => [for (var i = 0; i < 30; i++) today.subtract(Duration(days: i))],
+  };
+  for (final d in days) {
+    final found = [for (final e in mealsOn(d)) if (e.payload['meal_type'] == ask['meal_type']) e];
+    if (found.isEmpty) continue;
+    return [
+      for (final raw in (found.last.payload['items'] as List? ?? const []).cast<Map<String, dynamic>>())
+        if ((raw['grams'] as num?) != null && (raw['grams'] as num) > 0)
+          if (findFood('${raw['food_id']}') case final food?)
+            savedFoodItem(food, (raw['grams'] as num).toDouble(), unit: raw['unit'] as String?)
+          else
+            {
+              'name': '${raw['name']}',
+              'grams': (raw['grams'] as num).toDouble(),
+              if (raw['unit'] == 'ml') 'unit': 'ml',
+              'kcal': (raw['energy_kcal'] as num?)?.toDouble() ?? 0,
+              'protein_g': (raw['protein_g'] as num?)?.toDouble() ?? 0,
+              'carbs_g': (raw['carbohydrates_g'] as num?)?.toDouble() ?? 0,
+              'fat_g': (raw['fat_g'] as num?)?.toDouble() ?? 0,
+            },
+    ];
+  }
+  return null;
+}
+
 /// Transforma o que a IA entendeu em chamadas de ferramenta — cada uma vira
 /// um cartão no Cérebro. Perguntas sobre os próprios dados viram
 /// ferramentas de leitura respondidas no aparelho.
-ToolCallPlan planFromReading(ChatReading r, {required List<Medication> medications, required DateTime now}) {
+///
+/// [findBarcode], [findFood] e [mealsOn] procuram no aparelho o que está
+/// salvo (itens cadastrados e refeições): nada disso vai à IA.
+ToolCallPlan planFromReading(
+  ChatReading r, {
+  required List<Medication> medications,
+  required DateTime now,
+  Food? Function(String barcode)? findBarcode,
+  Food? Function(String id)? findFood,
+  List<HealthEvent> Function(DateTime localDay)? mealsOn,
+}) {
   final calls = <ToolCallDecision>[];
   final messages = <String>[];
   if (r.transcript != null) messages.add('Transcrição: “${r.transcript}”');
@@ -200,23 +301,25 @@ ToolCallPlan planFromReading(ChatReading r, {required List<Medication> medicatio
     calls.add(ToolCallDecision('log_water', Map.of(w)));
   }
   for (final m in r.meals) {
+    final items = [for (final i in m.items) ?mealItemParams(i, findBarcode: findBarcode, messages: messages)];
+    if (items.isEmpty) continue;
     calls.add(ToolCallDecision('log_estimated_meal', {
       'meal_type': m.mealType,
       if (m.at != null) 'at': m.at,
-      'items': [
-        for (final i in m.items)
-          {
-            'name': i.name,
-            'grams': i.grams,
-            if (i.liquid) 'unit': 'ml',
-            'kcal': i.kcal,
-            'protein_g': i.proteinGrams,
-            'carbs_g': i.carbsGrams,
-            'fat_g': i.fatGrams,
-            'sugar_g': ?i.sugarGrams,
-          },
-      ],
+      'items': items,
     }));
+  }
+  for (final ask in r.repeatMeals) {
+    final items = mealsOn == null || findFood == null
+        ? null
+        : repeatedMealItems(ask, now: now, mealsOn: mealsOn, findFood: findFood);
+    final name = _mealNames[ask['meal_type']] ?? 'refeição';
+    if (items == null || items.isEmpty) {
+      final when = switch (ask['day']) { 'today' => ' hoje', 'yesterday' => ' ontem', _ => ' nos últimos 30 dias' };
+      messages.add('Não achei $name salvo$when.');
+      continue;
+    }
+    calls.add(ToolCallDecision('log_estimated_meal', {'meal_type': ask['meal_type'], 'items': items}));
   }
   for (final d in r.doses) {
     final known = matchMedication(medications, d.name);
@@ -263,13 +366,16 @@ ToolCallPlan planFromReading(ChatReading r, {required List<Medication> medicatio
     calls.add(ToolCallDecision('log_body_measurement', Map.of(b)));
   }
   final date = _todayIso(now);
+  final yesterday = _todayIso(now.subtract(const Duration(days: 1)));
   for (final q in r.questions.toSet()) {
-    final tool = switch (q) {
-      'daily_summary' => 'get_daily_summary',
-      'steps' => 'get_steps',
-      _ => 'get_medication_agenda',
+    final (tool, day) = switch (q) {
+      'daily_summary' => ('get_daily_summary', date),
+      'steps' => ('get_steps', date),
+      'meals_today' => ('get_meals', date),
+      'meals_yesterday' => ('get_meals', yesterday),
+      _ => ('get_medication_agenda', date),
     };
-    calls.add(ToolCallDecision(tool, {'date': date}));
+    calls.add(ToolCallDecision(tool, {'date': day}));
   }
   for (final m in r.newMedications) {
     final known = matchMedication(medications, m.name);
@@ -338,12 +444,20 @@ class AiToolCaller implements PlanningToolCaller {
   final MealPlan? Function()? mealPlan;
   final List<WorkoutPlan> Function()? workoutPlans;
 
+  /// Itens e refeições salvos, procurados no aparelho (não vão à IA).
+  final Food? Function(String barcode)? findBarcode;
+  final Food? Function(String id)? findFood;
+  final List<HealthEvent> Function(DateTime localDay)? mealsOn;
+
   AiToolCaller({
     required this.client,
     required this.medications,
     this.history,
     this.mealPlan,
     this.workoutPlans,
+    this.findBarcode,
+    this.findFood,
+    this.mealsOn,
     DateTime Function()? clock,
   }) : clock = clock ?? DateTime.now;
 
@@ -358,7 +472,14 @@ class AiToolCaller implements PlanningToolCaller {
   Future<ToolCallPlan> _plan(String userInput, List<ToolSpec> availableTools, {AiPart? audio}) async {
     final now = clock();
     final reading = await readChatMessage(await client(), userInput, now: now, audio: audio, history: history?.call());
-    var plan = planFromReading(reading, medications: medications(), now: now);
+    var plan = planFromReading(
+      reading,
+      medications: medications(),
+      now: now,
+      findBarcode: findBarcode,
+      findFood: findFood,
+      mealsOn: mealsOn,
+    );
     if (reading.planSwaps.isNotEmpty) {
       final swaps = await resolvePlanSwaps(
         reading.planSwaps,
@@ -384,4 +505,44 @@ class AiToolCaller implements PlanningToolCaller {
       suggestions: plan.suggestions,
     );
   }
+}
+
+/// "O que eu comi hoje?" — respondido no aparelho, com o que está salvo.
+final Map<String, dynamic> getMealsSchema = {
+  'type': 'object',
+  'properties': {
+    'date': {'type': 'string', 'format': 'date', 'description': 'Dia local, AAAA-MM-DD'},
+  },
+  'required': ['date'],
+};
+
+ToolSpec getMealsSpec() => ToolSpec(
+      name: 'get_meals',
+      description: 'Refeições salvas num dia: hora, tipo, itens e kcal',
+      write: false,
+      confirm: false,
+      module: 'nutrition',
+      parametersSchema: getMealsSchema,
+    );
+
+ToolHandler getMealsHandler(DayReadModel days) {
+  return (params) async {
+    final d = DateTime.parse(params['date'] as String);
+    final meals = days.eventsOnLocalDay(HealthEventType.meal, DateTime(d.year, d.month, d.day));
+    return ToolResult.ok({
+      'date': params['date'],
+      'meals': [
+        for (final e in meals)
+          {
+            'meal_type': e.payload['meal_type'],
+            'time': hhmm(localOf(e.occurredAt, e.occurredAtTzOffsetMinutes)),
+            'kcal': ((e.payload['totals'] as Map?)?['energy_kcal'] as num?)?.toDouble() ?? 0,
+            'items': [
+              for (final i in (e.payload['items'] as List? ?? const []).cast<Map<String, dynamic>>())
+                {'name': i['name'], 'grams': i['grams'], 'unit': i['unit'] == 'ml' ? 'ml' : 'g'},
+            ],
+          },
+      ],
+    });
+  };
 }

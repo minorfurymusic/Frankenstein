@@ -139,3 +139,15 @@ códigos são do Trakinas, de um queijo e de outro produto. A IA errou os três.
 |---|---|---|---|
 | 09:39 | Nutrição › Nova receita, ingrediente "Café" | Busca mostra "Café 2 kcal" duas vezes, além de "Café, infusão 10%" e "Café, pó, torrado 419 kcal". As medidas oferecidas para "Café" são gramas, colher de sopa, colher de chá e **fatia/unidade pequena** | **Errado**: falta xícara/ml, e não existe "fatia" de café. Os dois "Café 2 kcal" vêm de refeições estimadas pela IA e confirmadas, porque cada item confirmado vira um alimento novo (`app/lib/data/nutrition_store.dart:200-228`). A busca procura em todos os alimentos guardados (`packages/nutrition/lib/src/food_repository.dart:198-207`). "Café" sozinho não está na lista de bebidas (`app/lib/data/household_measures.dart:17-35`, que só reconhece "café, infusão" e "café coado") |
 | 11:58 | Cérebro | "Repita o café da manhã salvo" → a IA diz que não vê o histórico; depois o app mostra o "Resumo de hoje" (586 kcal em 2 refeições) | Coerente com o desenho atual: a IA não recebe o que está salvo, e só o app responde perguntas sobre os dados, e só três tipos (`packages/ai/lib/src/chat_intents.dart:370-375`). Não existe pedido de "repetir refeição" |
+
+## Para testar no aparelho (ADR-28, 2026-10-20)
+
+| # | Onde | Como testar | Esperado |
+|---|---|---|---|
+| T13 | Cérebro | Com o Trakinas cadastrado pelo código, escrever "comi 6 biscoitos do <código do Trakinas>" | Cartão com o nome cadastrado e "kcal (dos seus itens salvos)", sem a etiqueta "Estimativa"; as gramas podem ser corrigidas no lápis |
+| T14 | Cérebro | Escrever um código que não está cadastrado (ex.: o do queijo) | Aviso "O código … não está nos seus itens", sem cartão e sem nome inventado |
+| T15 | Cérebro › foto | Foto com os números do código de barras + "6 biscoitos" | Igual a T13 (ou T14, se o código não estiver cadastrado). Foto só das barras, sem os números: não é garantido que a IA leia; o leitor de Nutrição › Código de barras é o caminho certo |
+| T16 | Cérebro | "repete o café da manhã de ontem" (ou "repita o café da manhã salvo") | Cartão com os mesmos itens da refeição salva; confirmar grava uma refeição nova |
+| T17 | Cérebro | "o que eu comi hoje?" / "o que comi ontem?" | Lista das refeições com hora, itens e kcal |
+| T18 | Cérebro e Nutrição | "tomei um copo de café" e foto de um prato com bebida; depois Nutrição › Montar prato › buscar "café" | Bebida em ml no cartão e na Nutrição; medidas copo/xícara (sem "fatia"); o mesmo café estimado aparece uma vez só na busca |
+

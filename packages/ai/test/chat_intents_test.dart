@@ -168,4 +168,32 @@ void main() {
     expect(chatReadingInstruction, contains('caminhada ou corrida até um lugar = round_trip = true'));
     expect(chatReadingInstruction, contains('voltou de outro jeito'));
   });
+
+  test('código de barras: só os dígitos; a IA não nomeia o produto; repetir refeição e "o que comi" vão para o app', () {
+    final r = parseChatReading({
+      'meals': [
+        {
+          'meal_type': 'snack',
+          'items': [
+            {'name': 'Produto do código 7891097103841', 'grams': 50, 'kcal': 0, 'barcode': '789 1097 103841'},
+            {'name': 'Pão', 'grams': 50, 'kcal': 130, 'barcode': '123'},
+          ],
+        },
+      ],
+      'repeat_meals': [
+        {'meal_type': 'breakfast', 'day': 'yesterday'},
+        {'meal_type': 'brunch', 'day': 'today'},
+        {'meal_type': 'lunch', 'day': 'semana passada'},
+      ],
+      'questions': ['meals_today'],
+    });
+    expect(r.meals.single.items.map((i) => i.barcode), ['7891097103841', null]);
+    expect(r.repeatMeals, [
+      {'meal_type': 'breakfast', 'day': 'yesterday'},
+    ]);
+    expect(r.questions, ['meals_today']);
+    expect(r.isEmpty, isFalse);
+    expect(chatReadingInstruction, contains('nunca diga nem adivinhe o nome do produto'));
+    expect(chatReadingInstruction, contains('repeat_meals'));
+  });
 }

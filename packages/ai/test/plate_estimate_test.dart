@@ -47,4 +47,16 @@ void main() {
     expect(menos.kcal, closeTo(128, 1e-9));
     expect(menos.carbsGrams, closeTo(28, 1e-9));
   });
+
+  test('foto: bebida em ml e código de barras só com os dígitos', () {
+    final e = parsePlateEstimate({
+      'items': [
+        {'name': 'Café', 'grams': 200, 'kcal': 4, 'protein_g': 0, 'carbs_g': 0, 'fat_g': 0, 'liquid': true},
+        {'name': 'Produto do código 7622210592750', 'grams': 60, 'kcal': 0, 'protein_g': 0, 'carbs_g': 0, 'fat_g': 0, 'barcode': '7622210592750'},
+      ],
+    });
+    expect(e.items.map((i) => (i.liquid, i.barcode)), [(true, null), (false, '7622210592750')]);
+    expect(e.items.last.withGrams(30).barcode, '7622210592750');
+    expect(plateEstimateInstruction, contains('Nunca diga nem adivinhe qual é o produto'));
+  });
 }

@@ -40,7 +40,7 @@ class _AddFoodScreenState extends State<AddFoodScreen> {
   }
 
   void _search(String q) {
-    setState(() => _results = q.trim().length < 2 ? const [] : widget.deps.foodRepository.searchByName(q.trim(), limit: 30));
+    setState(() => _results = q.trim().length < 2 ? const [] : widget.deps.nutrition.searchFoods(q.trim(), limit: 30));
   }
 
   void _open(Food food, {MealItemInputMethod method = MealItemInputMethod.search}) {

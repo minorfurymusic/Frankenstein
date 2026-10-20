@@ -96,6 +96,9 @@ Responda pelo número (ex.: "1: ok; 3: B; 9: A").
 
 ## Cérebro e comida salva (teste de 2026-10-20)
 
+**Respondido em 2026-10-20: "Faça todos".** Os itens 18 a 22 foram feitos
+(ADR-28) e esperam o teste no aparelho (T13–T18 de `docs/TESTE-APARELHO.md`).
+
 Princípio de todas: o que está salvo **não vai para a IA**. A IA só diz o
 que entendeu; quem procura no que está salvo é o app, no aparelho, como já
 acontece com os remédios (`app/lib/ai/brain_ai.dart:160-170`).

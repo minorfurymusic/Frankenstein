@@ -104,8 +104,13 @@ class ChatReading {
   final List<Map<String, dynamic>> history;
 
   /// Perguntas sobre os próprios dados que o app responde **localmente**
-  /// (`daily_summary`, `steps`, `medication_agenda`) — o dado não vai à IA.
+  /// (`daily_summary`, `steps`, `medication_agenda`, `meals_today`,
+  /// `meals_yesterday`) — o dado não vai à IA.
   final List<String> questions;
+
+  /// Pedidos para repetir uma refeição já salva: `meal_type` e `day`
+  /// (`today`, `yesterday` ou `last`). O app procura a refeição no aparelho.
+  final List<Map<String, String>> repeatMeals;
 
   const ChatReading({
     this.reply,
@@ -121,6 +126,7 @@ class ChatReading {
     this.vitalSigns = const [],
     this.bodyMeasurements = const [],
     this.questions = const [],
+    this.repeatMeals = const [],
     this.history = const [],
     this.incomplete = const [],
     this.planSwaps = const [],
@@ -131,6 +137,7 @@ class ChatReading {
   bool get isEmpty =>
       water.isEmpty &&
       meals.isEmpty &&
+      repeatMeals.isEmpty &&
       doses.isEmpty &&
       workouts.isEmpty &&
       newMedications.isEmpty &&
@@ -189,12 +196,30 @@ const chatReadingSchema = <String, dynamic>{
                 'carbs_g': {'type': 'number'},
                 'fat_g': {'type': 'number'},
                 'sugar_g': {'type': 'number'},
+                'barcode': {'type': 'string'},
               },
               'required': ['name', 'grams', 'kcal'],
             },
           },
         },
         'required': ['meal_type', 'items'],
+      },
+    },
+    'repeat_meals': {
+      'type': 'array',
+      'items': {
+        'type': 'object',
+        'properties': {
+          'meal_type': {
+            'type': 'string',
+            'enum': ['breakfast', 'lunch', 'dinner', 'snack'],
+          },
+          'day': {
+            'type': 'string',
+            'enum': ['today', 'yesterday', 'last'],
+          },
+        },
+        'required': ['meal_type', 'day'],
       },
     },
     'medication_doses': {
@@ -371,7 +396,7 @@ const chatReadingSchema = <String, dynamic>{
       'type': 'array',
       'items': {
         'type': 'string',
-        'enum': ['daily_summary', 'steps', 'medication_agenda'],
+        'enum': ['daily_summary', 'steps', 'medication_agenda', 'meals_today', 'meals_yesterday'],
       },
     },
   },
@@ -386,6 +411,8 @@ Regras:
 - Separe cada coisa num item próprio: "bebi 2 L de água, comi 3 ovos e tomei dipirona às 9h" = 1 água + 1 refeição + 1 remédio.
 - Água em mililitros (1 copo = 250 ml, 1 garrafa pequena = 500 ml, 1 L = 1000 ml).
 - Refeição: um item por alimento, com gramas estimadas pela quantidade dita (1 ovo ≈ 50 g) e kcal, protein_g, carbs_g, fat_g e sugar_g (açúcares totais) estimados para essas gramas. Bebida (suco, refrigerante, energético, leite, café, chá, cerveja): liquid = true e grams = mililitros (1 L = 1000). kcal e macros são o TOTAL do item nas gramas/ml dele (2 copos = a soma dos dois), nunca por unidade. O que se põe na bebida ou na comida (açúcar, adoçante, leite, mel, azeite) é um item próprio, e o item da bebida conta só a bebida: "café com 15 g de açúcar" = "Café" (sem açúcar, ≈ 2 kcal por 100 ml) + "Açúcar" 15 g. Nunca conte o mesmo ingrediente duas vezes. Água pura vai em water, não em meals. meal_type pelo que a pessoa disse ou pela hora.
+- Código de barras (número de 8 a 14 dígitos que a pessoa digitou, ex.: "comi 50 g do 7891097103841"): um item com barcode = só os dígitos, name = "Produto do código" seguido dos dígitos, grams = a quantidade dita (se ela contou unidades, estime as gramas, ex.: 6 biscoitos recheados ≈ 60 g) e kcal, protein_g, carbs_g e fat_g = 0. Você NÃO sabe que produto é: nunca diga nem adivinhe o nome do produto pelo número, nem em reply. O app procura o código nos itens que a pessoa cadastrou.
+- Repetir refeição já salva ("repete o café da manhã de ontem", "comi o mesmo almoço de hoje", "repita o café da manhã salvo"): vá em repeat_meals com o meal_type da refeição salva e day = today, yesterday ou last (a mais recente, quando a pessoa não disse o dia). Você não vê o que está salvo; o app procura e mostra o cartão. Não ponha essa refeição em meals.
 - Remédio: copie o nome e, SÓ se a pessoa disse, a dose e a unidade. Nunca complete, sugira ou corrija dose. "Esqueci/pulei" = skipped.
 - Treino de academia: um item por exercício, com o nome em português (ex.: "Supino reto", "Agachamento livre", "Leg press"), séries, repetições e carga em kg (0 se for peso do corpo). Corrida e caminhada não entram aqui.
 - Remédio de uso (novo ou que a pessoa já toma: "comecei a tomar", "tomo", "faço uso", "uso todo dia") vai em new_medications, um item por remédio, com nome, dose e horários ditos. medication_doses é só para uma dose tomada ou pulada agora ("tomei a dipirona"). "Desde 01/02/2026" vai em start_date. Horário dito em relação a outro remédio ("30 min antes do enalapril pela manhã", com o enalapril às 07:00) vira o horário calculado ("06:30"), só nas doses que a pessoa disse. Se faltar dose ou horário, ponha o remédio mesmo assim com o que foi dito e pergunte o que falta em reply; em suggestions ofereça só horários comuns (ex.: "08:00", "12:00", "20:00") — nunca ofereça dose.
@@ -396,7 +423,7 @@ Regras:
 - Sinais vitais: pressão "12 por 8" = 120/80 mmHg; temperatura em °C; glicemia em mg/dL; saturação em %; frequência em bpm.
 - Medidas: peso em kg, gordura em %, circunferências em cm.
 - at: use a hora que a pessoa disse, no fuso dela (veja "Agora"). "Às 9h" de hoje que ainda não chegou = ontem. Sem hora dita, omita.
-- Perguntas sobre os próprios dados ("quantos passos dei?", "resumo do dia", "que remédios tenho hoje?") vão em questions; não responda você. Só use questions quando a pessoa PERGUNTA; contar o que toma não é perguntar.
+- Perguntas sobre os próprios dados ("quantos passos dei?", "resumo do dia", "que remédios tenho hoje?", "o que eu comi hoje?" = meals_today, "o que comi ontem?" = meals_yesterday) vão em questions; não responda você e não diga que não tem acesso: o app responde com o que está salvo. Só use questions quando a pessoa PERGUNTA; contar o que toma não é perguntar.
 - Remédio com dose ou horário faltando: ponha em new_medications mesmo assim, com o que foi dito; o app pergunta o que falta. Em reply, não repita essa pergunta e não diga que anotou o que ficou faltando.
 - Limites (ADR-27): não diga que a pessoa TEM uma doença; não mande a pessoa começar, parar, trocar ou mudar a dose de remédio ou tratamento — pode explicar tudo, mas decisão de tratamento é com o médico, e diga isso quando a pergunta for sobre o caso dela. Sem dieta nova restritiva (troca equivalente no plano pode, via plan_swaps).
 - seek_care = true se a pessoa descreve algo que pede atenção profissional rápida (dor no peito, falta de ar, desmaio, sangramento forte, pensamentos de se machucar, febre muito alta, pressão ou glicemia muito altas ou baixas).
@@ -444,6 +471,7 @@ ChatReading parseChatReading(Map<String, dynamic> json) {
         fatGrams: g('fat_g'),
         sugarGrams: (i['sugar_g'] as num?) == null ? null : g('sugar_g'),
         liquid: i['liquid'] == true,
+        barcode: barcodeDigits(i['barcode']),
       ));
     }
     if (items.isEmpty) continue;
@@ -545,6 +573,11 @@ ChatReading parseChatReading(Map<String, dynamic> json) {
     vitalSigns: vitals,
     bodyMeasurements: body,
     questions: [for (final q in (json['questions'] as List? ?? const [])) q as String],
+    repeatMeals: [
+      for (final r in list('repeat_meals'))
+        if (const ['breakfast', 'lunch', 'dinner', 'snack'].contains(r['meal_type']) && const ['today', 'yesterday', 'last'].contains(r['day']))
+          {'meal_type': r['meal_type'] as String, 'day': r['day'] as String},
+    ],
     mood: () {
       final m = json['mood'];
       if (m is! Map) return null;
