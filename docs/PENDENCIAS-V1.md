@@ -18,6 +18,7 @@ automáticos (`make test`) não contam como confirmação no aparelho.
 | Cérebro | Conversa, cartão de humor, caminhada/atividade e ida e volta (APK `d0297c3`, "testei e está ok") |
 | Conta | Tela de permissões |
 | Geral | Português (pt-BR), data dd/mm/aaaa, tema claro/escuro |
+| Cérebro | Foto do rótulo com a tabela nutricional + "4 biscoitos" = 42 g e 193 kcal, igual ao rótulo (conferido no print do usuário de 2026-10-20) |
 
 ## 2. Feito, só com teste automático (NÃO VERIFICADO no celular)
 
@@ -47,12 +48,13 @@ Números de `docs/DECISOES-PENDENTES.md`.
 | 15 | Especificação de nutrição: incluir foto do prato e texto no Cérebro |
 | 16 | Avaliação ao vivo com a chave do usuário (`packages/ai/test/live_eval_test.dart`) |
 | 17 | Ícone do app (usuário vai mandar) |
+| 18–22 | Respondidos em 2026-10-20 ("Faça todos"), feitos na ADR-28; falta testar no celular (T13–T18) |
 | — | Lista de palavras + comandos simples sem IA; voz sem IA (Vosk) — propostos, sem resposta |
 
 ## 4. Dados
 
 - Base de alimentos USDA/Open Food Facts traduzida: aguardando os CSVs do usuário. TBCA bloqueada (licença paga).
-- Peso dos ovos P/M/G e coluna "líquido" da base nova (`app/lib/data/household_measures.dart:17,40`).
+- Peso dos ovos P/M/G e coluna "líquido" da base nova (`app/lib/data/household_measures.dart:21,56`).
 - Coeficientes de MET (ADR-15) conferidos só em fonte secundária.
 
 ## 5. Código (`TODO(frankstein)`)
@@ -89,6 +91,7 @@ Fora da tabela, necessário para lançar:
 
 ## Ordem sugerida
 
+0. Testar no celular T13–T18 (`docs/TESTE-APARELHO.md`) com o APK de `ab30aa6`. Antes, o usuário diz qual dos três códigos (7891097103841, 7622210674050, 7622210592750) é o do Trakinas; os outros são de um queijo e de outro produto.
 1. Usuário responde as decisões da seção 3, manda o ícone e os CSVs de alimentos.
 2. Rodada de testes no celular dos itens 1–7 da seção 7, com roteiro.
 3. Servidor (login, assinatura por Pix).

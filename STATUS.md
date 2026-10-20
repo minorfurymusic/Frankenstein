@@ -32,6 +32,21 @@ Diário do teste no aparelho: `docs/TESTE-APARELHO.md` (itens 1–34, rodada de
 2026-10-20 e roteiro T1–T18). `make test` em 2026-10-20 = 250 testes no app
 (mais os dos pacotes), todos passando.
 
+**Como retomar (2026-10-20).**
+- Branch de trabalho: `claude/funcionalidades-confirmadas-kima2l`. Último
+  commit de código: `ab30aa6` (CI verde, run `39449329719`, APK no artefato
+  `frankstein-debug-apk`, disponível até 03/11). Se `main` ainda estiver em
+  `d0297c3`, o trabalho de 2026-10-20 só existe nesse branch: confira com
+  `git log --oneline origin/main -3` antes de continuar.
+- O contêiner da nuvem pode vir sem Flutter, e aí `make test` falha com
+  `dart: not found`. Instalar a mesma versão da CI: baixar
+  `https://storage.googleapis.com/flutter_infra_release/releases/stable/linux/flutter_linux_3.35.5-stable.tar.xz`,
+  extrair em `/opt/flutter-dl`,
+  `export PATH=/opt/flutter-dl/flutter/bin:$PATH` e
+  `git config --global --add safe.directory /opt/flutter-dl/flutter`.
+- Próximo passo: o usuário testa T13–T18 no celular e diz qual código é o
+  do Trakinas (`docs/PENDENCIAS-V1.md`, "Ordem sugerida").
+
 Rodada de 2026-10-20 (ADR-28): o Cérebro procura no aparelho o que está
 salvo. Código de barras (texto ou números na foto) usa o item cadastrado,
 e a IA não nomeia mais produto pelo número. "Repete o café da manhã" e "o
