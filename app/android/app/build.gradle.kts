@@ -30,6 +30,24 @@ android {
         versionName = flutter.versionName
     }
 
+    // ADR-28: chave fixa dos APKs de teste, para o APK novo instalar por cima
+    // do antigo sem perder os dados. O CI grava o segredo num arquivo e passa
+    // caminho e senha por variável de ambiente; sem elas (máquina local ou
+    // segredo ausente), fica a chave debug padrão.
+    signingConfigs {
+        getByName("debug") {
+            val keystorePath = System.getenv("RLT_KEYSTORE_PATH")
+            val keystorePassword = System.getenv("RLT_KEYSTORE_PASSWORD")
+            if (!keystorePath.isNullOrEmpty() && !keystorePassword.isNullOrEmpty()) {
+                storeFile = file(keystorePath)
+                storeType = "pkcs12"
+                storePassword = keystorePassword
+                keyAlias = "rlt-teste"
+                keyPassword = keystorePassword
+            }
+        }
+    }
+
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.

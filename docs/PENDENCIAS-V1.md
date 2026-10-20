@@ -81,7 +81,8 @@ Números de `docs/DECISOES-PENDENTES.md`.
 
 Fora da tabela, necessário para lançar:
 - Servidor: login com Google (ADR-13), entitlement assinado, apagar conta, prontuário Premium.
-- APK de lançamento: chave de assinatura própria (hoje é a de debug, por decisão do usuário), versão, ícone.
+- APK de lançamento: chave de assinatura própria (os APKs de teste usam uma chave fixa de teste, ADR-28), versão, ícone.
+- ADR-28: cadastrar os segredos `RLT_KEYSTORE_BASE64` e `RLT_KEYSTORE_PASSWORD` no GitHub; depois, confirmar no celular que o APK novo instala por cima e que "manter dados" aparece ao desinstalar.
 - Canal de distribuição (ADR-7).
 - wger/Fasten: código pronto, nunca falou com servidor real.
 - Painel B2B (F14): depois da 1.0.

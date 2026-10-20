@@ -36,7 +36,23 @@ jobs:
       - name: test
         run: make test
 
+      # ADR-28: chave fixa dos APKs de teste, guardada nos segredos do
+      # repositório (RLT_KEYSTORE_BASE64 e RLT_KEYSTORE_PASSWORD). Sem os
+      # segredos, o build segue com a chave debug padrão, que muda a cada run.
+      - name: chave de assinatura de teste
+        env:
+          RLT_KEYSTORE_BASE64: ${{ secrets.RLT_KEYSTORE_BASE64 }}
+        run: |
+          if [ -n "$RLT_KEYSTORE_BASE64" ]; then
+            echo "$RLT_KEYSTORE_BASE64" | base64 -d > "$RUNNER_TEMP/rlt-teste.p12"
+            echo "RLT_KEYSTORE_PATH=$RUNNER_TEMP/rlt-teste.p12" >> "$GITHUB_ENV"
+          else
+            echo "::warning::Segredo RLT_KEYSTORE_BASE64 ausente: APK assinado com a chave debug padrão (muda a cada run)."
+          fi
+
       - name: build
+        env:
+          RLT_KEYSTORE_PASSWORD: ${{ secrets.RLT_KEYSTORE_PASSWORD }}
         run: make build
 
       # APK debug (assinado com a chave debug padrão do Flutter — só serve

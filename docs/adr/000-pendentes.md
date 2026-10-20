@@ -1,6 +1,6 @@
 # ADRs
 
-27 registradas. **26 em vigor, 1 substituída** (ADR-2, pela ADR-11 em
+28 registradas. **27 em vigor, 1 substituída** (ADR-2, pela ADR-11 em
 2026-10-02). ADR-1 e ADR-7 foram alteradas pela ADR-12 (Android apenas); a
 ADR-7 também pela ADR-13 (login Google substitui o código de "Já assinei"
 quando houver servidor).
@@ -37,5 +37,6 @@ Nenhuma virou "aceita" sem confirmação explícita do usuário.
 | [ADR-25](025-analise-como-estou.md) | "Como estou?": a IA recebe só resumos; humor entra sempre que registrado (revisão de 2026-10-18) | cérebro | **aceito, revisado** |
 | [ADR-26](026-trocas-equivalentes-no-plano.md) | A IA pode propor trocas equivalentes no plano do profissional, sem mudar metas | cérebro | **aceito** |
 | [ADR-27](027-cerebro-conversa.md) | O Cérebro conversa como a IA da pessoa, com avisos e travas mínimas | cérebro | **aceito** |
+| [ADR-28](028-dados-sobrevivem-a-reinstalacao.md) | Dados sobrevivem à reinstalação: chave fixa nos APKs de teste (segredos do repositório) e "manter dados" ao desinstalar (Android 10+) | instalação | **aceito** |
 
 `_MODELO.md` neste diretório é o template usado em todas.
