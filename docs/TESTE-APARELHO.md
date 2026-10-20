@@ -131,3 +131,11 @@ Causas encontradas lendo o código (não confirmadas no aparelho):
   pedido passa de 90 s (`packages/ai/lib/src/gemini_client.dart:350-356`,
   `HttpAiTransport` em `:55`; texto em `app/lib/ai/ai_settings.dart:216`).
   Pela tela, não dá para saber qual dos dois aconteceu.
+
+Mais dois prints e uma informação do usuário (2026-10-20): os três
+códigos são do Trakinas, de um queijo e de outro produto. A IA errou os três.
+
+| Hora | Onde | O que aparece | Avaliação |
+|---|---|---|---|
+| 09:39 | Nutrição › Nova receita, ingrediente "Café" | Busca mostra "Café 2 kcal" duas vezes, além de "Café, infusão 10%" e "Café, pó, torrado 419 kcal". As medidas oferecidas para "Café" são gramas, colher de sopa, colher de chá e **fatia/unidade pequena** | **Errado**: falta xícara/ml, e não existe "fatia" de café. Os dois "Café 2 kcal" vêm de refeições estimadas pela IA e confirmadas, porque cada item confirmado vira um alimento novo (`app/lib/data/nutrition_store.dart:200-228`). A busca procura em todos os alimentos guardados (`packages/nutrition/lib/src/food_repository.dart:198-207`). "Café" sozinho não está na lista de bebidas (`app/lib/data/household_measures.dart:17-35`, que só reconhece "café, infusão" e "café coado") |
+| 11:58 | Cérebro | "Repita o café da manhã salvo" → a IA diz que não vê o histórico; depois o app mostra o "Resumo de hoje" (586 kcal em 2 refeições) | Coerente com o desenho atual: a IA não recebe o que está salvo, e só o app responde perguntas sobre os dados, e só três tipos (`packages/ai/lib/src/chat_intents.dart:370-375`). Não existe pedido de "repetir refeição" |

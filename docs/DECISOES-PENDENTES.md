@@ -93,3 +93,27 @@ Responda pelo número (ex.: "1: ok; 3: B; 9: A").
     `packages/ai` mostra quanto o Gemini acerta nos 12 exemplos reais
     (gasta 12 chamadas).
 17. **Ícone do app**: você disse que mandaria depois.
+
+## Cérebro e comida salva (teste de 2026-10-20)
+
+Princípio de todas: o que está salvo **não vai para a IA**. A IA só diz o
+que entendeu; quem procura no que está salvo é o app, no aparelho, como já
+acontece com os remédios (`app/lib/ai/brain_ai.dart:160-170`).
+
+18. **Código de barras no Cérebro.** A IA passa a copiar o número sem dizer
+    qual é o produto, e o app procura o número nos itens que você cadastrou.
+    Achou: o cartão usa os valores do seu item ("do seu item", não
+    "estimativa"). Não achou: o cartão diz que o código não está cadastrado
+    e oferece cadastrar. Foto com o número impresso também vale. Só as
+    barras, sem os números: o app pede para usar o leitor em Nutrição. Confere?
+19. **"Repete o café da manhã de ontem/hoje."** Novo pedido que o app
+    resolve sozinho: acha a refeição salva e mostra o cartão com os mesmos
+    itens para você confirmar. Confere?
+20. **"O que eu comi hoje/ontem?"** O app responde com a lista das
+    refeições salvas, sem passar pela IA. Confere?
+21. **Café e outras bebidas em "Montar prato"/busca.** (a) A bebida
+    estimada pela IA guarda que é bebida, e aí aparecem copo, xícara e ml,
+    sem "fatia". (b) Os itens que a IA estimou não se repetem na busca: o
+    mesmo nome com os mesmos valores aparece uma vez só. Confere?
+22. **"Sem conexão com a IA"** separado de "A IA demorou demais (mais de
+    90 s)", para saber se o problema é a internet ou o app. Confere?
