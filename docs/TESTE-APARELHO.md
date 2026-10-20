@@ -100,3 +100,34 @@ trabalho, até o usuário decidir (ver regra de dado de saúde / LGPD).
 | T10 | Cérebro › refeição | "comi um bolo de chocolate" | Cartão normal; o açúcar passa a entrar no "Como estou?" |
 | T11 | Conta › Permissões | Microfone negado | "Não permitida" + "Ativar" |
 | T12 | Saúde › Saúde mental › Questionários | Responder PHQ-9 e GAD-7 | Pontuação e ponto de corte (10), sem diagnóstico; última pontuação aparece na linha; item 9 do PHQ-9 acima de "nenhuma vez" mostra o CVV |
+
+## Rodada 2026-10-20 — código de barras e rótulo pelo Cérebro
+
+Referência (rótulo do Trakinas que o usuário mandou, por 100 g): 459 kcal,
+carbo 70 g, proteína 5,7 g, gordura 17 g. Porção 30 g = 2 6/7 biscoitos,
+ou seja, 1 biscoito ≈ 10,5 g. O usuário cadastrou o Trakinas pelo código
+de barras em Nutrição e citou três códigos: 7891097103841, 7622210674050,
+7622210592750. Ainda não se sabe qual é o do Trakinas nem se o item
+aparece como "Meu item".
+
+| Hora | O que foi enviado | O que o app fez | Avaliação |
+|---|---|---|---|
+| 09:08 | Texto: "código 7622210592750, 9 biscoitos" | "Identifiquei pelo código: Oreo", 95 g, ≈ 456 kcal | **Errado.** A IA não tem acesso a nenhuma base de códigos de barras e mesmo assim afirmou ter identificado o produto |
+| 09:09 | Foto do número do código + "9 biscoitos dessa marca" | "Não vi comida nesta foto" | Esperado hoje: a foto do prato só aceita comida |
+| 09:10 | Texto: 40 g do 7622210674050 e 70 g do 7891097103841 | "Oreo 40 g, Bis 70 g", ≈ 549 kcal | **Errado**, mesmo motivo (produto inventado pelo número) |
+| 09:11 | Texto: 50 g do 7891097103841 | "Bis 50 g", ≈ 260 kcal | **Errado**, mesmo motivo |
+| 09:15 | Foto do código (Mondelēz) + "6 biscoitos desse código" | "Sem conexão com a IA" | Não verificado se foi a internet ou o tempo esgotado |
+| 09:23 | Mesma foto + "6 biscoitos" | "Biscoito recheado 75 g", ≈ 354 kcal | Pelo rótulo seria 63 g e ≈ 289 kcal (+22%). Não usou o item cadastrado |
+| 09:28–09:29 | Foto do rótulo + "4 biscoito" (3 vezes) | "Sem conexão com a IA" | Não verificado se foi a internet ou o tempo esgotado |
+| 09:30 | Foto do rótulo + "4 biscoito" | "Biscoito recheado de chocolate 42 g", ≈ 193 kcal | **Certo**: 4 × 10,5 g = 42 g; 42 × 4,59 = 192,8 kcal. O cartão não mostra a hora |
+
+Causas encontradas lendo o código (não confirmadas no aparelho):
+- Pelo Cérebro, a refeição é sempre estimada pela IA (`log_estimated_meal`,
+  `app/lib/ai/brain_ai.dart:15-20, 202-219`). O Cérebro não consulta os
+  itens salvos nem os códigos de barras cadastrados: nenhum arquivo de
+  `app/lib/ai/`, `app/lib/chat_router.dart` ou `app/lib/screens/brain/`
+  menciona código de barras.
+- "Sem conexão com a IA" aparece tanto sem internet quanto quando o
+  pedido passa de 90 s (`packages/ai/lib/src/gemini_client.dart:350-356`,
+  `HttpAiTransport` em `:55`; texto em `app/lib/ai/ai_settings.dart:216`).
+  Pela tela, não dá para saber qual dos dois aconteceu.
