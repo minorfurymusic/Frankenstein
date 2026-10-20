@@ -1,6 +1,6 @@
 # ADRs
 
-22 registradas. **21 em vigor, 1 substituída** (ADR-2, pela ADR-11 em
+27 registradas. **26 em vigor, 1 substituída** (ADR-2, pela ADR-11 em
 2026-10-02). ADR-1 e ADR-7 foram alteradas pela ADR-12 (Android apenas); a
 ADR-7 também pela ADR-13 (login Google substitui o código de "Já assinei"
 quando houver servidor).
@@ -31,5 +31,11 @@ Nenhuma virou "aceita" sem confirmação explícita do usuário.
 | [ADR-19](019-varios-documentos-no-cerebro.md) | Vários documentos de uma vez no Cérebro: a IA identifica o tipo, cada um vira cartão; dados pessoais lidos em cartão separado; foto qualquer: diz o que vê | cérebro | **aceito** |
 | [ADR-20](020-passos-pelo-health-connect.md) | Passos: Health Connect como fonte principal (total por dia), contador do app como reserva; uma fonte por dia; atualiza com o app aberto | passos | **aceito** |
 | [ADR-21](021-gasto-musculacao-por-carga.md) | Gasto da musculação por carga × repetições (retas de Reis 2017 por exercício + geral), recuperação de Knausenberger 2014, carga total + barra somada; altera ADR-15 | metas | **aceito** |
+| [ADR-22](022-escada-de-modelos.md) | Escada de modelos da IA: sem cota ou ocupado, passa para o próximo (até 3 por pedido); nome do modelo em cada resposta | cérebro | **aceito** |
+| [ADR-23](023-saude-mental.md) | Saúde mental: humor do dia, sintomas mentais, PHQ-9/GAD-7 com texto oficial, aviso CVV/SAMU; tudo no celular | saúde | **aceito** |
+| [ADR-24](024-avisos-de-rotina-locais.md) | Aviso de quebra de rotina calculado no celular, sem IA em segundo plano | lembretes | **aceito** |
+| [ADR-25](025-analise-como-estou.md) | "Como estou?": a IA recebe só resumos; humor entra sempre que registrado (revisão de 2026-10-18) | cérebro | **aceito, revisado** |
+| [ADR-26](026-trocas-equivalentes-no-plano.md) | A IA pode propor trocas equivalentes no plano do profissional, sem mudar metas | cérebro | **aceito** |
+| [ADR-27](027-cerebro-conversa.md) | O Cérebro conversa como a IA da pessoa, com avisos e travas mínimas | cérebro | **aceito** |
 
 `_MODELO.md` neste diretório é o template usado em todas.

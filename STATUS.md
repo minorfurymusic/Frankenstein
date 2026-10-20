@@ -23,7 +23,40 @@ branco: navegação Resumo/Chat de verdade, ligada aos pacotes reais, com
 compartilhamento de treino/corrida funcionando de ponta a ponta. Detalhe
 completo em `docs/HISTORICO.md`.
 
-**Ciclo mais recente (2026-10-06): acabamentos.** Conta › Sobre
+**Estado em 2026-10-20 — leia isto primeiro.** O app está completo para
+uma rodada de testes no aparelho e o usuário confirmou no celular as
+funções da lista "Confirmadas" de `docs/PENDENCIAS-V1.md`. **O que falta
+para a versão 1.0, as decisões em aberto e o que só foi testado por teste
+automático estão em `docs/PENDENCIAS-V1.md`** (fonte única de pendências).
+Diário do teste no aparelho: `docs/TESTE-APARELHO.md` (itens 1–34 e roteiro
+T1–T12). Último commit verde: `d0297c3`; `make test` = 241 testes no app
+(mais os dos pacotes), todos passando.
+
+Rodadas de 2026-10-15 a 2026-10-18 (detalhe nos commits e ADRs 19–27):
+- **Cérebro:** vários documentos de uma vez (ADR-19); escada de modelos
+  Gemini com troca automática por cota (ADR-22); foto com texto; cartões
+  editáveis (refeição com "Recalcular com a observação", remédio, passos);
+  conversa como a IA da pessoa, explica remédio como a bula, sem prescrever
+  (ADR-27); desabafo vira cartão de humor; caminhada contada vira passos
+  (ida e volta por padrão) e "outra atividade" com esforço 1–10; "Como
+  estou?" com resumos da semana (ADR-25); trocas equivalentes no plano
+  alimentar e na ficha (ADR-26); microfone por toque.
+- **Saúde mental (ADR-23):** humor do dia (evento `mood`), sintomas
+  mentais, PHQ-9 e GAD-7 com texto oficial (evento `screening`), aviso fixo
+  CVV 188/SAMU 192.
+- **Avisos de rotina (ADR-24):** calculados no celular, sem IA em segundo
+  plano (humor baixo, remédio sem marcar, 3 dias sem atividade, 2 dias sem
+  comida), liga/desliga por tipo.
+- **Passos pelo Health Connect (ADR-20);** gasto da musculação por carga
+  (ADR-21); editar/excluir registros (correção append-only); açúcar nas
+  refeições estimadas.
+
+Regras de trabalho combinadas com o usuário: falar em português simples;
+**não** gerar/mandar APK a cada mudança (só quando ele pedir — o CI roda
+sozinho); a chave de assinatura de debug fica como está por enquanto;
+prints com dado de saúde nunca no repositório público.
+
+**Ciclo de 2026-10-06: acabamentos.** Conta › Sobre
 (prancheta ContaSobre): nome, versão (constante conferida contra o
 `pubspec.yaml` por teste, sem biblioteca), aviso de saúde, licenças,
 política e termos (por ora, os compromissos do app; texto jurídico
@@ -650,7 +683,9 @@ este status sem revalidar).
   Achado: sem Play Services o login no Android depende de domínio + servidor
   nosso pra trocar o código → implementação fica junto com o servidor; a
   alternativa é uma exceção à regra de licença só pro login. Decidir lá.
-- **IA registra, não diagnostica nem receita** (reconfirmado 2026-10-02).
+- **IA registra e conversa, mas não diagnostica nem receita** (ADR-27,
+  2026-10-18: conversa como o Gemini, explica como a bula; nunca manda
+  começar/parar/mudar remédio ou dose).
 - **Navegação: 5 abas** — Início, Saúde, Cérebro, Nutrição, Exercícios
   (`docs/PRODUTO.md`). Layout vem do Claude Design
   (`docs/design/PROMPT-CLAUDE-DESIGN.md`).
@@ -666,4 +701,5 @@ este status sem revalidar).
 
 ## Débito técnico
 
-Nenhum em aberto no momento.
+Lista completa em `docs/PENDENCIAS-V1.md` (seção "Código"). Os
+`TODO(frankstein)` no código são a fonte: `grep -rn "TODO(frankstein)"`.
