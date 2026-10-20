@@ -1,5 +1,6 @@
 import 'gemini_client.dart';
 import 'plate_estimate.dart';
+import 'workout_plan_reading.dart';
 
 /// Uma refeição citada na conversa ("comi 3 ovos"), com porção e valores
 /// estimados pela IA — sempre estimativa, conferida no cartão.
@@ -38,6 +39,18 @@ class ChatWorkout {
   const ChatWorkout({required this.exercise, required this.sets, required this.reps, this.loadKg = 0, this.at});
 }
 
+/// Plano de treino que a pessoa pediu para criar ("crie o treino para mim
+/// às 18:30: supino…") — vira ficha em Exercícios › Academia, não treino
+/// feito.
+class ChatWorkoutPlan {
+  final String? name;
+
+  /// Horário do treino ("HH:MM"), só se a pessoa disse; liga o lembrete.
+  final String? time;
+  final List<ReadPlannedExercise> exercises;
+  const ChatWorkoutPlan({this.name, this.time, this.exercises = const []});
+}
+
 /// Um remédio novo que a pessoa disse que começou a tomar, **com** dose e
 /// horários ditos por ela — sem isso, a IA pergunta em vez de cadastrar.
 class ChatNewMedication {
@@ -71,6 +84,7 @@ class ChatReading {
   final List<ChatMeal> meals;
   final List<ChatDose> doses;
   final List<ChatWorkout> workouts;
+  final ChatWorkoutPlan? workoutPlan;
   final List<ChatNewMedication> newMedications;
 
   /// Respostas curtas para tocar (ex.: horários "08:00", "20:00"); o app
@@ -115,6 +129,7 @@ class ChatReading {
     this.meals = const [],
     this.doses = const [],
     this.workouts = const [],
+    this.workoutPlan,
     this.newMedications = const [],
     this.suggestions = const [],
     this.symptoms = const [],
@@ -133,6 +148,7 @@ class ChatReading {
       meals.isEmpty &&
       doses.isEmpty &&
       workouts.isEmpty &&
+      workoutPlan == null &&
       newMedications.isEmpty &&
       symptoms.isEmpty &&
       vitalSigns.isEmpty &&
@@ -227,6 +243,27 @@ const chatReadingSchema = <String, dynamic>{
         },
         'required': ['exercise', 'sets', 'reps'],
       },
+    },
+    'workout_plan': {
+      'type': 'object',
+      'properties': {
+        'name': {'type': 'string'},
+        'time': {'type': 'string', 'description': 'Horário do treino dito pela pessoa, "HH:MM".'},
+        'exercises': {
+          'type': 'array',
+          'items': {
+            'type': 'object',
+            'properties': {
+              'exercise': {'type': 'string'},
+              'sets': {'type': 'integer'},
+              'reps': {'type': 'integer'},
+              'load_kg': {'type': 'number'},
+            },
+            'required': ['exercise', 'sets', 'reps'],
+          },
+        },
+      },
+      'required': ['exercises'],
     },
     'new_medications': {
       'type': 'array',
@@ -387,7 +424,8 @@ Regras:
 - Água em mililitros (1 copo = 250 ml, 1 garrafa pequena = 500 ml, 1 L = 1000 ml).
 - Refeição: um item por alimento, com gramas estimadas pela quantidade dita (1 ovo ≈ 50 g) e kcal, protein_g, carbs_g, fat_g e sugar_g (açúcares totais) estimados para essas gramas. Bebida (suco, refrigerante, energético, leite, café, chá, cerveja): liquid = true e grams = mililitros (1 L = 1000). kcal e macros são o TOTAL do item nas gramas/ml dele (2 copos = a soma dos dois), nunca por unidade. O que se põe na bebida ou na comida (açúcar, adoçante, leite, mel, azeite) é um item próprio, e o item da bebida conta só a bebida: "café com 15 g de açúcar" = "Café" (sem açúcar, ≈ 2 kcal por 100 ml) + "Açúcar" 15 g. Nunca conte o mesmo ingrediente duas vezes. Água pura vai em water, não em meals. meal_type pelo que a pessoa disse ou pela hora.
 - Remédio: copie o nome e, SÓ se a pessoa disse, a dose e a unidade. Nunca complete, sugira ou corrija dose. "Esqueci/pulei" = skipped.
-- Treino de academia: um item por exercício, com o nome em português (ex.: "Supino reto", "Agachamento livre", "Leg press"), séries, repetições e carga em kg (0 se for peso do corpo). Corrida e caminhada não entram aqui.
+- Treino de academia: um item por exercício, com o nome em português (ex.: "Supino reto", "Agachamento livre", "Leg press"), séries, repetições e carga em kg (0 se for peso do corpo). Corrida e caminhada não entram aqui. workouts é SÓ treino que a pessoa já FEZ.
+- Plano de treino: quando a pessoa pede para criar, montar, cadastrar ou salvar um treino, ficha ou plano ("crie o treino para mim", "monta minha ficha", "meu treino de amanhã é…"), ou conta um treino que ainda vai fazer, vá em workout_plan (name se ela deu, time "HH:MM" se disse o horário, e os exercícios com séries, repetições e carga em kg, 0 se for peso do corpo). Nunca ponha o mesmo pedido em workouts. Se a pessoa corrigir ("não fiz ainda, era o plano"), mande o workout_plan e diga em reply que o treino registrado por engano pode ser excluído tocando nele em Exercícios › Hoje.
 - Remédio de uso (novo ou que a pessoa já toma: "comecei a tomar", "tomo", "faço uso", "uso todo dia") vai em new_medications, um item por remédio, com nome, dose e horários ditos. medication_doses é só para uma dose tomada ou pulada agora ("tomei a dipirona"). "Desde 01/02/2026" vai em start_date. Horário dito em relação a outro remédio ("30 min antes do enalapril pela manhã", com o enalapril às 07:00) vira o horário calculado ("06:30"), só nas doses que a pessoa disse. Se faltar dose ou horário, ponha o remédio mesmo assim com o que foi dito e pergunte o que falta em reply; em suggestions ofereça só horários comuns (ex.: "08:00", "12:00", "20:00") — nunca ofereça dose.
 - Atividade sem gravar: caminhada ou corrida que a pessoa conta ("caminhei até a praia, uns 700 m"), bicicleta, natação, futebol, dança, brincar com os filhos, faxina pesada… vão em activities (um item por atividade), com a distância em metros e/ou o tempo em minutos que ela disse e o esforço de 1 a 10 se ela disse. Brincadeira, faxina e o que não tiver código vai como other, com label. Não calcule passos nem calorias: o app calcula pela passada e pelo peso dela. Ida e volta: quem conta "caminhei até a praia, uns 700 m" já voltou — o jeito comum de falar dá a distância de UM trecho. Então, caminhada ou corrida até um lugar = round_trip = true e distance_m é a de um trecho, sem perguntar. Só deixe round_trip de fora se a pessoa disse que voltou de outro jeito (carro, ônibus, carona), que ficou lá, ou que a distância já é o total ("caminhei 3 km no total", "dei uma volta de 2 km").
 - Sentimentos: quando a pessoa desabafa ou conta como está ("tô muito pra baixo", "hoje foi um dia ótimo"), CONVERSE com acolhimento em reply (ouça, valide, ajude a pensar, sem julgar) e preencha mood com o humor dela (1 a 5), sentimentos e um resumo curto; o app oferece salvar no diário de saúde mental. Não rotule transtorno. Se houver risco (pensar em se machucar, desespero), seek_care = true.
@@ -535,6 +573,7 @@ ChatReading parseChatReading(Map<String, dynamic> json) {
     meals: meals,
     doses: doses,
     workouts: workouts,
+    workoutPlan: _workoutPlan(json['workout_plan']),
     newMedications: newMeds,
     incomplete: incomplete,
     suggestions: [
@@ -588,6 +627,27 @@ ChatReading parseChatReading(Map<String, dynamic> json) {
             if (_text(h['date']) != null && ymd.hasMatch(_text(h['date'])!)) 'date': _text(h['date']),
           },
     ],
+  );
+}
+
+final _hhmm = RegExp(r'^([01]?\d|2[0-3]):([0-5]\d)$');
+
+ChatWorkoutPlan? _workoutPlan(Object? raw) {
+  if (raw is! Map<String, dynamic>) return null;
+  final read = parseWorkoutPlan({
+    'name': raw['name'],
+    'exercises': [
+      for (final e in (raw['exercises'] as List? ?? const []))
+        if (e is Map) <String, dynamic>{...e.cast<String, dynamic>(), 'name': e['exercise']},
+    ],
+  });
+  if (read.exercises.isEmpty) return null;
+  final time = _text(raw['time']);
+  final m = time == null ? null : _hhmm.firstMatch(time);
+  return ChatWorkoutPlan(
+    name: read.name,
+    time: m == null ? null : '${m.group(1)!.padLeft(2, '0')}:${m.group(2)}',
+    exercises: read.exercises,
   );
 }
 

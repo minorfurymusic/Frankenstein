@@ -5,6 +5,7 @@ import 'package:frankstein/card_image_capturer.dart';
 import 'package:frankstein/confirmation_gate.dart';
 import 'package:frankstein/main.dart';
 import 'package:frankstein/screens/exercise/activity_screens.dart';
+import 'package:frankstein/screens/exercise/exercise_tab.dart';
 import 'package:frankstein/screens/exercise/live_workout_screen.dart';
 import 'package:frankstein/share_sheet.dart';
 import 'package:frankstein/theme/rlt_theme.dart';
@@ -90,6 +91,23 @@ void main() {
     expect(deps.core.queryByType(HealthEventType.workoutSession), isEmpty);
     expect(deps.core.queryByType(HealthEventType.setLog), isEmpty);
     expect(deps.activityRead.forDay(DateTime.now()), isEmpty);
+  });
+
+  testWidgets('Exercícios › Hoje: tocar no treino abre o resumo, e de lá se exclui', (tester) async {
+    workout();
+    await pump(tester, Scaffold(body: ExerciseTab(deps: deps)));
+    await tester.scrollUntilVisible(find.text('Treino de academia'), 200);
+    await tester.tap(find.text('Treino de academia'));
+    await tester.pumpAndSettle();
+    expect(find.text('Treino salvo'), findsOneWidget);
+    expect(find.byKey(const Key('saved_set_1_supino-reto_menu')), findsOneWidget);
+
+    await tester.tap(find.byKey(const Key('workout_delete')));
+    await tester.pumpAndSettle();
+    await tester.tap(find.byKey(const Key('confirm_delete')));
+    await tester.pumpAndSettle();
+    expect(deps.core.queryByType(HealthEventType.workoutSession), isEmpty);
+    expect(find.text('Treino de academia'), findsNothing);
   });
 
   testWidgets('passos à mão por distância: 1,2 km vira passos pela passada; editar e excluir', (tester) async {

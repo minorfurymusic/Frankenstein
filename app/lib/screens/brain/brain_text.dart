@@ -210,6 +210,20 @@ ProposalView describeProposal(AppDependencies deps, String tool, Map<String, dyn
         'Nutrição › Plano de refeições',
         estimated: true,
       );
+    case 'add_workout_plan':
+      String load(Object? kg) => kg is num && kg > 0 ? '${n(kg, d: kg % 1 == 0 ? 0 : 1)} kg' : 'peso do corpo';
+      final exercises = (p['exercises'] as List? ?? const []).cast<Map<String, dynamic>>();
+      final minutes = p['reminder_minutes'] as int?;
+      return ProposalView(
+        HealthArea.workout,
+        'Plano de treino — ${p['name']}',
+        [
+          for (final e in exercises) '${e['exercise_name']} — ${e['sets']} × ${e['reps']} · ${load(e['load_kg'])}',
+          if (minutes != null) 'Lembrete "Hora do treino" todo dia às ${formatTimeOfDay(minutes)}',
+        ].join('\n'),
+        'Exercícios › Academia',
+        when: 'plano, não é treino feito',
+      );
     case 'swap_plan_exercise':
       return ProposalView(
         HealthArea.workout,

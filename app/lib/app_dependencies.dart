@@ -20,6 +20,7 @@ import 'ai/document_tools.dart';
 import 'ai/plan_swaps.dart';
 import 'ai/brain_ai.dart';
 import 'ai/voice_recorder.dart';
+import 'ai/workout_plan_tools.dart';
 import 'card_image_capturer.dart';
 import 'data/activity_read_model.dart';
 import 'data/brain_conversations.dart';
@@ -427,6 +428,8 @@ class AppDependencies {
       // Trocas equivalentes no plano (ADR-26).
       ..register(swapPlanItemSpec(), swapPlanItemHandler(MealPlanStore(profileRepository)))
       ..register(swapPlanExerciseSpec(), swapPlanExerciseHandler(workoutRepository))
+      // Plano de treino pedido no Cérebro.
+      ..register(addWorkoutPlanSpec(), addWorkoutPlanHandler(workoutRepository, profileRepository))
       ..register(
         logWaterSpec(),
         logWaterHandler(waterLogger, tzOffsetMinutesProvider: tzOffsetMinutesProvider),

@@ -168,4 +168,29 @@ void main() {
     expect(chatReadingInstruction, contains('caminhada ou corrida até um lugar = round_trip = true'));
     expect(chatReadingInstruction, contains('voltou de outro jeito'));
   });
+
+  test('plano de treino pedido vem em workout_plan, com horário HH:MM; horário inválido cai fora', () {
+    final r = parseChatReading({
+      'workout_plan': {
+        'time': '18:30',
+        'exercises': [
+          {'exercise': 'Crucifixo', 'sets': 3, 'reps': 12, 'load_kg': 34},
+          {'exercise': 'Flexão', 'sets': 3, 'reps': 12, 'load_kg': 0},
+          {'exercise': '', 'sets': 3, 'reps': 12},
+        ],
+      },
+    });
+    expect(r.workouts, isEmpty);
+    expect(r.isEmpty, isFalse);
+    expect(r.workoutPlan!.time, '18:30');
+    expect(r.workoutPlan!.exercises.map((e) => (e.name, e.sets, e.reps, e.loadKg)), [('Crucifixo', 3, 12, 34.0), ('Flexão', 3, 12, null)]);
+    expect(parseChatReading({'workout_plan': {'time': '25:00', 'exercises': [{'exercise': 'Supino', 'sets': 3, 'reps': 10}]}}).workoutPlan!.time, isNull);
+    expect(parseChatReading({'workout_plan': {'time': '7:05', 'exercises': [{'exercise': 'Supino', 'sets': 3, 'reps': 10}]}}).workoutPlan!.time, '07:05');
+    expect(parseChatReading({'workout_plan': {'exercises': []}}).workoutPlan, isNull);
+  });
+
+  test('a instrução separa plano (vai fazer) de treino feito', () {
+    expect(chatReadingInstruction, contains('workouts é SÓ treino que a pessoa já FEZ'));
+    expect(chatReadingInstruction, contains('vá em workout_plan'));
+  });
 }

@@ -164,6 +164,11 @@ class ExerciseTab extends StatelessWidget {
                         if (activities[i].kcal > 0) '${formatNumber(activities[i].kcal)} kcal',
                       ].join(' · '),
                       isLast: i == activities.length - 1,
+                      // Treino de academia abre o resumo: lá se editam e
+                      // excluem as séries ou o treino inteiro (como no Início).
+                      onTap: activities[i].kind == ActivityKind.strength
+                          ? () => _open(context, WorkoutSummaryScreen(deps: deps, session: activities[i].event))
+                          : null,
                     ),
                 ],
                 const RltSectionHeader('Seções'),

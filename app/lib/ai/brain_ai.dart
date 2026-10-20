@@ -253,6 +253,27 @@ ToolCallPlan planFromReading(ChatReading r, {required List<Medication> medicatio
     final at = r.workouts.map((w) => w.at).whereType<String>().firstOrNull;
     calls.add(ToolCallDecision('log_workout_session', {'sets': sets, 'at': ?at}));
   }
+  final wp = r.workoutPlan;
+  if (wp != null) {
+    final time = wp.time?.split(':');
+    calls.add(ToolCallDecision('add_workout_plan', {
+      'name': wp.name ?? 'Meu treino',
+      'exercises': [
+        for (final e in wp.exercises)
+          () {
+            final known = matchExercise(e.name);
+            return {
+              'exercise_id': known?.id ?? 'livre-${_slug(e.name)}',
+              'exercise_name': known?.name ?? e.name,
+              'sets': e.sets,
+              'reps': e.reps,
+              'load_kg': ?e.loadKg,
+            };
+          }(),
+      ],
+      if (time != null) 'reminder_minutes': int.parse(time[0]) * 60 + int.parse(time[1]),
+    }));
+  }
   for (final s in r.symptoms) {
     calls.add(ToolCallDecision('log_symptom', Map.of(s)));
   }
