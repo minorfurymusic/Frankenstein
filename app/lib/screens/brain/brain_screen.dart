@@ -1152,6 +1152,10 @@ class _BrainScreenState extends State<BrainScreen> {
 
   Future<void> _proposePlate(PickedDocument photo, PlateEstimate estimate) async {
     final deps = widget.deps;
+    if (estimate.package != null) {
+      await _proposePackage(estimate.package!, estimate.mealType);
+      return;
+    }
     if (estimate.items.isEmpty) {
       final seen = estimate.notFood;
       _changed(() => _messages.add(_BotMsg(
@@ -1191,6 +1195,80 @@ class _BrainScreenState extends State<BrainScreen> {
         atUtc: now.toUtc(),
         tzOffsetMinutes: now.timeZoneOffset.inMinutes,
       ));
+    }
+    if (mounted) _showResults(results);
+  }
+
+  /// Produto embalado: valores do item com o mesmo código no celular ou da
+  /// tabela lida na foto — nunca estimados (decisão do usuário,
+  /// 2026-10-20). Sem nenhum dos dois, pede a foto da tabela.
+  Future<void> _proposePackage(PackageLabel label, String? mealType) async {
+    final deps = widget.deps;
+    final known = label.barcode == null ? null : deps.foodRepository.findByBarcode(label.barcode!);
+    final name = label.displayName ?? known?.name ?? 'Produto';
+    final unit = label.liquid ? 'ml' : 'g';
+    final read = [
+      name,
+      if (label.netAmount != null) '${formatNumber(label.netAmount!)} $unit',
+      if (label.barcode != null) 'código ${label.barcode}',
+    ].join(' · ');
+    final per100 = known != null
+        ? PlateItem(
+            name: name,
+            grams: 100,
+            kcal: known.energyKcalPer100g,
+            proteinGrams: known.proteinPer100g,
+            carbsGrams: known.carbohydratesPer100g,
+            fatGrams: known.fatPer100g,
+            sugarGrams: known.sugarPer100g,
+            liquid: label.liquid,
+          )
+        : label.per100;
+    if (per100 == null) {
+      _changed(() => _messages.add(_BotMsg(
+          'Li na embalagem: $read. A tabela nutricional não aparece na foto, então não registrei: '
+          'não estimo valores de produto embalado. Mande uma foto da tabela (geralmente no verso).',
+          fromAi: true,
+          model: _modelLabel)));
+      return;
+    }
+    _changed(() => _messages.add(_BotMsg(
+        'Li na embalagem: $read. ${known != null ? 'Valores do item com este código no seu celular.' : 'Valores copiados da tabela da foto.'}',
+        fromAi: true,
+        model: _modelLabel)));
+    final amount = label.netAmount ?? 100;
+    final item = per100.withGrams(amount);
+    final now = DateTime.now();
+    final meal = MealType.values.where((t) => t.name == mealType).firstOrNull ?? mealTypeForHour(now.hour);
+    final results = await deps.pipeline.runPlan(ToolCallPlan(calls: [
+      ToolCallDecision('log_estimated_meal', {
+        'meal_type': meal.wireValue,
+        'source': 'label',
+        'items': [
+          {
+            'name': name,
+            'grams': item.grams,
+            if (label.liquid) 'unit': 'ml',
+            'kcal': item.kcal,
+            'protein_g': item.proteinGrams,
+            'carbs_g': item.carbsGrams,
+            'fat_g': item.fatGrams,
+            'sugar_g': ?item.sugarGrams,
+          },
+        ],
+      }),
+    ]));
+    final r = results.single;
+    if (r.outcome == PipelineOutcome.executed && r.toolResult!.success && known == null && label.barcode != null) {
+      // Vira item seu com o código: da próxima vez o leitor acha sozinho.
+      deps.nutrition.createBarcodeItem(
+        barcode: label.barcode!,
+        name: name,
+        kcalPer100g: per100.kcal,
+        proteinPer100g: per100.proteinGrams,
+        carbsPer100g: per100.carbsGrams,
+        fatPer100g: per100.fatGrams,
+      );
     }
     if (mounted) _showResults(results);
   }

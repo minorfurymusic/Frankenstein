@@ -47,4 +47,10 @@ void main() {
     expect(menos.kcal, closeTo(128, 1e-9));
     expect(menos.carbsGrams, closeTo(28, 1e-9));
   });
+
+  test('produto embalado: a instrução manda copiar o rótulo e nunca estimar', () {
+    expect(plateEstimateInstruction, contains('Produto embalado'));
+    expect(plateEstimateInstruction, contains('NÃO estime nada'));
+    expect(plateEstimateInstruction, contains('Sem tabela legível, deixe nutrition_per_100 de fora'));
+  });
 }

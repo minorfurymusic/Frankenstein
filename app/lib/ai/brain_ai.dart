@@ -25,6 +25,11 @@ final Map<String, dynamic> logEstimatedMealSchema = {
       'enum': ['breakfast', 'lunch', 'dinner', 'snack'],
     },
     'at': {'type': 'string', 'format': 'date-time'},
+    // `label`: valores copiados do rótulo do produto, não estimados.
+    'source': {
+      'type': 'string',
+      'enum': ['label'],
+    },
     'items': {
       'type': 'array',
       'minItems': 1,

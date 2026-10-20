@@ -82,10 +82,10 @@ ProposalView describeProposal(AppDependencies deps, String tool, Map<String, dyn
       return ProposalView(
         HealthArea.meal,
         '$label — ${items.map((i) => '${i['name']} ${n(i['grams'])} ${i['unit'] == 'ml' ? 'ml' : 'g'}').join(', ')}',
-        '≈ ${n(kcal)} kcal (estimativa)',
+        p['source'] == 'label' ? '${n(kcal)} kcal (do rótulo)' : '≈ ${n(kcal)} kcal (estimativa)',
         'Nutrição › $label',
         when: when,
-        estimated: true,
+        estimated: p['source'] != 'label',
       );
     case 'log_workout_session':
       final sets = (p['sets'] as List? ?? const []).cast<Map<String, dynamic>>();

@@ -44,6 +44,47 @@ class PlateItem {
   }
 }
 
+/// Produto embalado na foto (lata, garrafa, pacote, código de barras): só
+/// o que está ESCRITO na embalagem — a IA não estima valor de produto
+/// embalado (decisão do usuário, 2026-10-20).
+class PackageLabel {
+  final String? brand;
+  final String? product;
+
+  /// Conteúdo da embalagem, em g (ou ml, se [liquid]).
+  final double? netAmount;
+  final bool liquid;
+
+  /// Números do código de barras impressos, já conferidos pelo dígito
+  /// verificador; `null` se ilegíveis ou errados.
+  final String? barcode;
+
+  /// Tabela nutricional por 100 g/ml, só se legível na foto.
+  final PlateItem? per100;
+  const PackageLabel({this.brand, this.product, this.netAmount, this.liquid = false, this.barcode, this.per100});
+
+  /// "Energético Bally": produto e marca, sem repetir a marca.
+  String? get displayName {
+    final p = product?.trim() ?? '';
+    final b = brand?.trim() ?? '';
+    if (p.isEmpty) return b.isEmpty ? null : b;
+    if (b.isEmpty || p.toLowerCase().contains(b.toLowerCase())) return p;
+    return '$p $b';
+  }
+}
+
+/// Confere o dígito verificador de EAN-8, UPC-A (12) e EAN-13.
+bool validRetailBarcode(String digits) {
+  if (!RegExp(r'^(\d{8}|\d{12}|\d{13})$').hasMatch(digits)) return false;
+  var sum = 0;
+  final body = digits.substring(0, digits.length - 1);
+  for (var i = 0; i < body.length; i++) {
+    final d = int.parse(body[body.length - 1 - i]);
+    sum += i.isEven ? d * 3 : d;
+  }
+  return (10 - sum % 10) % 10 == int.parse(digits[digits.length - 1]);
+}
+
 class PlateEstimate {
   /// `breakfast`, `lunch`, `dinner`, `snack` — palpite pela comida; o app
   /// usa o que a pessoa escolheu, se escolheu.
@@ -52,7 +93,10 @@ class PlateEstimate {
 
   /// Foto sem comida: o que a IA viu, em uma frase (ADR-19).
   final String? notFood;
-  const PlateEstimate({this.mealType, this.items = const [], this.notFood});
+
+  /// Foto de produto embalado: o que está escrito nele (sem [items]).
+  final PackageLabel? package;
+  const PlateEstimate({this.mealType, this.items = const [], this.notFood, this.package});
 
   double get grams => items.fold(0, (s, i) => s + i.grams);
   double get kcal => items.fold(0, (s, i) => s + i.kcal);
@@ -66,6 +110,27 @@ const plateEstimateSchema = <String, dynamic>{
       'enum': ['breakfast', 'lunch', 'dinner', 'snack'],
     },
     'not_food': {'type': 'string'},
+    'package': {
+      'type': 'object',
+      'properties': {
+        'brand': {'type': 'string'},
+        'product': {'type': 'string'},
+        'net_amount': {'type': 'number'},
+        'liquid': {'type': 'boolean'},
+        'barcode': {'type': 'string'},
+        'nutrition_per_100': {
+          'type': 'object',
+          'properties': {
+            'kcal': {'type': 'number'},
+            'protein_g': {'type': 'number'},
+            'carbs_g': {'type': 'number'},
+            'fat_g': {'type': 'number'},
+            'sugar_g': {'type': 'number'},
+          },
+          'required': ['kcal'],
+        },
+      },
+    },
     'items': {
       'type': 'array',
       'items': {
@@ -95,6 +160,7 @@ Regras:
 - Para cada alimento, estime kcal, protein_g, carbs_g, fat_g e, se souber, fiber_g e sugar_g (açúcares totais), para a porção estimada (use valores típicos de tabelas brasileiras, como a TACO).
 - meal_type: seu palpite (café da manhã = breakfast, almoço = lunch, jantar = dinner, lanche = snack).
 - Se vier "A pessoa disse", use: ela sabe o que comeu (ex.: "pastel de carne, não comi a borda", "tirei a gordura"). Ajuste nomes, porções e valores a isso.
+- Produto embalado (lata, garrafa, pacote, rótulo ou código de barras de um alimento ou bebida industrializado): NÃO estime nada. Preencha package copiando só o que está escrito: brand (marca, ex.: "Bally"), product (ex.: "Energético"), net_amount (conteúdo em g ou ml), liquid (bebida), barcode (os números impressos embaixo das barras, só dígitos) e nutrition_per_100 SÓ se a tabela nutricional estiver legível na foto (valores convertidos para 100 g ou 100 ml). Sem tabela legível, deixe nutrition_per_100 de fora. Com package, items fica vazio.
 - Se a foto não for de comida, devolva items vazio e, em not_food, diga em uma frase curta o que a foto mostra (ex.: "Print da tela de metas de um app.").
 - Não dê conselho de saúde nem comente a refeição.
 ''';
@@ -121,11 +187,44 @@ PlateEstimate parsePlateEstimate(Map<String, dynamic> json) {
     ));
   }
   final notFood = json['not_food'];
+  final package = _package(json['package']);
   return PlateEstimate(
     mealType: json['meal_type'] as String?,
-    items: items,
-    notFood: items.isEmpty && notFood is String && notFood.trim().isNotEmpty ? notFood.trim() : null,
+    items: package == null ? items : const [],
+    notFood: package == null && items.isEmpty && notFood is String && notFood.trim().isNotEmpty ? notFood.trim() : null,
+    package: package,
   );
+}
+
+PackageLabel? _package(Object? raw) {
+  if (raw is! Map) return null;
+  String? text(Object? v) => v is String && v.trim().isNotEmpty ? v.trim() : null;
+  double? pos(Object? v) => v is num && v.toDouble().isFinite && v > 0 ? v.toDouble() : null;
+  final digits = (text(raw['barcode']) ?? '').replaceAll(RegExp(r'\D'), '');
+  final liquid = raw['liquid'] == true;
+  final t = raw['nutrition_per_100'];
+  final kcal = t is Map && t['kcal'] is num && (t['kcal'] as num) >= 0 ? (t['kcal'] as num).toDouble() : null;
+  double n(String k) => t is Map && t[k] is num && (t[k] as num) >= 0 ? (t[k] as num).toDouble() : 0;
+  final label = PackageLabel(
+    brand: text(raw['brand']),
+    product: text(raw['product']),
+    netAmount: pos(raw['net_amount']),
+    liquid: liquid,
+    barcode: validRetailBarcode(digits) ? digits : null,
+    per100: kcal == null
+        ? null
+        : PlateItem(
+            name: '',
+            grams: 100,
+            kcal: kcal,
+            proteinGrams: n('protein_g'),
+            carbsGrams: n('carbs_g'),
+            fatGrams: n('fat_g'),
+            sugarGrams: t is Map && t['sugar_g'] is num ? n('sugar_g') : null,
+            liquid: liquid,
+          ),
+  );
+  return label.displayName == null && label.barcode == null ? null : label;
 }
 
 /// Estima o prato da foto. [plateGrams]: peso na balança, se a pessoa
